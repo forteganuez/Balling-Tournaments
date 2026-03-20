@@ -14,6 +14,7 @@ export type AppTabParamList = {
   Home: undefined;
   Tournaments: NavigatorScreenParams<TournamentsStackParamList>;
   Dashboard: undefined;
+  Profile: undefined;
 };
 
 export type TournamentsStackParamList = {

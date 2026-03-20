@@ -13,11 +13,34 @@ export type TournamentStatus =
 
 export type UserRole = 'PLAYER' | 'ORGANIZER' | 'ADMIN';
 
+export type AuthProvider = 'LOCAL' | 'GOOGLE' | 'APPLE' | 'MICROSOFT';
+
+export type PlayLevel = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'PRO';
+
 export interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
+  phone?: string | null;
+  avatarUrl?: string | null;
+  bio?: string | null;
+  city?: string | null;
+  dateOfBirth?: string | null;
+  level?: PlayLevel | null;
+  preferredSport?: Sport | null;
+  authProvider?: AuthProvider;
+}
+
+export interface ProfileUpdate {
+  name?: string;
+  phone?: string | null;
+  avatarUrl?: string | null;
+  bio?: string | null;
+  city?: string | null;
+  dateOfBirth?: string | null;
+  level?: PlayLevel | null;
+  preferredSport?: Sport | null;
 }
 
 export interface Tournament {

@@ -30,3 +30,18 @@ export const matchResultSchema = z.object({
   score: z.string().min(1, 'Score is required'),
   winnerId: z.string(),
 });
+
+export const profileUpdateSchema = z.object({
+  name: z.string().min(2).optional(),
+  phone: z.string().nullable().optional(),
+  avatarUrl: z.string().url().nullable().optional(),
+  bio: z.string().max(500).nullable().optional(),
+  city: z.string().nullable().optional(),
+  dateOfBirth: z.string().nullable().optional(),
+  level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PRO']).nullable().optional(),
+  preferredSport: z.enum(['PADEL', 'TENNIS', 'SQUASH']).nullable().optional(),
+});
+
+export const socialAuthSchema = z.object({
+  idToken: z.string().min(1, 'Token is required'),
+});

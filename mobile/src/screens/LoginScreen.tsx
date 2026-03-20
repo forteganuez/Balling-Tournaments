@@ -4,6 +4,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '../hooks/useAuth';
+import { SocialAuthButtons } from '../components/SocialAuthButtons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../navigation/types';
 
@@ -116,6 +117,8 @@ export function LoginScreen({ navigation }: Props) {
             {submitting ? 'Signing in...' : 'Sign In'}
           </Text>
         </Pressable>
+
+        <SocialAuthButtons />
 
         <Pressable
           onPress={() => navigation.navigate('Register')}

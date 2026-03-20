@@ -5,6 +5,7 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { TournamentsScreen } from '../screens/TournamentsScreen';
 import { TournamentDetailScreen } from '../screens/TournamentDetailScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
+import { ProfileScreen } from '../screens/ProfileScreen';
 import type { AppTabParamList, TournamentsStackParamList } from './types';
 import { colors } from '../constants/theme';
 import { Text } from 'react-native';
@@ -34,6 +35,7 @@ function TabIcon({ label, focused }: { label: string; focused: boolean }) {
     Home: '🏠',
     Tournaments: '🏆',
     Dashboard: '👤',
+    Profile: '⚙️',
   };
 
   return (
@@ -65,6 +67,11 @@ export function AppNavigator() {
         name="Dashboard"
         component={DashboardScreen}
         options={{ title: 'My Tournaments' }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ title: 'Profile' }}
       />
     </Tab.Navigator>
   );

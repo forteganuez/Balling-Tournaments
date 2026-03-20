@@ -5,6 +5,7 @@ import type {
   Match,
   Sport,
   TournamentStatus,
+  ProfileUpdate,
 } from './types';
 import { getToken, clearToken } from './storage';
 
@@ -95,6 +96,25 @@ export async function logout(): Promise<{ message: string }> {
 
 export async function getMe(): Promise<{ user: User }> {
   return apiFetch<{ user: User }>('/api/auth/me');
+}
+
+export async function updateProfile(
+  data: ProfileUpdate
+): Promise<{ user: User }> {
+  return apiFetch<{ user: User }>('/api/auth/profile', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function socialAuth(
+  provider: 'google' | 'apple' | 'microsoft',
+  payload: Record<string, string>
+): Promise<{ user: User; token: string }> {
+  return apiFetch<{ user: User; token: string }>(`/api/auth/${provider}`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 }
 
 // ── Tournaments ───────────────────────────────────────────────────────
