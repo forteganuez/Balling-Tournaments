@@ -54,6 +54,7 @@ authRouter.post('/register', async (req: Request, res: Response, next: NextFunct
         email: user.email,
         role: user.role,
       },
+      token,
     });
   } catch (err) {
     next(err);
@@ -90,6 +91,7 @@ authRouter.post('/login', async (req: Request, res: Response, next: NextFunction
         email: user.email,
         role: user.role,
       },
+      token,
     });
   } catch (err) {
     next(err);
