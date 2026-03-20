@@ -54,7 +54,7 @@ export default function Login() {
             Welcome back
           </h1>
           <p className="mb-6 text-sm text-gray-500">
-            Log in to your TourneyPlay account
+            Log in to your Balling account
           </p>
 
           {submitError && (

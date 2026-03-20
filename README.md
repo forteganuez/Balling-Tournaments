@@ -96,8 +96,8 @@ npm run dev
 ```
 
 Usuarios de prueba (contraseña: `password123`):
-- `admin@tourneyplay.com` — Admin
-- `maria@tourneyplay.com` — Organizer
+- `admin@balling.com` — Admin
+- `maria@balling.com` — Organizer
 - `carlos@example.com` — Player
 
 ---
@@ -105,7 +105,7 @@ Usuarios de prueba (contraseña: `password123`):
 ## Variables de entorno
 
 ```env
-DATABASE_URL=postgresql://user:password@localhost:5432/tourneyplay
+DATABASE_URL=postgresql://user:password@localhost:5432/balling
 JWT_SECRET=secreto-seguro
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...

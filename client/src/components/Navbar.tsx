@@ -32,7 +32,7 @@ export default function Navbar() {
             onClick={() => setMobileOpen(false)}
           >
             <span className="text-2xl">🏆</span>
-            <span>TourneyPlay</span>
+            <span>Balling</span>
           </Link>
 
           {/* Desktop nav */}

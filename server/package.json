@@ -1,5 +1,5 @@
 {
-  "name": "tourneyplay-server",
+  "name": "balling-server",
   "private": true,
   "scripts": {
     "dev": "tsx watch src/index.ts",

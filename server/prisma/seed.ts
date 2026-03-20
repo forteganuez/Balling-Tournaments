@@ -16,7 +16,7 @@ async function main() {
   const admin = await prisma.user.create({
     data: {
       name: 'Admin',
-      email: 'admin@tourneyplay.com',
+      email: 'admin@balling.com',
       passwordHash,
       role: 'ADMIN',
     },
@@ -26,7 +26,7 @@ async function main() {
   const organizer = await prisma.user.create({
     data: {
       name: 'María García',
-      email: 'maria@tourneyplay.com',
+      email: 'maria@balling.com',
       passwordHash,
       role: 'ORGANIZER',
     },

@@ -60,7 +60,7 @@ export default function Register() {
             Create your account
           </h1>
           <p className="mb-6 text-sm text-gray-500">
-            Join TourneyPlay and start competing
+            Join Balling and start competing
           </p>
 
           {submitError && (
