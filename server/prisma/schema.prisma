@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Sport {
+  PADEL
+  TENNIS
+  SQUASH
+}
+
+enum TournamentFormat {
+  SINGLE_ELIMINATION
+  DOUBLE_ELIMINATION
+  ROUND_ROBIN
+}
+
+enum TournamentStatus {
+  REGISTRATION_OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum UserRole {
+  PLAYER
+  ORGANIZER
+  ADMIN
+}
+
+model User {
+  id            String         @id @default(cuid())
+  name          String
+  email         String         @unique
+  phone         String?
+  passwordHash  String
+  role          UserRole       @default(PLAYER)
+  createdAt     DateTime       @default(now())
+  registrations Registration[]
+  organizedTournaments Tournament[] @relation("Organizer")
+}
+
+model Tournament {
+  id            String           @id @default(cuid())
+  name          String
+  sport         Sport
+  format        TournamentFormat
+  status        TournamentStatus @default(REGISTRATION_OPEN)
+  description   String?
+  date          DateTime
+  location      String
+  venue         String?
+  maxPlayers    Int
+  entryFee      Int              // in cents (€10.00 = 1000)
+  organizerId   String
+  organizer     User             @relation("Organizer", fields: [organizerId], references: [id])
+  registrations Registration[]
+  matches       Match[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+}
+
+model Registration {
+  id              String   @id @default(cuid())
+  userId          String
+  tournamentId    String
+  stripeSessionId String?
+  stripePaymentId String?
+  paidAt          DateTime?
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id])
+  tournament      Tournament @relation(fields: [tournamentId], references: [id])
+
+  @@unique([userId, tournamentId])
+}
+
+model Match {
+  id           String     @id @default(cuid())
+  tournamentId String
+  round        Int
+  position     Int
+  player1Id    String?
+  player2Id    String?
+  winnerId     String?
+  score        String?
+  scheduledAt  DateTime?
+  completedAt  DateTime?
+  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+}

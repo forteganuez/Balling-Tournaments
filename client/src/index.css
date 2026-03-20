@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply min-h-screen;
+}
+
+/* Custom scrollbar for bracket view */
+.bracket-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+.bracket-scroll::-webkit-scrollbar-track {
+  @apply bg-gray-100 rounded;
+}
+.bracket-scroll::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded hover:bg-gray-400;
+}

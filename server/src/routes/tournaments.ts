@@ -1,0 +1,311 @@
+import { Router, Request, Response, NextFunction } from 'express';
+import prisma from '../lib/prisma.js';
+import { createTournamentSchema, updateTournamentSchema } from '../lib/validation.js';
+import { authenticate } from '../middleware/auth.js';
+import { requireRole } from '../middleware/roleCheck.js';
+import { generateBrackets } from '../services/bracket-generator.js';
+import { createCheckoutSession } from '../services/stripe.js';
+import { Prisma } from '@prisma/client';
+
+export const tournamentRouter = Router();
+
+// GET /my — must be defined BEFORE /:id
+tournamentRouter.get('/my', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const registrations = await prisma.registration.findMany({
+      where: { userId: req.user!.id },
+      include: {
+        tournament: {
+          include: {
+            organizer: { select: { id: true, name: true } },
+            _count: { select: { registrations: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json(registrations);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Also export the handler for mounting at /api/my-tournaments in index.ts
+export async function myTournamentsHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const registrations = await prisma.registration.findMany({
+      where: { userId: req.user!.id },
+      include: {
+        tournament: {
+          include: {
+            organizer: { select: { id: true, name: true } },
+            _count: { select: { registrations: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json(registrations);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// GET / — list tournaments
+tournamentRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { sport, status, search } = req.query;
+
+    const where: Prisma.TournamentWhereInput = {};
+
+    if (sport && typeof sport === 'string') {
+      where.sport = sport as any;
+    }
+
+    if (status && typeof status === 'string') {
+      where.status = status as any;
+    }
+
+    if (search && typeof search === 'string') {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { location: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const tournaments = await prisma.tournament.findMany({
+      where,
+      include: {
+        organizer: { select: { id: true, name: true } },
+        _count: { select: { registrations: true } },
+      },
+      orderBy: { date: 'asc' },
+    });
+
+    res.json(tournaments);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /:id — tournament detail
+tournamentRouter.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tournament = await prisma.tournament.findUnique({
+      where: { id: req.params.id },
+      include: {
+        organizer: { select: { id: true, name: true, email: true } },
+        registrations: {
+          include: {
+            user: { select: { id: true, name: true, email: true } },
+          },
+        },
+        matches: {
+          orderBy: [{ round: 'asc' }, { position: 'asc' }],
+        },
+      },
+    });
+
+    if (!tournament) {
+      res.status(404).json({ error: 'Tournament not found' });
+      return;
+    }
+
+    res.json(tournament);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST / — create tournament
+tournamentRouter.post(
+  '/',
+  authenticate,
+  requireRole('ORGANIZER', 'ADMIN'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const data = createTournamentSchema.parse(req.body);
+
+      const tournament = await prisma.tournament.create({
+        data: {
+          ...data,
+          organizerId: req.user!.id,
+        },
+      });
+
+      res.status(201).json(tournament);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// PUT /:id — update tournament
+tournamentRouter.put('/:id', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tournament = await prisma.tournament.findUnique({ where: { id: req.params.id } });
+
+    if (!tournament) {
+      res.status(404).json({ error: 'Tournament not found' });
+      return;
+    }
+
+    if (tournament.organizerId !== req.user!.id && req.user!.role !== 'ADMIN') {
+      res.status(403).json({ error: 'Insufficient permissions' });
+      return;
+    }
+
+    const data = updateTournamentSchema.parse(req.body);
+
+    const updated = await prisma.tournament.update({
+      where: { id: req.params.id },
+      data,
+    });
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /:id/close-registration — close registration and generate bracket
+tournamentRouter.post(
+  '/:id/close-registration',
+  authenticate,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const tournament = await prisma.tournament.findUnique({ where: { id: req.params.id } });
+
+      if (!tournament) {
+        res.status(404).json({ error: 'Tournament not found' });
+        return;
+      }
+
+      if (tournament.organizerId !== req.user!.id && req.user!.role !== 'ADMIN') {
+        res.status(403).json({ error: 'Insufficient permissions' });
+        return;
+      }
+
+      if (tournament.status !== 'REGISTRATION_OPEN') {
+        res.status(400).json({ error: 'Registration is not open for this tournament' });
+        return;
+      }
+
+      await prisma.tournament.update({
+        where: { id: req.params.id },
+        data: { status: 'IN_PROGRESS' },
+      });
+
+      await generateBrackets(req.params.id, tournament.format);
+
+      const updatedTournament = await prisma.tournament.findUnique({
+        where: { id: req.params.id },
+        include: {
+          matches: { orderBy: [{ round: 'asc' }, { position: 'asc' }] },
+          registrations: {
+            include: { user: { select: { id: true, name: true, email: true } } },
+          },
+          organizer: { select: { id: true, name: true, email: true } },
+        },
+      });
+
+      res.json(updatedTournament);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// POST /:id/cancel — cancel tournament
+tournamentRouter.post('/:id/cancel', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tournament = await prisma.tournament.findUnique({ where: { id: req.params.id } });
+
+    if (!tournament) {
+      res.status(404).json({ error: 'Tournament not found' });
+      return;
+    }
+
+    if (tournament.organizerId !== req.user!.id && req.user!.role !== 'ADMIN') {
+      res.status(403).json({ error: 'Insufficient permissions' });
+      return;
+    }
+
+    const updated = await prisma.tournament.update({
+      where: { id: req.params.id },
+      data: { status: 'CANCELLED' },
+    });
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /:id/join — join tournament (creates Stripe checkout)
+tournamentRouter.post('/:id/join', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tournament = await prisma.tournament.findUnique({
+      where: { id: req.params.id },
+      include: { _count: { select: { registrations: true } } },
+    });
+
+    if (!tournament) {
+      res.status(404).json({ error: 'Tournament not found' });
+      return;
+    }
+
+    if (tournament.status !== 'REGISTRATION_OPEN') {
+      res.status(400).json({ error: 'Tournament is not open for registration' });
+      return;
+    }
+
+    if (tournament._count.registrations >= tournament.maxPlayers) {
+      res.status(400).json({ error: 'Tournament is full' });
+      return;
+    }
+
+    const existingRegistration = await prisma.registration.findUnique({
+      where: {
+        userId_tournamentId: {
+          userId: req.user!.id,
+          tournamentId: req.params.id,
+        },
+      },
+    });
+
+    if (existingRegistration) {
+      res.status(409).json({ error: 'You are already registered for this tournament' });
+      return;
+    }
+
+    // If entry fee is 0, register directly without Stripe
+    if (tournament.entryFee === 0) {
+      await prisma.registration.create({
+        data: {
+          userId: req.user!.id,
+          tournamentId: req.params.id,
+          paidAt: new Date(),
+        },
+      });
+
+      res.json({ url: `${process.env.CLIENT_URL || 'http://localhost:5173'}/tournaments/${req.params.id}?payment=success` });
+      return;
+    }
+
+    const session = await createCheckoutSession({
+      tournamentId: req.params.id,
+      tournamentName: tournament.name,
+      entryFee: tournament.entryFee,
+      userId: req.user!.id,
+      userEmail: req.user!.email,
+    });
+
+    res.json({ url: session.url });
+  } catch (err) {
+    next(err);
+  }
+});
