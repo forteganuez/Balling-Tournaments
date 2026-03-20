@@ -26,7 +26,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   platforms: ['ios', 'android'],
-  plugins: ['expo-secure-store', 'expo-font'],
+  plugins: ['expo-secure-store', 'expo-font', 'expo-asset'],
   extra: {
     apiUrl: process.env.EXPO_PUBLIC_API_URL,
   },
