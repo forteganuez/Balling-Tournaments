@@ -9,7 +9,10 @@ import { authenticate } from '../middleware/auth.js';
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
-const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
+const SERVER_URL = process.env.SERVER_URL || `http://localhost:${process.env.PORT || 3001}`;
+const MOBILE_SCHEME = process.env.MOBILE_SCHEME || 'exp+balling';
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, `${SERVER_URL}/api/auth/google/callback`);
 
 export const authRouter = Router();
 
@@ -93,7 +96,113 @@ authRouter.post('/login', async (req: Request, res: Response, next: NextFunction
   }
 });
 
-// POST /google — sign in with Google ID token
+// Temporary store for OAuth state → token mapping
+const pendingOAuth = new Map<string, string | null>();
+
+// GET /google/start — redirect user to Google consent screen
+authRouter.get('/google/start', (req: Request, res: Response) => {
+  const state = req.query.state as string || '';
+  const redirectUri = `${SERVER_URL}/api/auth/google/callback`;
+  const url = googleClient.generateAuthUrl({
+    access_type: 'offline',
+    scope: ['openid', 'profile', 'email'],
+    redirect_uri: redirectUri,
+    state,
+  });
+  if (state) {
+    pendingOAuth.set(state, null);
+    // Clean up after 5 minutes
+    setTimeout(() => pendingOAuth.delete(state), 5 * 60 * 1000);
+  }
+  res.redirect(url);
+});
+
+// GET /google/callback — Google redirects here with auth code
+authRouter.get('/google/callback', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { code } = req.query;
+    if (!code || typeof code !== 'string') {
+      res.status(400).json({ error: 'Missing authorization code' });
+      return;
+    }
+
+    const redirectUri = `${SERVER_URL}/api/auth/google/callback`;
+    const { tokens } = await googleClient.getToken({ code, redirect_uri: redirectUri });
+
+    if (!tokens.id_token) {
+      res.status(401).json({ error: 'Failed to get ID token from Google' });
+      return;
+    }
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: tokens.id_token,
+      audience: GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      res.status(401).json({ error: 'Invalid Google token' });
+      return;
+    }
+
+    let user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { authProvider: 'GOOGLE', providerId: payload.sub },
+          { email: payload.email },
+        ],
+      },
+    });
+
+    if (user) {
+      if (user.authProvider === 'LOCAL') {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { authProvider: 'GOOGLE', providerId: payload.sub, avatarUrl: user.avatarUrl || payload.picture },
+        });
+      }
+    } else {
+      user = await prisma.user.create({
+        data: {
+          name: payload.name || payload.email.split('@')[0],
+          email: payload.email,
+          authProvider: 'GOOGLE',
+          providerId: payload.sub,
+          avatarUrl: payload.picture,
+        },
+      });
+    }
+
+    const token = signToken(user);
+    const state = req.query.state as string;
+
+    // Store token for polling, keyed by state
+    if (state && pendingOAuth.has(state)) {
+      pendingOAuth.set(state, token);
+    }
+
+    res.send(`<!DOCTYPE html><html><head><meta charset="utf-8"/></head><body style="font-family:sans-serif;text-align:center;padding:60px 20px;"><h2>Signed in!</h2><p>Return to the Balling app.</p></body></html>`);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /google/poll — mobile app polls for the token
+authRouter.get('/google/poll', (req: Request, res: Response) => {
+  const state = req.query.state as string;
+  if (!state || !pendingOAuth.has(state)) {
+    res.status(404).json({ error: 'Not found' });
+    return;
+  }
+  const token = pendingOAuth.get(state);
+  if (token) {
+    pendingOAuth.delete(state);
+    res.json({ token });
+  } else {
+    res.json({ token: null });
+  }
+});
+
+// POST /google — sign in with Google ID token (kept for direct token flow)
 authRouter.post('/google', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { idToken } = socialAuthSchema.parse(req.body);
