@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, Pressable, ScrollView, Alert,
   KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthContext } from '../context/AuthContext';
 import type { Sport, PlayLevel } from '../lib/types';
 
@@ -62,9 +63,10 @@ export function ProfileScreen() {
   }
 
   return (
+    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-white"
+      className="flex-1"
     >
       <ScrollView
         className="flex-1"
@@ -224,5 +226,6 @@ export function ProfileScreen() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

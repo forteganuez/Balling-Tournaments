@@ -5,9 +5,10 @@ import * as api from '../lib/api';
 import type { Registration } from '../lib/types';
 import { SportIcon } from '../components/SportIcon';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, CompositeNavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { TournamentsStackParamList } from '../navigation/types';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { TournamentsStackParamList, AppTabParamList } from '../navigation/types';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const statusColors: Record<string, string> = {
@@ -26,7 +27,7 @@ const statusLabels: Record<string, string> = {
 
 export function DashboardScreen() {
   const { user } = useAuth();
-  const navigation = useNavigation<NativeStackNavigationProp<TournamentsStackParamList>>();
+  const navigation = useNavigation<any>();
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +91,7 @@ export function DashboardScreen() {
     return (
       <Pressable
         key={reg.id}
-        onPress={() => navigation.navigate('TournamentDetail', { id: t.id })}
+        onPress={() => navigation.navigate('Tournaments', { screen: 'TournamentDetail', params: { id: t.id } })}
         className="bg-white rounded-xl p-4 mb-3 border border-border flex-row items-center"
       >
         <SportIcon sport={t.sport} size={28} />
@@ -121,7 +122,7 @@ export function DashboardScreen() {
             Join your first tournament and start competing!
           </Text>
           <Pressable
-            onPress={() => navigation.navigate('TournamentList')}
+            onPress={() => navigation.navigate('Tournaments', { screen: 'TournamentList' })}
             className="bg-primary px-6 py-3 rounded-lg"
           >
             <Text className="text-white font-semibold">Browse Tournaments</Text>

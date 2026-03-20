@@ -5,6 +5,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'Balling',
   slug: 'balling',
+  scheme: 'balling',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
@@ -26,7 +27,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   platforms: ['ios', 'android'],
-  plugins: ['expo-secure-store', 'expo-font', 'expo-asset', 'expo-web-browser', 'expo-apple-authentication'],
+  plugins: ['expo-web-browser', 'expo-apple-authentication'],
   extra: {
     apiUrl: process.env.EXPO_PUBLIC_API_URL,
   },

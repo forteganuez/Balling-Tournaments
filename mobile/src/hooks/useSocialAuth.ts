@@ -1,33 +1,51 @@
 import { useState } from 'react';
 import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
 import { makeRedirectUri } from 'expo-auth-session';
 import { useAuthContext } from '../context/AuthContext';
+import { setToken } from '../lib/storage';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || '';
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001';
+const GOOGLE_AUTH_URL = process.env.EXPO_PUBLIC_GOOGLE_AUTH_URL || API_URL;
 const MICROSOFT_CLIENT_ID = process.env.EXPO_PUBLIC_MICROSOFT_CLIENT_ID || '';
 
 export function useSocialAuth() {
-  const { socialLogin } = useAuthContext();
+  const { socialLogin, refreshUser } = useAuthContext();
   const [loading, setLoading] = useState<'google' | 'apple' | 'microsoft' | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const redirectUri = makeRedirectUri({ scheme: 'balling' });
 
-  const [, googleResponse, googlePromptAsync] = Google.useIdTokenAuthRequest({
-    clientId: GOOGLE_CLIENT_ID,
-    redirectUri,
-  });
-
   const handleGoogle = async () => {
     try {
       setError(null);
       setLoading('google');
-      const result = await googlePromptAsync();
-      if (result.type === 'success' && result.params.id_token) {
-        await socialLogin('google', { idToken: result.params.id_token });
+
+      // Generate a unique state to track this auth session
+      const state = Math.random().toString(36).substring(2, 15);
+      const authUrl = `${GOOGLE_AUTH_URL}/api/auth/google/start?state=${state}`;
+
+      // Open browser for Google sign in
+      await WebBrowser.openBrowserAsync(authUrl);
+
+      // Poll for the token after user returns to app
+      const pollForToken = async (): Promise<string | null> => {
+        for (let i = 0; i < 30; i++) {
+          const res = await fetch(`${GOOGLE_AUTH_URL}/api/auth/google/poll?state=${state}`);
+          const data = await res.json();
+          if (data.token) return data.token;
+          await new Promise(r => setTimeout(r, 2000));
+        }
+        return null;
+      };
+
+      const token = await pollForToken();
+      if (token) {
+        await setToken(token);
+        await refreshUser();
+      } else {
+        setError('Sign in timed out. Please try again.');
       }
     } catch (err: any) {
       setError(err.message || 'Google sign in failed');

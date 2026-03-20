@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -40,9 +41,10 @@ export function LoginScreen({ navigation }: Props) {
   }
 
   return (
+    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-white"
+      className="flex-1"
     >
       <ScrollView
         contentContainerClassName="flex-1 justify-center px-6"
@@ -131,5 +133,6 @@ export function LoginScreen({ navigation }: Props) {
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
