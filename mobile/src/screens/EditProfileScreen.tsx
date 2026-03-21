@@ -6,7 +6,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
+import { CalendarPickerModal } from '../components/CalendarPickerModal';
 import { useAuthContext } from '../context/AuthContext';
+import { formatDateKey, formatLongDate, getTodayDateKey } from '../lib/dateUtils';
 import { uploadImage } from '../lib/uploadImage';
 import type { Sport } from '../lib/types';
 
@@ -30,6 +32,27 @@ function getSkillLabel(level: number): string {
   return 'Advanced';
 }
 
+function formatDateOfBirth(value?: string | null): string {
+  if (!value) {
+    return '';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  return formatDateKey(new Date(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+    12,
+    0,
+    0,
+    0,
+  ));
+}
+
 export function EditProfileScreen() {
   const navigation = useNavigation();
   const { user, updateProfile } = useAuthContext();
@@ -37,10 +60,12 @@ export function EditProfileScreen() {
   const [name, setName] = useState(user?.name ?? '');
   const [bio, setBio] = useState(user?.bio ?? '');
   const [city, setCity] = useState(user?.city ?? '');
+  const [dateOfBirth, setDateOfBirth] = useState(formatDateOfBirth(user?.dateOfBirth));
   const [skillLevel, setSkillLevel] = useState(user?.skillLevel ?? 5);
   const [sports, setSports] = useState<Sport[]>(user?.sports ?? []);
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
 
   if (!user) return null;
 
@@ -66,16 +91,22 @@ export function EditProfileScreen() {
   }
 
   async function handleSave() {
+    const trimmedDateOfBirth = dateOfBirth.trim();
+
     setSaving(true);
     try {
       let avatarUrl: string | undefined;
 
       if (avatarUri && user) {
         try {
-          const path = `avatars/${user.id}-${Date.now()}.jpg`;
-          avatarUrl = await uploadImage(avatarUri, 'avatars', path);
-        } catch {
-          Alert.alert('Upload Error', 'Failed to upload photo. Other changes will be saved.');
+          avatarUrl = await uploadImage(avatarUri, 'avatars');
+        } catch (uploadError) {
+          Alert.alert(
+            'Upload Error',
+            uploadError instanceof Error
+              ? uploadError.message
+              : 'Failed to upload photo. Other changes will be saved.',
+          );
         }
       }
 
@@ -83,6 +114,7 @@ export function EditProfileScreen() {
         name: name.trim() || undefined,
         bio: bio.trim() || null,
         city: city.trim() || null,
+        dateOfBirth: trimmedDateOfBirth || null,
         skillLevel,
         sports,
         ...(avatarUrl && { avatarUrl }),
@@ -173,6 +205,26 @@ export function EditProfileScreen() {
               />
             </View>
 
+            <View className="mb-4">
+              <Text className="text-sm font-medium text-secondary mb-1">
+                Date of Birth
+              </Text>
+              <Pressable
+                onPress={() => setDatePickerVisible(true)}
+                className="rounded-xl border border-border px-4 py-3"
+              >
+                <Text className="text-xs font-semibold uppercase tracking-[1px] text-muted">
+                  Birthday
+                </Text>
+                <Text className="mt-1 text-base font-semibold text-secondary">
+                  {dateOfBirth ? formatLongDate(dateOfBirth) : 'Choose your date of birth'}
+                </Text>
+              </Pressable>
+              <Text className="text-xs text-muted mt-1.5">
+                Optional. Tap to open the calendar.
+              </Text>
+            </View>
+
             {/* Skill Level */}
             <View className="mb-4">
               <Text className="text-sm font-medium text-secondary mb-2">
@@ -261,6 +313,18 @@ export function EditProfileScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <CalendarPickerModal
+        visible={datePickerVisible}
+        title="Pick your date of birth"
+        subtitle="This stays on your profile and helps personalize your experience."
+        value={dateOfBirth || null}
+        maxDate={getTodayDateKey()}
+        allowClear
+        onClose={() => setDatePickerVisible(false)}
+        onConfirm={(date) => setDateOfBirth(date)}
+        onClear={() => setDateOfBirth('')}
+      />
     </SafeAreaView>
   );
 }

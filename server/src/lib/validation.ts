@@ -45,3 +45,11 @@ export const profileUpdateSchema = z.object({
 export const socialAuthSchema = z.object({
   idToken: z.string().min(1, 'Token is required'),
 });
+
+export const createOpenMatchSchema = z.object({
+  sport: z.enum(['PADEL', 'TENNIS', 'SQUASH']),
+  location: z.string().min(2, 'Location must be at least 2 characters'),
+  venue: z.string().max(120).optional(),
+  notes: z.string().max(240).optional(),
+  scheduledFor: z.coerce.date(),
+});

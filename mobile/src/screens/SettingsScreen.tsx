@@ -24,15 +24,28 @@ const PROVIDER_LABELS: Record<string, string> = {
   MICROSOFT: 'Microsoft',
 };
 
-function SectionHeader({ title, danger }: { title: string; danger?: boolean }) {
+function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
-    <Text
-      className={`text-xs font-semibold uppercase tracking-wider px-4 pt-6 pb-2 ${
-        danger ? 'text-red-500' : 'text-muted'
+    <View className="px-5 pt-6 pb-2">
+      <Text className="text-xs font-semibold uppercase tracking-wider text-muted">
+        {title}
+      </Text>
+      {subtitle ? (
+        <Text className="text-sm text-muted mt-1">{subtitle}</Text>
+      ) : null}
+    </View>
+  );
+}
+
+function SettingsCard({ children, danger }: { children: React.ReactNode; danger?: boolean }) {
+  return (
+    <View
+      className={`mx-4 rounded-2xl overflow-hidden border ${
+        danger ? 'border-red-200 bg-red-50/40' : 'border-border bg-white'
       }`}
     >
-      {title}
-    </Text>
+      {children}
+    </View>
   );
 }
 
@@ -41,26 +54,32 @@ function SettingsRow({
   detail,
   onPress,
   danger,
+  isLast,
 }: {
   label: string;
   detail?: string;
   onPress: () => void;
   danger?: boolean;
+  isLast?: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
-      className="flex-row items-center justify-between px-4 py-3.5 border-b border-border bg-white"
+      className={`flex-row items-center justify-between px-4 py-4 ${
+        isLast ? '' : danger ? 'border-b border-red-100' : 'border-b border-border'
+      }`}
     >
-      <Text
-        className={`text-base ${danger ? 'text-red-500 font-semibold' : 'text-secondary'}`}
-      >
-        {label}
-      </Text>
-      <View className="flex-row items-center">
+      <View className="flex-1 pr-4">
+        <Text
+          className={`text-base ${danger ? 'text-red-500 font-semibold' : 'text-secondary'}`}
+        >
+          {label}
+        </Text>
         {detail ? (
-          <Text className="text-sm text-muted mr-2">{detail}</Text>
+          <Text className="text-sm text-muted mt-1">{detail}</Text>
         ) : null}
+      </View>
+      <View className="flex-row items-center">
         <Text className="text-muted text-sm">{'\u2192'}</Text>
       </View>
     </Pressable>
@@ -74,6 +93,12 @@ export function SettingsScreen() {
 
   const providerLabel =
     user?.authProvider ? PROVIDER_LABELS[user.authProvider] ?? user.authProvider : 'Email & Password';
+  const memberSince = user?.createdAt
+    ? new Date(user.createdAt).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'long',
+      })
+    : null;
 
   function handleChangePassword() {
     Alert.alert(
@@ -129,36 +154,61 @@ export function SettingsScreen() {
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 40 }}
       >
-        {/* Screen Title */}
-        <View className="px-4 pt-4 pb-2">
-          <Text className="text-2xl font-bold text-secondary">Settings</Text>
+        <View className="px-4 pt-4 pb-1">
+          <Text className="text-3xl font-bold text-secondary">Settings</Text>
+          <Text className="text-sm text-muted mt-1">
+            Keep your account, appearance, and support preferences in one place.
+          </Text>
         </View>
 
-        {/* Account */}
-        <SectionHeader title="Account" />
-        <SettingsRow
-          label="Edit profile"
-          onPress={() => navigation.navigate('EditProfile')}
-        />
-        <SettingsRow
-          label="Change password"
-          onPress={handleChangePassword}
-        />
-        <SettingsRow
-          label="Connected accounts"
-          detail={providerLabel}
-          onPress={() =>
-            Alert.alert('Connected Accounts', `Signed in with ${providerLabel}`)
-          }
-        />
+        <View className="mx-4 mt-4 rounded-3xl bg-secondary px-5 py-5">
+          <Text className="text-white text-lg font-semibold">{user?.name ?? 'Your account'}</Text>
+          <Text className="text-white/80 text-sm mt-1">{user?.email}</Text>
+          <View className="flex-row flex-wrap gap-2 mt-4">
+            <View className="rounded-full bg-white/10 px-3 py-1.5">
+              <Text className="text-white text-xs font-medium">Signed in with {providerLabel}</Text>
+            </View>
+            {memberSince ? (
+              <View className="rounded-full bg-white/10 px-3 py-1.5">
+                <Text className="text-white text-xs font-medium">Member since {memberSince}</Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
 
-        {/* Preferences */}
-        <SectionHeader title="Preferences" />
+        <SectionHeader
+          title="Account"
+          subtitle="Update your personal info and sign-in details."
+        />
+        <SettingsCard>
+          <SettingsRow
+            label="Edit profile"
+            detail="Photo, bio, city, birth date, sports, and skill level"
+            onPress={() => navigation.navigate('EditProfile')}
+          />
+          <SettingsRow
+            label="Change password"
+            detail="Send yourself a reset link"
+            onPress={handleChangePassword}
+          />
+          <SettingsRow
+            label="Connected account"
+            detail={providerLabel}
+            onPress={() =>
+              Alert.alert('Connected Accounts', `Signed in with ${providerLabel}`)
+            }
+            isLast
+          />
+        </SettingsCard>
 
-        {/* Dark Mode Selector */}
-        <View className="px-4 py-3.5 border-b border-border bg-white">
-          <Text className="text-base text-secondary mb-2.5">Dark mode</Text>
-          <View className="flex-row bg-surface rounded-lg p-1">
+        <SectionHeader
+          title="Appearance"
+          subtitle="Choose how Balling should look on your device."
+        />
+        <SettingsCard>
+          <View className="px-4 py-4">
+            <Text className="text-base text-secondary mb-3">Theme</Text>
+            <View className="flex-row bg-surface rounded-xl p-1">
             {THEME_OPTIONS.map((option) => {
               const isActive = mode === option.value;
               return (
@@ -179,35 +229,51 @@ export function SettingsScreen() {
                 </Pressable>
               );
             })}
+            </View>
           </View>
-        </View>
+          <SettingsRow
+            label="Notification preferences"
+            detail="All enabled"
+            onPress={() =>
+              Alert.alert(
+                'Notification Preferences',
+                'Notification settings coming soon.',
+              )
+            }
+            isLast
+          />
+        </SettingsCard>
 
-        <SettingsRow
-          label="Notification preferences"
-          detail="All enabled"
-          onPress={() =>
-            Alert.alert(
-              'Notification Preferences',
-              'Notification settings coming soon.',
-            )
-          }
+        <SectionHeader
+          title="Support"
+          subtitle="Get help or review our policies."
         />
+        <SettingsCard>
+          <SettingsRow label="Help & FAQ" detail="Quick answers for common questions" onPress={handleHelp} />
+          <SettingsRow label="Contact support" detail="support@balling.app" onPress={handleContactSupport} />
+          <SettingsRow label="Privacy policy" onPress={handlePrivacyPolicy} />
+          <SettingsRow label="Terms of service" onPress={handleTerms} isLast />
+        </SettingsCard>
 
-        {/* Support */}
-        <SectionHeader title="Support" />
-        <SettingsRow label="Help & FAQ" onPress={handleHelp} />
-        <SettingsRow label="Contact support" onPress={handleContactSupport} />
-        <SettingsRow label="Privacy policy" onPress={handlePrivacyPolicy} />
-        <SettingsRow label="Terms of service" onPress={handleTerms} />
-
-        {/* Danger Zone */}
-        <SectionHeader title="Danger Zone" danger />
-        <SettingsRow
-          label="Delete account"
-          onPress={handleDeleteAccount}
-          danger
+        <SectionHeader
+          title="Danger Zone"
+          subtitle="These actions affect your account access."
         />
-        <SettingsRow label="Log out" onPress={handleLogout} danger />
+        <SettingsCard danger>
+          <SettingsRow
+            label="Delete account"
+            detail="Permanently remove your account"
+            onPress={handleDeleteAccount}
+            danger
+          />
+          <SettingsRow
+            label="Log out"
+            detail="Sign out on this device"
+            onPress={handleLogout}
+            danger
+            isLast
+          />
+        </SettingsCard>
       </ScrollView>
     </SafeAreaView>
   );

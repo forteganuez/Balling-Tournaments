@@ -16,7 +16,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthContext } from '../context/AuthContext';
+import { CalendarPickerModal } from '../components/CalendarPickerModal';
 import { createTournament } from '../lib/api';
+import { formatLongDate, getTodayDateKey } from '../lib/dateUtils';
 import { uploadImage } from '../lib/uploadImage';
 import type { Sport, TournamentFormat } from '../lib/types';
 
@@ -107,6 +109,7 @@ export function CreateTournamentScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
 
   // ── Field updaters ───────────────────────────────────────────────
 
@@ -201,8 +204,7 @@ export function CreateTournamentScreen() {
 
       if (form.coverImageUri) {
         setUploadingImage(true);
-        const path = `tournaments/${user.id}/${Date.now()}.jpg`;
-        coverImageUrl = await uploadImage(form.coverImageUri, 'covers', path);
+        coverImageUrl = await uploadImage(form.coverImageUri, 'covers');
         setUploadingImage(false);
       }
 
@@ -391,14 +393,17 @@ export function CreateTournamentScreen() {
       <Text className="text-sm text-muted mb-4">When and where will the tournament take place?</Text>
 
       <SectionLabel text="Date" />
-      <TextInput
-        value={form.date}
-        onChangeText={(v) => updateField('date', v)}
-        placeholder="YYYY-MM-DD"
-        placeholderTextColor="#9CA3AF"
-        className="bg-surface border border-gray-200 rounded-xl px-4 py-3.5 text-secondary text-base"
-        autoCapitalize="none"
-      />
+      <Pressable
+        onPress={() => setDatePickerVisible(true)}
+        className="rounded-2xl border border-gray-200 bg-surface px-4 py-4"
+      >
+        <Text className="text-xs font-semibold uppercase tracking-[1px] text-muted">
+          Tournament day
+        </Text>
+        <Text className="mt-1 text-base font-semibold text-secondary">
+          {form.date ? formatLongDate(form.date) : 'Choose a tournament date'}
+        </Text>
+      </Pressable>
 
       <SectionLabel text="Location" />
       <TextInput
@@ -598,7 +603,7 @@ export function CreateTournamentScreen() {
           {form.sport === 'TENNIS' && (
             <ReviewRow label="Doubles" value={form.allowDoubles ? 'Yes' : 'No'} />
           )}
-          <ReviewRow label="Date" value={form.date} />
+          <ReviewRow label="Date" value={form.date ? formatLongDate(form.date) : ''} />
           <ReviewRow label="Location" value={form.location} />
           {form.venue.trim() !== '' && <ReviewRow label="Venue" value={form.venue} />}
           <ReviewRow label="Max Players" value={form.maxPlayers ? String(form.maxPlayers) : ''} />
@@ -745,6 +750,16 @@ export function CreateTournamentScreen() {
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      <CalendarPickerModal
+        visible={datePickerVisible}
+        title="Pick tournament date"
+        subtitle="Choose the day your tournament starts."
+        value={form.date}
+        minDate={getTodayDateKey()}
+        onClose={() => setDatePickerVisible(false)}
+        onConfirm={(date) => updateField('date', date)}
+      />
     </SafeAreaView>
   );
 }

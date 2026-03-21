@@ -1,13 +1,12 @@
 import * as ImageManipulator from 'expo-image-manipulator';
-import { getSupabaseClient } from './supabase';
+import { getToken } from './storage';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 export async function uploadImage(
   uri: string,
-  bucket: string,
-  path: string
+  bucket: string
 ): Promise<string> {
-  const supabase = getSupabaseClient();
-
   // Resize image to max 600x600
   const manipulated = await ImageManipulator.manipulateAsync(
     uri,
@@ -15,26 +14,37 @@ export async function uploadImage(
     { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
   );
 
-  // Read the file as blob
-  const response = await fetch(manipulated.uri);
-  const blob = await response.blob();
-
-  // Upload to Supabase Storage
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .upload(path, blob, {
-      contentType: 'image/jpeg',
-      upsert: true,
-    });
-
-  if (error) {
-    throw new Error(`Upload failed: ${error.message}`);
+  const token = await getToken();
+  if (!token) {
+    throw new Error('You must be logged in to upload images.');
   }
 
-  // Get public URL
-  const { data: urlData } = supabase.storage
-    .from(bucket)
-    .getPublicUrl(data.path);
+  const formData = new FormData();
+  formData.append('bucket', bucket);
+  formData.append('file', {
+    uri: manipulated.uri,
+    name: `${bucket}-${Date.now()}.jpg`,
+    type: 'image/jpeg',
+  } as unknown as Blob);
 
-  return urlData.publicUrl;
+  const response = await fetch(`${API_URL}/api/uploads/image`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  let payload: { error?: string; publicUrl?: string } = {};
+  try {
+    payload = await response.json();
+  } catch {
+    // Ignore parse failures and fall back to a generic message.
+  }
+
+  if (!response.ok || !payload.publicUrl) {
+    throw new Error(payload.error || 'Image upload failed.');
+  }
+
+  return payload.publicUrl;
 }

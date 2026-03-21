@@ -2,6 +2,8 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { HomeScreen } from '../screens/HomeScreen';
+import { HostMatchScreen } from '../screens/HostMatchScreen';
+import { MatchScheduleScreen } from '../screens/MatchScheduleScreen';
 import { TournamentsScreen } from '../screens/TournamentsScreen';
 import { TournamentDetailScreen } from '../screens/TournamentDetailScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
@@ -10,6 +12,7 @@ import { PlayerProfileScreen } from '../screens/PlayerProfileScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import type {
   AppTabParamList,
+  HomeStackParamList,
   TournamentsStackParamList,
   ProfileStackParamList,
 } from './types';
@@ -17,8 +20,31 @@ import { colors } from '../constants/theme';
 import { Text } from 'react-native';
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
+const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const TournamentsStack = createNativeStackNavigator<TournamentsStackParamList>();
 const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
+
+function HomeNavigator() {
+  return (
+    <HomeStack.Navigator>
+      <HomeStack.Screen
+        name="HomeMain"
+        component={HomeScreen}
+        options={{ headerShown: false }}
+      />
+      <HomeStack.Screen
+        name="HostMatch"
+        component={HostMatchScreen}
+        options={{ headerShown: false }}
+      />
+      <HomeStack.Screen
+        name="MatchSchedule"
+        component={MatchScheduleScreen}
+        options={{ headerShown: false }}
+      />
+    </HomeStack.Navigator>
+  );
+}
 
 function TournamentsNavigator() {
   return (
@@ -92,7 +118,7 @@ export function AppNavigator() {
         tabBarInactiveTintColor: colors.muted,
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Home" component={HomeNavigator} />
       <Tab.Screen
         name="Tournaments"
         component={TournamentsNavigator}

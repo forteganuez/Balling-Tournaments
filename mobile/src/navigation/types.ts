@@ -14,11 +14,23 @@ export type AuthStackParamList = {
 };
 
 export type AppTabParamList = {
-  Home: undefined;
+  Home: NavigatorScreenParams<HomeStackParamList>;
   Tournaments: NavigatorScreenParams<TournamentsStackParamList>;
   Friends: undefined;
   Notifications: undefined;
   Profile: NavigatorScreenParams<ProfileStackParamList>;
+};
+
+export type HomeStackParamList = {
+  HomeMain: undefined;
+  HostMatch: {
+    scheduledDate?: string;
+    scheduledTime?: string;
+  } | undefined;
+  MatchSchedule: {
+    scheduledDate?: string;
+    scheduledTime?: string;
+  } | undefined;
 };
 
 export type TournamentsStackParamList = {

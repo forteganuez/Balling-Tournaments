@@ -53,6 +53,12 @@ enum FriendshipStatus {
   DECLINED
 }
 
+enum OpenMatchStatus {
+  OPEN
+  BOOKED
+  CANCELLED
+}
+
 enum NotificationType {
   MATCH_READY
   RESULT_CONFIRMED
@@ -103,6 +109,8 @@ model User {
   chatMessages         TournamentChat[]
   doublesAsPlayer1     DoublesTeam[]           @relation("Player1")
   doublesAsPlayer2     DoublesTeam[]           @relation("Player2")
+  createdOpenMatches   OpenMatch[]             @relation("OpenMatchCreator")
+  joinedOpenMatches    OpenMatch[]             @relation("OpenMatchOpponent")
 
   @@unique([authProvider, providerId])
 }
@@ -245,4 +253,24 @@ model DoublesTeam {
   tournament   Tournament @relation(fields: [tournamentId], references: [id])
   player1      User       @relation("Player1", fields: [player1Id], references: [id])
   player2      User       @relation("Player2", fields: [player2Id], references: [id])
+}
+
+model OpenMatch {
+  id           String          @id @default(cuid())
+  creatorId    String
+  opponentId   String?
+  sport        Sport
+  location     String
+  venue        String?
+  notes        String?
+  scheduledFor DateTime
+  status       OpenMatchStatus @default(OPEN)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  creator      User            @relation("OpenMatchCreator", fields: [creatorId], references: [id])
+  opponent     User?           @relation("OpenMatchOpponent", fields: [opponentId], references: [id])
+
+  @@index([status, scheduledFor])
+  @@index([creatorId, status])
+  @@index([opponentId, status])
 }

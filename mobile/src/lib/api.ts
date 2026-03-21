@@ -14,6 +14,8 @@ import type {
   Notification,
   TournamentAnnouncement,
   TournamentChatMessage,
+  OpenMatch,
+  OpenMatchesFeed,
 } from './types';
 import { getToken, clearToken } from './storage';
 
@@ -170,6 +172,47 @@ export async function cancelTournament(id: string): Promise<Tournament> {
 
 export async function getMyTournaments(): Promise<Registration[]> {
   return apiFetch<Registration[]>('/api/tournaments/my');
+}
+
+// ── Open Matches ──────────────────────────────────────────────────────
+
+export interface CreateOpenMatchInput {
+  sport: Sport;
+  location: string;
+  venue?: string;
+  notes?: string;
+  scheduledFor: string;
+}
+
+export async function getOpenMatchesFeed(): Promise<OpenMatchesFeed> {
+  return apiFetch<OpenMatchesFeed>('/api/open-matches/feed');
+}
+
+export async function createOpenMatch(
+  data: CreateOpenMatchInput
+): Promise<OpenMatch> {
+  return apiFetch<OpenMatch>('/api/open-matches', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function joinOpenMatch(id: string): Promise<OpenMatch> {
+  return apiFetch<OpenMatch>(`/api/open-matches/${id}/join`, {
+    method: 'POST',
+  });
+}
+
+export async function cancelOpenMatch(id: string): Promise<OpenMatch> {
+  return apiFetch<OpenMatch>(`/api/open-matches/${id}/cancel`, {
+    method: 'POST',
+  });
+}
+
+export async function leaveOpenMatch(id: string): Promise<OpenMatch> {
+  return apiFetch<OpenMatch>(`/api/open-matches/${id}/leave`, {
+    method: 'POST',
+  });
 }
 
 // ── Matches ───────────────────────────────────────────────────────────

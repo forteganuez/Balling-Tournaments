@@ -37,10 +37,14 @@ export function OnboardingAvatarScreen({ route }: Props) {
 
       if (avatarUri) {
         try {
-          const path = `avatars/${user?.id ?? 'unknown'}-${Date.now()}.jpg`;
-          avatarUrl = await uploadImage(avatarUri, 'avatars', path);
-        } catch {
-          Alert.alert('Upload Error', 'Failed to upload photo. Your profile will be saved without a photo.');
+          avatarUrl = await uploadImage(avatarUri, 'avatars');
+        } catch (uploadError) {
+          Alert.alert(
+            'Upload Error',
+            uploadError instanceof Error
+              ? uploadError.message
+              : 'Failed to upload photo. Your profile will be saved without a photo.',
+          );
         }
       }
 

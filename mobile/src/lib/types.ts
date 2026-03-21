@@ -18,6 +18,7 @@ export type AuthProvider = 'LOCAL' | 'GOOGLE' | 'APPLE' | 'MICROSOFT';
 export type PlayLevel = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'PRO';
 
 export type FriendshipStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED';
+export type OpenMatchStatus = 'OPEN' | 'BOOKED' | 'CANCELLED';
 
 export type NotificationType =
   | 'MATCH_READY'
@@ -131,6 +132,37 @@ export interface MatchResult {
   score?: string | null;
   createdAt: string;
   submitter?: { id: string; name: string };
+}
+
+export interface OpenMatchPlayer {
+  id: string;
+  name: string;
+  avatarUrl?: string | null;
+  city?: string | null;
+  level?: PlayLevel | null;
+  preferredSport?: Sport | null;
+}
+
+export interface OpenMatch {
+  id: string;
+  creatorId: string;
+  opponentId?: string | null;
+  sport: Sport;
+  location: string;
+  venue?: string | null;
+  notes?: string | null;
+  scheduledFor: string;
+  status: OpenMatchStatus;
+  createdAt: string;
+  updatedAt: string;
+  creator: OpenMatchPlayer;
+  opponent?: OpenMatchPlayer | null;
+}
+
+export interface OpenMatchesFeed {
+  hosting: OpenMatch[];
+  playing: OpenMatch[];
+  available: OpenMatch[];
 }
 
 export interface Friendship {

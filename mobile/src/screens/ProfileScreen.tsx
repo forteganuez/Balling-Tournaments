@@ -32,6 +32,23 @@ const SPORT_ICONS: Record<string, string> = {
   SQUASH: '🏸',
 };
 
+function formatProfileDate(value?: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
 export function ProfileScreen() {
   const navigation = useNavigation<Nav>();
   const { user, logout } = useAuthContext();
@@ -85,6 +102,7 @@ export function ProfileScreen() {
   const winRate = stats && stats.matchesPlayed > 0
     ? Math.round((stats.wins / stats.matchesPlayed) * 100)
     : 0;
+  const formattedDateOfBirth = formatProfileDate(user.dateOfBirth);
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
@@ -121,6 +139,9 @@ export function ProfileScreen() {
           <Text className="text-xl font-bold text-secondary">{user.name}</Text>
           {user.city && (
             <Text className="text-sm text-muted mt-0.5">📍 {user.city}</Text>
+          )}
+          {formattedDateOfBirth && (
+            <Text className="text-sm text-muted mt-0.5">🎂 {formattedDateOfBirth}</Text>
           )}
           {user.bio && (
             <Text className="text-sm text-muted mt-1 px-8 text-center">{user.bio}</Text>
