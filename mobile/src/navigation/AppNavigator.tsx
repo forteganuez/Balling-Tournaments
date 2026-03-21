@@ -6,6 +6,8 @@ import { TournamentsScreen } from '../screens/TournamentsScreen';
 import { TournamentDetailScreen } from '../screens/TournamentDetailScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { EditProfileScreen } from '../screens/EditProfileScreen';
+import { PlayerProfileScreen } from '../screens/PlayerProfileScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
 import type {
   AppTabParamList,
   TournamentsStackParamList,
@@ -47,6 +49,16 @@ function ProfileNavigator() {
         name="EditProfile"
         component={EditProfileScreen}
         options={{ title: 'Edit Profile' }}
+      />
+      <ProfileStack.Screen
+        name="PlayerProfile"
+        component={PlayerProfileScreen}
+        options={{ title: 'Player Profile' }}
+      />
+      <ProfileStack.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{ title: 'Settings' }}
       />
     </ProfileStack.Navigator>
   );

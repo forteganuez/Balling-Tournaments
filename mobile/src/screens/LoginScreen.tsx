@@ -47,7 +47,11 @@ export function LoginScreen({ navigation }: Props) {
       className="flex-1"
     >
       <ScrollView
-        contentContainerClassName="flex-1 justify-center px-6"
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
+          paddingHorizontal: 24,
+        }}
         keyboardShouldPersistTaps="handled"
       >
         <Text className="text-3xl font-bold text-secondary text-center mb-2">

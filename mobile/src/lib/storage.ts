@@ -13,3 +13,15 @@ export async function setToken(token: string): Promise<void> {
 export async function clearToken(): Promise<void> {
   await SecureStore.deleteItemAsync(TOKEN_KEY);
 }
+
+export async function getStoredValue(key: string): Promise<string | null> {
+  return SecureStore.getItemAsync(key);
+}
+
+export async function setStoredValue(key: string, value: string): Promise<void> {
+  await SecureStore.setItemAsync(key, value);
+}
+
+export async function clearStoredValue(key: string): Promise<void> {
+  await SecureStore.deleteItemAsync(key);
+}

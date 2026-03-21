@@ -1,41 +1,125 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
 import { useAuthContext } from '../context/AuthContext';
-import { setToken } from '../lib/storage';
+import { getStoredValue, setStoredValue, setToken } from '../lib/storage';
 
 WebBrowser.maybeCompleteAuthSession();
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001';
 const GOOGLE_AUTH_URL = process.env.EXPO_PUBLIC_GOOGLE_AUTH_URL || API_URL;
 const MICROSOFT_CLIENT_ID = process.env.EXPO_PUBLIC_MICROSOFT_CLIENT_ID || '';
+const GOOGLE_REDIRECT_PATH = 'oauth/google';
+const APPLE_PROFILE_KEY_PREFIX = 'apple_profile_';
+
+interface AppleProfileCache {
+  email?: string;
+  name?: string;
+}
+
+function getAppleProfileKey(userId: string | null | undefined): string | null {
+  if (!userId) {
+    return null;
+  }
+
+  const sanitizedUserId = userId.replace(/[^A-Za-z0-9._-]/g, '_');
+  if (!sanitizedUserId) {
+    return null;
+  }
+
+  return `${APPLE_PROFILE_KEY_PREFIX}${sanitizedUserId}`;
+}
 
 export function useSocialAuth() {
   const { socialLogin, refreshUser } = useAuthContext();
   const [loading, setLoading] = useState<'google' | 'apple' | 'microsoft' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [appleAvailable, setAppleAvailable] = useState(false);
 
-  const redirectUri = makeRedirectUri({ scheme: 'balling' });
+  const googleRedirectUri = makeRedirectUri({ path: GOOGLE_REDIRECT_PATH });
+  const redirectUri = makeRedirectUri({ path: 'oauth/microsoft' });
+
+  useEffect(() => {
+    WebBrowser.warmUpAsync().catch(() => {
+      // Best effort only.
+    });
+
+    return () => {
+      WebBrowser.coolDownAsync().catch(() => {
+        // Best effort only.
+      });
+    };
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS !== 'ios') {
+      setAppleAvailable(false);
+      return;
+    }
+
+    let active = true;
+
+    async function loadAppleAvailability() {
+      try {
+        const AppleAuth = await import('expo-apple-authentication');
+        const available = await AppleAuth.isAvailableAsync();
+        if (active) {
+          setAppleAvailable(available);
+        }
+      } catch {
+        if (active) {
+          setAppleAvailable(false);
+        }
+      }
+    }
+
+    loadAppleAvailability();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleGoogle = async () => {
     try {
       setError(null);
       setLoading('google');
 
-      // Generate a unique state to track this auth session
+      // Generate a unique state to track this auth session.
       const state = Math.random().toString(36).substring(2, 15);
-      const authUrl = `${GOOGLE_AUTH_URL}/api/auth/google/start?state=${state}`;
+      const authUrl =
+        `${GOOGLE_AUTH_URL}/api/auth/google/start?state=${encodeURIComponent(state)}` +
+        `&redirect_uri=${encodeURIComponent(googleRedirectUri)}`;
 
-      // Open browser for Google sign in
-      await WebBrowser.openBrowserAsync(authUrl);
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, googleRedirectUri);
+      if (result.type === 'cancel' || result.type === 'dismiss') {
+        return;
+      }
 
-      // Poll for the token after user returns to app
+      if (result.type !== 'success' || !result.url) {
+        throw new Error('Google sign in did not complete.');
+      }
+
+      const callbackUrl = new URL(result.url);
+      const callbackError = callbackUrl.searchParams.get('error');
+      const returnedState = callbackUrl.searchParams.get('state');
+
+      if (callbackError) {
+        throw new Error('Google sign in was cancelled or failed.');
+      }
+
+      if (returnedState !== state) {
+        throw new Error('Google sign in session mismatch. Please try again.');
+      }
+
+      // Poll for the token after the auth session redirects back into the app.
       const pollForToken = async (): Promise<string | null> => {
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < 20; i++) {
           const res = await fetch(`${GOOGLE_AUTH_URL}/api/auth/google/poll?state=${state}`);
           const data = await res.json();
           if (data.token) return data.token;
-          await new Promise(r => setTimeout(r, 2000));
+          await new Promise(r => setTimeout(r, 500));
         }
         return null;
       };
@@ -59,6 +143,12 @@ export function useSocialAuth() {
       setError(null);
       setLoading('apple');
       const AppleAuth = await import('expo-apple-authentication');
+
+      if (!(await AppleAuth.isAvailableAsync())) {
+        setError('Apple Sign In is only available on supported iOS devices.');
+        return;
+      }
+
       const credential = await AppleAuth.signInAsync({
         requestedScopes: [
           AppleAuth.AppleAuthenticationScope.FULL_NAME,
@@ -66,19 +156,36 @@ export function useSocialAuth() {
         ],
       });
 
-      if (credential.identityToken) {
-        const name = credential.fullName
-          ? [credential.fullName.givenName, credential.fullName.familyName].filter(Boolean).join(' ')
-          : undefined;
-
-        await socialLogin('apple', {
-          idToken: credential.identityToken,
-          ...(name ? { name } : {}),
-          ...(credential.email ? { email: credential.email } : {}),
-        });
+      if (!credential.identityToken) {
+        throw new Error('Apple did not return an identity token.');
       }
+
+      const appleProfileKey = getAppleProfileKey(credential.user);
+      const cachedProfileRaw = appleProfileKey
+        ? await getStoredValue(appleProfileKey)
+        : null;
+      const cachedProfile: AppleProfileCache | null =
+        cachedProfileRaw ? JSON.parse(cachedProfileRaw) as AppleProfileCache : null;
+
+      const name = credential.fullName
+        ? [credential.fullName.givenName, credential.fullName.familyName].filter(Boolean).join(' ')
+        : cachedProfile?.name;
+      const email = credential.email ?? cachedProfile?.email;
+
+      if (appleProfileKey && (name || email)) {
+        await setStoredValue(
+          appleProfileKey,
+          JSON.stringify({ name, email }),
+        );
+      }
+
+      await socialLogin('apple', {
+        idToken: credential.identityToken,
+        ...(name ? { name } : {}),
+        ...(email ? { email } : {}),
+      });
     } catch (err: any) {
-      if (err.code !== 'ERR_CANCELED') {
+      if (err.code !== 'ERR_REQUEST_CANCELED') {
         setError(err.message || 'Apple sign in failed');
       }
     } finally {
@@ -120,6 +227,7 @@ export function useSocialAuth() {
     handleMicrosoft,
     loading,
     error,
+    appleAvailable,
     clearError: () => setError(null),
   };
 }

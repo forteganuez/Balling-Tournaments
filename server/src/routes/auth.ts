@@ -11,7 +11,6 @@ const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 const SERVER_URL = process.env.SERVER_URL || `http://localhost:${process.env.PORT || 3001}`;
-const MOBILE_SCHEME = process.env.MOBILE_SCHEME || 'exp+balling';
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, `${SERVER_URL}/api/auth/google/callback`);
 
 export const authRouter = Router();
@@ -99,21 +98,43 @@ authRouter.post('/login', async (req: Request, res: Response, next: NextFunction
   }
 });
 
+interface PendingOAuthEntry {
+  redirectUri: string | null;
+  token: string | null;
+}
+
 // Temporary store for OAuth state → token mapping
-const pendingOAuth = new Map<string, string | null>();
+const pendingOAuth = new Map<string, PendingOAuthEntry>();
+
+function appendParamsToUrl(
+  target: string,
+  params: Record<string, string>,
+): string {
+  const url = new URL(target);
+
+  for (const [key, value] of Object.entries(params)) {
+    url.searchParams.set(key, value);
+  }
+
+  return url.toString();
+}
 
 // GET /google/start — redirect user to Google consent screen
 authRouter.get('/google/start', (req: Request, res: Response) => {
   const state = req.query.state as string || '';
-  const redirectUri = `${SERVER_URL}/api/auth/google/callback`;
+  const appRedirectUri =
+    typeof req.query.redirect_uri === 'string' && req.query.redirect_uri
+      ? req.query.redirect_uri
+      : null;
+  const googleCallbackUri = `${SERVER_URL}/api/auth/google/callback`;
   const url = googleClient.generateAuthUrl({
     access_type: 'offline',
     scope: ['openid', 'profile', 'email'],
-    redirect_uri: redirectUri,
+    redirect_uri: googleCallbackUri,
     state,
   });
   if (state) {
-    pendingOAuth.set(state, null);
+    pendingOAuth.set(state, { token: null, redirectUri: appRedirectUri });
     // Clean up after 5 minutes
     setTimeout(() => pendingOAuth.delete(state), 5 * 60 * 1000);
   }
@@ -123,6 +144,20 @@ authRouter.get('/google/start', (req: Request, res: Response) => {
 // GET /google/callback — Google redirects here with auth code
 authRouter.get('/google/callback', async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const state = typeof req.query.state === 'string' ? req.query.state : '';
+    const pending = state ? pendingOAuth.get(state) : null;
+    const providerError = typeof req.query.error === 'string' ? req.query.error : '';
+
+    if (providerError) {
+      if (pending?.redirectUri) {
+        res.redirect(appendParamsToUrl(pending.redirectUri, { state, error: providerError }));
+        return;
+      }
+
+      res.status(400).send('Google sign in was cancelled or failed.');
+      return;
+    }
+
     const { code } = req.query;
     if (!code || typeof code !== 'string') {
       res.status(400).json({ error: 'Missing authorization code' });
@@ -176,11 +211,15 @@ authRouter.get('/google/callback', async (req: Request, res: Response, next: Nex
     }
 
     const token = signToken(user);
-    const state = req.query.state as string;
 
     // Store token for polling, keyed by state
-    if (state && pendingOAuth.has(state)) {
-      pendingOAuth.set(state, token);
+    if (state && pending) {
+      pendingOAuth.set(state, { ...pending, token });
+
+      if (pending.redirectUri) {
+        res.redirect(appendParamsToUrl(pending.redirectUri, { state, provider: 'google' }));
+        return;
+      }
     }
 
     res.send(`<!DOCTYPE html><html><head><meta charset="utf-8"/></head><body style="font-family:sans-serif;text-align:center;padding:60px 20px;"><h2>Signed in!</h2><p>Return to the Balling app.</p></body></html>`);
@@ -196,7 +235,8 @@ authRouter.get('/google/poll', (req: Request, res: Response) => {
     res.status(404).json({ error: 'Not found' });
     return;
   }
-  const token = pendingOAuth.get(state);
+  const entry = pendingOAuth.get(state);
+  const token = entry?.token;
   if (token) {
     pendingOAuth.delete(state);
     res.json({ token });

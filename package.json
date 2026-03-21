@@ -10,6 +10,11 @@
     "db:seed": "cd server && npx prisma db seed"
   },
   "devDependencies": {
-    "concurrently": "^9.1.0"
+    "@types/react": "~19.2.10",
+    "concurrently": "^9.1.0",
+    "typescript": "~5.9.2"
+  },
+  "dependencies": {
+    "expo": "^54.0.33"
   }
 }

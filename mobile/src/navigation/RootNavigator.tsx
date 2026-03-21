@@ -1,4 +1,5 @@
 import React from 'react';
+import type { LinkingOptions } from '@react-navigation/native';
 import { ActivityIndicator, View } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
@@ -20,7 +21,7 @@ function AuthNavigator() {
   );
 }
 
-export const linking = {
+export const linking: LinkingOptions<RootStackParamList> = {
   prefixes: ['balling://'],
   config: {
     screens: {

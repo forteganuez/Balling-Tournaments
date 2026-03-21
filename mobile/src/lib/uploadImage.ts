@@ -1,11 +1,13 @@
 import * as ImageManipulator from 'expo-image-manipulator';
-import { supabase } from './supabase';
+import { getSupabaseClient } from './supabase';
 
 export async function uploadImage(
   uri: string,
   bucket: string,
   path: string
 ): Promise<string> {
+  const supabase = getSupabaseClient();
+
   // Resize image to max 600x600
   const manipulated = await ImageManipulator.manipulateAsync(
     uri,

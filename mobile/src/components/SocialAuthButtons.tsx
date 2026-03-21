@@ -1,9 +1,17 @@
 import React from 'react';
 import { View, Text, Pressable, ActivityIndicator, Platform } from 'react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { useSocialAuth } from '../hooks/useSocialAuth';
 
 export function SocialAuthButtons() {
-  const { handleGoogle, handleApple, handleMicrosoft, loading, error, clearError } = useSocialAuth();
+  const {
+    handleGoogle,
+    handleApple,
+    handleMicrosoft,
+    loading,
+    error,
+    appleAvailable,
+  } = useSocialAuth();
 
   return (
     <View className="mt-6">
@@ -34,21 +42,22 @@ export function SocialAuthButtons() {
         )}
       </Pressable>
 
-      {Platform.OS === 'ios' ? (
-        <Pressable
-          onPress={handleApple}
-          disabled={loading !== null}
-          className="flex-row items-center justify-center rounded-xl py-3.5 mb-3 bg-black"
-        >
+      {Platform.OS === 'ios' && appleAvailable ? (
+        <View className="mb-3">
           {loading === 'apple' ? (
-            <ActivityIndicator size="small" color="#fff" />
+            <View className="items-center justify-center rounded-xl py-3.5 bg-black">
+              <ActivityIndicator size="small" color="#fff" />
+            </View>
           ) : (
-            <>
-              <Text className="text-lg mr-3 text-white">{'\uF8FF'}</Text>
-              <Text className="text-base font-semibold text-white">Continue with Apple</Text>
-            </>
+            <AppleAuthentication.AppleAuthenticationButton
+              buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+              cornerRadius={12}
+              style={{ width: '100%', height: 50 }}
+              onPress={handleApple}
+            />
           )}
-        </Pressable>
+        </View>
       ) : null}
 
       <Pressable

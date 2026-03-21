@@ -140,7 +140,10 @@ export function TournamentsScreen({ navigation }: Props) {
         <FlatList
           data={tournaments}
           keyExtractor={(item) => item.id}
-          contentContainerClassName="px-4 pb-4"
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingBottom: 16,
+          }}
           refreshControl={
             <RefreshControl refreshing={loading} onRefresh={refetch} />
           }
