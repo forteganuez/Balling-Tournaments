@@ -1,58 +1,76 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
-  View, Text, TextInput, Pressable, ScrollView, Alert,
-  KeyboardAvoidingView, Platform, ActivityIndicator,
+  View, Text, ScrollView, Pressable, Image, Alert,
+  ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuthContext } from '../context/AuthContext';
-import type { Sport, PlayLevel } from '../lib/types';
+import * as api from '../lib/api';
+import type { UserStats, Registration } from '../lib/types';
+import type { ProfileStackParamList } from '../navigation/types';
+import { colors } from '../constants/theme';
 
-const LEVELS: { value: PlayLevel; label: string }[] = [
-  { value: 'BEGINNER', label: 'Beginner' },
-  { value: 'INTERMEDIATE', label: 'Intermediate' },
-  { value: 'ADVANCED', label: 'Advanced' },
-  { value: 'PRO', label: 'Pro' },
-];
+type Nav = NativeStackNavigationProp<ProfileStackParamList, 'MyProfile'>;
 
-const SPORTS: { value: Sport; label: string; icon: string }[] = [
-  { value: 'PADEL', label: 'Padel', icon: '🏓' },
-  { value: 'TENNIS', label: 'Tennis', icon: '🎾' },
-  { value: 'SQUASH', label: 'Squash', icon: '🏸' },
-];
+function getSkillColor(level: number): { text: string; bg: string } {
+  if (level <= 3) return { text: 'text-green-600', bg: 'bg-green-100' };
+  if (level <= 6) return { text: 'text-blue-600', bg: 'bg-blue-100' };
+  return { text: 'text-purple-600', bg: 'bg-purple-100' };
+}
+
+function getSkillLabel(level: number): string {
+  if (level <= 3) return 'Beginner';
+  if (level <= 6) return 'Intermediate';
+  return 'Advanced';
+}
+
+const SPORT_ICONS: Record<string, string> = {
+  PADEL: '🏓',
+  TENNIS: '🎾',
+  SQUASH: '🏸',
+};
 
 export function ProfileScreen() {
-  const { user, updateProfile, logout } = useAuthContext();
+  const navigation = useNavigation<Nav>();
+  const { user, logout } = useAuthContext();
 
-  const [name, setName] = useState(user?.name ?? '');
-  const [phone, setPhone] = useState(user?.phone ?? '');
-  const [bio, setBio] = useState(user?.bio ?? '');
-  const [city, setCity] = useState(user?.city ?? '');
-  const [level, setLevel] = useState<PlayLevel | null>(user?.level ?? null);
-  const [preferredSport, setPreferredSport] = useState<Sport | null>(user?.preferredSport ?? null);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [stats, setStats] = useState<UserStats | null>(null);
+  const [tournaments, setTournaments] = useState<Registration[]>([]);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  if (!user) return null;
-
-  async function handleSave() {
-    setSaving(true);
-    setSaved(false);
+  const fetchData = useCallback(async () => {
+    if (!user) return;
     try {
-      await updateProfile({
-        name: name.trim() || undefined,
-        phone: phone.trim() || null,
-        bio: bio.trim() || null,
-        city: city.trim() || null,
-        level,
-        preferredSport,
-      });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (err) {
-      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to update profile');
+      const [statsData, tournamentsData, followersData, followingData] = await Promise.all([
+        api.getUserStats(user.id),
+        api.getUserTournaments(user.id),
+        api.getFollowers(),
+        api.getFollowing(),
+      ]);
+      setStats(statsData);
+      setTournaments(tournamentsData);
+      setFollowerCount(followersData.length);
+      setFollowingCount(followingData.length);
+    } catch {
+      // Best effort
     } finally {
-      setSaving(false);
+      setLoading(false);
+      setRefreshing(false);
     }
+  }, [user]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  function handleRefresh() {
+    setRefreshing(true);
+    fetchData();
   }
 
   function handleLogout() {
@@ -62,170 +80,172 @@ export function ProfileScreen() {
     ]);
   }
 
+  if (!user) return null;
+
+  const winRate = stats && stats.matchesPlayed > 0
+    ? Math.round((stats.wins / stats.matchesPlayed) * 100)
+    : 0;
+
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1"
-    >
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 40 }}
-        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
+        }
       >
         {/* Header */}
-        <View className="items-center pt-8 pb-6 bg-primary/5">
-          <View className="w-20 h-20 rounded-full bg-primary/20 items-center justify-center mb-3">
-            <Text className="text-3xl">
-              {user.name.charAt(0).toUpperCase()}
-            </Text>
+        <View className="items-center pt-8 pb-6">
+          <View className="relative mb-3">
+            {user.avatarUrl ? (
+              <Image
+                source={{ uri: user.avatarUrl }}
+                className="w-24 h-24 rounded-full"
+              />
+            ) : (
+              <View className="w-24 h-24 rounded-full bg-primary/10 items-center justify-center">
+                <Text className="text-4xl font-bold text-primary">
+                  {user.name.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            )}
+            <Pressable
+              onPress={() => navigation.navigate('EditProfile')}
+              className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary items-center justify-center border-2 border-white"
+            >
+              <Text className="text-white text-xs">✏️</Text>
+            </Pressable>
           </View>
+
           <Text className="text-xl font-bold text-secondary">{user.name}</Text>
-          <Text className="text-muted text-sm">{user.email}</Text>
-          {user.authProvider && user.authProvider !== 'LOCAL' && (
-            <View className="mt-2 bg-gray-100 rounded-full px-3 py-1">
-              <Text className="text-xs text-muted">
-                Signed in with {user.authProvider.charAt(0) + user.authProvider.slice(1).toLowerCase()}
-              </Text>
-            </View>
+          {user.city && (
+            <Text className="text-sm text-muted mt-0.5">📍 {user.city}</Text>
+          )}
+          {user.bio && (
+            <Text className="text-sm text-muted mt-1 px-8 text-center">{user.bio}</Text>
           )}
         </View>
 
-        <View className="px-6 pt-6">
-          {/* Name */}
-          <View className="mb-4">
-            <Text className="text-sm font-medium text-secondary mb-1">Name</Text>
-            <TextInput
-              className="border border-gray-300 rounded-xl px-4 py-3 text-base text-secondary"
-              value={name}
-              onChangeText={setName}
-              placeholder="Your name"
-              placeholderTextColor="#9CA3AF"
-              autoCapitalize="words"
-            />
-          </View>
-
-          {/* Phone */}
-          <View className="mb-4">
-            <Text className="text-sm font-medium text-secondary mb-1">Phone</Text>
-            <TextInput
-              className="border border-gray-300 rounded-xl px-4 py-3 text-base text-secondary"
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="+34 600 000 000"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="phone-pad"
-            />
-          </View>
-
-          {/* City */}
-          <View className="mb-4">
-            <Text className="text-sm font-medium text-secondary mb-1">City</Text>
-            <TextInput
-              className="border border-gray-300 rounded-xl px-4 py-3 text-base text-secondary"
-              value={city}
-              onChangeText={setCity}
-              placeholder="Where are you based?"
-              placeholderTextColor="#9CA3AF"
-            />
-          </View>
-
-          {/* Bio */}
-          <View className="mb-4">
-            <Text className="text-sm font-medium text-secondary mb-1">About me</Text>
-            <TextInput
-              className="border border-gray-300 rounded-xl px-4 py-3 text-base text-secondary"
-              value={bio}
-              onChangeText={setBio}
-              placeholder="Tell us about yourself..."
-              placeholderTextColor="#9CA3AF"
-              multiline
-              numberOfLines={3}
-              style={{ minHeight: 80, textAlignVertical: 'top' }}
-            />
-            <Text className="text-xs text-muted mt-1 text-right">{bio.length}/500</Text>
-          </View>
-
-          {/* Playing Level */}
-          <View className="mb-4">
-            <Text className="text-sm font-medium text-secondary mb-2">Playing Level</Text>
-            <View className="flex-row flex-wrap gap-2">
-              {LEVELS.map((l) => (
-                <Pressable
-                  key={l.value}
-                  onPress={() => setLevel(level === l.value ? null : l.value)}
-                  className={`px-4 py-2 rounded-full border ${
-                    level === l.value
-                      ? 'bg-primary border-primary'
-                      : 'bg-white border-gray-300'
-                  }`}
-                >
-                  <Text
-                    className={`text-sm font-medium ${
-                      level === l.value ? 'text-white' : 'text-secondary'
-                    }`}
-                  >
-                    {l.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-
-          {/* Preferred Sport */}
-          <View className="mb-6">
-            <Text className="text-sm font-medium text-secondary mb-2">Preferred Sport</Text>
-            <View className="flex-row gap-3">
-              {SPORTS.map((s) => (
-                <Pressable
-                  key={s.value}
-                  onPress={() => setPreferredSport(preferredSport === s.value ? null : s.value)}
-                  className={`flex-1 items-center py-3 rounded-xl border ${
-                    preferredSport === s.value
-                      ? 'bg-primary/10 border-primary'
-                      : 'bg-white border-gray-300'
-                  }`}
-                >
-                  <Text className="text-2xl mb-1">{s.icon}</Text>
-                  <Text
-                    className={`text-xs font-medium ${
-                      preferredSport === s.value ? 'text-primary' : 'text-muted'
-                    }`}
-                  >
-                    {s.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-
-          {/* Save Button */}
-          <Pressable
-            onPress={handleSave}
-            disabled={saving}
-            className={`rounded-xl py-3.5 items-center mb-3 ${
-              saved ? 'bg-green-500' : saving ? 'bg-primary/60' : 'bg-primary'
-            }`}
-          >
-            {saving ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text className="text-white font-semibold text-base">
-                {saved ? 'Saved!' : 'Save Changes'}
+        {/* Skill Badge + Sport Tags */}
+        <View className="flex-row items-center justify-center gap-2 px-4 mb-4">
+          {user.skillLevel != null && (
+            <View className={`flex-row items-center px-3 py-1.5 rounded-full ${getSkillColor(user.skillLevel).bg}`}>
+              <Text className={`text-sm font-semibold ${getSkillColor(user.skillLevel).text}`}>
+                Lvl {user.skillLevel} · {getSkillLabel(user.skillLevel)}
               </Text>
-            )}
+            </View>
+          )}
+          {user.sports?.map((sport) => (
+            <View key={sport} className="flex-row items-center px-3 py-1.5 rounded-full bg-surface border border-border">
+              <Text className="text-sm">{SPORT_ICONS[sport] ?? '🏅'} {sport.charAt(0) + sport.slice(1).toLowerCase()}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Followers / Following */}
+        <View className="flex-row justify-center gap-6 mb-5">
+          <Pressable className="items-center">
+            <Text className="text-lg font-bold text-secondary">{followerCount}</Text>
+            <Text className="text-xs text-muted">Followers</Text>
+          </Pressable>
+          <Pressable className="items-center">
+            <Text className="text-lg font-bold text-secondary">{followingCount}</Text>
+            <Text className="text-xs text-muted">Following</Text>
+          </Pressable>
+        </View>
+
+        {/* Stats Row */}
+        {loading ? (
+          <View className="py-4">
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        ) : stats ? (
+          <View className="flex-row mx-4 mb-5 bg-surface rounded-xl p-4">
+            <View className="flex-1 items-center">
+              <Text className="text-lg font-bold text-secondary">{stats.matchesPlayed}</Text>
+              <Text className="text-xs text-muted">Matches</Text>
+            </View>
+            <View className="flex-1 items-center border-l border-border">
+              <Text className="text-lg font-bold text-green-600">{stats.wins}</Text>
+              <Text className="text-xs text-muted">Wins</Text>
+            </View>
+            <View className="flex-1 items-center border-l border-border">
+              <Text className="text-lg font-bold text-red-500">{stats.losses}</Text>
+              <Text className="text-xs text-muted">Losses</Text>
+            </View>
+            <View className="flex-1 items-center border-l border-border">
+              <Text className="text-lg font-bold text-primary">{winRate}%</Text>
+              <Text className="text-xs text-muted">Win Rate</Text>
+            </View>
+          </View>
+        ) : null}
+
+        {/* Tournament History */}
+        <View className="px-4 mb-5">
+          <Text className="text-base font-semibold text-secondary mb-3">
+            Tournament History
+          </Text>
+          {tournaments.length === 0 ? (
+            <View className="bg-surface rounded-xl p-4 items-center">
+              <Text className="text-muted text-sm">No tournaments yet</Text>
+            </View>
+          ) : (
+            tournaments.slice(0, 10).map((reg) => (
+              <Pressable
+                key={reg.id}
+                onPress={() =>
+                  navigation.getParent()?.navigate('Tournaments', {
+                    screen: 'TournamentDetail',
+                    params: { id: reg.tournamentId },
+                  })
+                }
+                className="flex-row items-center bg-surface rounded-xl p-3 mb-2"
+              >
+                <Text className="text-xl mr-3">
+                  {reg.tournament ? SPORT_ICONS[reg.tournament.sport] ?? '🏅' : '🏅'}
+                </Text>
+                <View className="flex-1">
+                  <Text className="text-sm font-medium text-secondary">
+                    {reg.tournament?.name ?? 'Tournament'}
+                  </Text>
+                  <Text className="text-xs text-muted">
+                    {reg.tournament?.date
+                      ? new Date(reg.tournament.date).toLocaleDateString()
+                      : ''}
+                    {reg.tournament?.location ? ` · ${reg.tournament.location}` : ''}
+                  </Text>
+                </View>
+                <Text className="text-muted text-xs">→</Text>
+              </Pressable>
+            ))
+          )}
+        </View>
+
+        {/* Action Buttons */}
+        <View className="px-4">
+          <Pressable
+            onPress={() => navigation.navigate('EditProfile')}
+            className="bg-primary rounded-xl py-3.5 items-center mb-3"
+          >
+            <Text className="text-white font-semibold text-base">Edit Profile</Text>
           </Pressable>
 
-          {/* Logout */}
+          <Pressable
+            onPress={() => navigation.navigate('Settings')}
+            className="bg-surface rounded-xl py-3.5 items-center mb-3 border border-border"
+          >
+            <Text className="text-secondary font-semibold text-base">Settings</Text>
+          </Pressable>
+
           <Pressable
             onPress={handleLogout}
-            className="rounded-xl py-3.5 items-center border border-red-300 mb-4"
+            className="rounded-xl py-3.5 items-center border border-red-300"
           >
             <Text className="text-red-500 font-semibold text-base">Log Out</Text>
           </Pressable>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

@@ -4,14 +4,19 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { HomeScreen } from '../screens/HomeScreen';
 import { TournamentsScreen } from '../screens/TournamentsScreen';
 import { TournamentDetailScreen } from '../screens/TournamentDetailScreen';
-import { DashboardScreen } from '../screens/DashboardScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
-import type { AppTabParamList, TournamentsStackParamList } from './types';
+import { EditProfileScreen } from '../screens/EditProfileScreen';
+import type {
+  AppTabParamList,
+  TournamentsStackParamList,
+  ProfileStackParamList,
+} from './types';
 import { colors } from '../constants/theme';
 import { Text } from 'react-native';
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
 const TournamentsStack = createNativeStackNavigator<TournamentsStackParamList>();
+const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 
 function TournamentsNavigator() {
   return (
@@ -30,12 +35,30 @@ function TournamentsNavigator() {
   );
 }
 
-function TabIcon({ label, focused }: { label: string; focused: boolean }) {
+function ProfileNavigator() {
+  return (
+    <ProfileStack.Navigator>
+      <ProfileStack.Screen
+        name="MyProfile"
+        component={ProfileScreen}
+        options={{ headerShown: false }}
+      />
+      <ProfileStack.Screen
+        name="EditProfile"
+        component={EditProfileScreen}
+        options={{ title: 'Edit Profile' }}
+      />
+    </ProfileStack.Navigator>
+  );
+}
+
+function TabIcon({ label }: { label: string; focused: boolean }) {
   const icons: Record<string, string> = {
     Home: '🏠',
     Tournaments: '🏆',
-    Dashboard: '👤',
-    Profile: '⚙️',
+    Friends: '👥',
+    Notifications: '🔔',
+    Profile: '👤',
   };
 
   return (
@@ -64,13 +87,8 @@ export function AppNavigator() {
         options={{ title: 'Tournaments' }}
       />
       <Tab.Screen
-        name="Dashboard"
-        component={DashboardScreen}
-        options={{ title: 'My Tournaments' }}
-      />
-      <Tab.Screen
         name="Profile"
-        component={ProfileScreen}
+        component={ProfileNavigator}
         options={{ title: 'Profile' }}
       />
     </Tab.Navigator>

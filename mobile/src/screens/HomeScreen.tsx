@@ -5,8 +5,6 @@ import { useTournaments } from '../hooks/useTournaments';
 import { TournamentCard } from '../components/TournamentCard';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { TournamentsStackParamList } from '../navigation/types';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const steps = [
@@ -18,7 +16,7 @@ const steps = [
 export function HomeScreen() {
   const { user } = useAuth();
   const { tournaments, loading, error } = useTournaments({ status: 'REGISTRATION_OPEN' });
-  const navigation = useNavigation<NativeStackNavigationProp<TournamentsStackParamList>>();
+  const navigation = useNavigation<any>();
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
@@ -56,7 +54,7 @@ export function HomeScreen() {
               <View className="w-72 mr-3">
                 <TournamentCard
                   tournament={item}
-                  onPress={() => navigation.navigate('TournamentDetail', { id: item.id })}
+                  onPress={() => navigation.navigate('Tournaments', { screen: 'TournamentDetail', params: { id: item.id } })}
                 />
               </View>
             )}
@@ -81,7 +79,7 @@ export function HomeScreen() {
         </View>
 
         <Pressable
-          onPress={() => navigation.navigate('TournamentList')}
+          onPress={() => navigation.navigate('Tournaments', { screen: 'TournamentList' })}
           className="bg-primary rounded-lg py-3.5 items-center mb-8"
         >
           <Text className="text-white font-semibold text-base">

@@ -20,6 +20,9 @@ const USER_SELECT = {
   id: true, name: true, email: true, role: true, phone: true,
   avatarUrl: true, bio: true, city: true, dateOfBirth: true,
   level: true, preferredSport: true, authProvider: true,
+  skillLevel: true, sports: true, wins: true, losses: true,
+  matchesPlayed: true, onboardingDone: true, expoPushToken: true,
+  createdAt: true,
 };
 
 function setCookie(res: Response, token: string): void {
@@ -415,6 +418,7 @@ authRouter.put('/profile', authenticate, async (req: Request, res: Response, nex
   try {
     const data = profileUpdateSchema.parse(req.body);
 
+    const body = req.body;
     const user = await prisma.user.update({
       where: { id: req.user!.id },
       data: {
@@ -426,6 +430,10 @@ authRouter.put('/profile', authenticate, async (req: Request, res: Response, nex
         ...(data.dateOfBirth !== undefined && { dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null }),
         ...(data.level !== undefined && { level: data.level }),
         ...(data.preferredSport !== undefined && { preferredSport: data.preferredSport }),
+        ...(body.skillLevel !== undefined && { skillLevel: body.skillLevel }),
+        ...(body.sports !== undefined && { sports: body.sports }),
+        ...(body.onboardingDone !== undefined && { onboardingDone: body.onboardingDone }),
+        ...(body.expoPushToken !== undefined && { expoPushToken: body.expoPushToken }),
       },
       select: USER_SELECT,
     });

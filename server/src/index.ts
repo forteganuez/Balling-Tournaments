@@ -6,6 +6,10 @@ import { webhookRouter } from './routes/webhooks.js';
 import { authRouter } from './routes/auth.js';
 import { tournamentRouter, myTournamentsHandler } from './routes/tournaments.js';
 import { matchRouter } from './routes/matches.js';
+import { usersRouter } from './routes/users.js';
+import { friendsRouter } from './routes/friends.js';
+import { followsRouter } from './routes/follows.js';
+import { notificationsRouter } from './routes/notifications.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authenticate } from './middleware/auth.js';
 
@@ -30,6 +34,10 @@ app.use(
 app.use('/api/auth', authRouter);
 app.use('/api/tournaments', tournamentRouter);
 app.use('/api/matches', matchRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/friends', friendsRouter);
+app.use('/api/follows', followsRouter);
+app.use('/api/notifications', notificationsRouter);
 app.get('/api/my-tournaments', authenticate, myTournamentsHandler);
 
 // Global error handler (must be last)

@@ -47,46 +47,93 @@ enum PlayLevel {
   PRO
 }
 
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum NotificationType {
+  MATCH_READY
+  RESULT_CONFIRMED
+  RESULT_DISPUTED
+  TOURNAMENT_STARTING
+  TOURNAMENT_ANNOUNCEMENT
+  FRIEND_REQUEST
+  FRIEND_ACCEPTED
+  FOLLOWED
+  TOURNAMENT_INVITE
+  SPOTS_FILLING
+  NEW_TOURNAMENT
+}
+
 model User {
-  id            String         @id @default(cuid())
-  name          String
-  email         String         @unique
-  phone         String?
-  passwordHash  String?
-  role          UserRole       @default(PLAYER)
-  authProvider  AuthProvider   @default(LOCAL)
-  providerId    String?
-  avatarUrl     String?
-  bio           String?
-  city          String?
-  dateOfBirth   DateTime?
-  level         PlayLevel?
-  preferredSport Sport?
-  createdAt     DateTime       @default(now())
-  registrations Registration[]
-  organizedTournaments Tournament[] @relation("Organizer")
+  id              String         @id @default(cuid())
+  name            String
+  email           String         @unique
+  phone           String?
+  passwordHash    String?
+  role            UserRole       @default(PLAYER)
+  authProvider    AuthProvider   @default(LOCAL)
+  providerId      String?
+  avatarUrl       String?
+  bio             String?
+  city            String?
+  dateOfBirth     DateTime?
+  level           PlayLevel?
+  preferredSport  Sport?
+  skillLevel      Int?
+  sports          Sport[]
+  wins            Int            @default(0)
+  losses          Int            @default(0)
+  matchesPlayed   Int            @default(0)
+  onboardingDone  Boolean        @default(false)
+  expoPushToken   String?
+  createdAt       DateTime       @default(now())
+
+  registrations        Registration[]
+  organizedTournaments Tournament[]            @relation("Organizer")
+  sentFriendRequests   Friendship[]            @relation("FriendshipRequester")
+  receivedFriendRequests Friendship[]          @relation("FriendshipReceiver")
+  following            Follow[]                @relation("Follower")
+  followers            Follow[]                @relation("Following")
+  notifications        Notification[]
+  matchResults         MatchResult[]
+  announcements        TournamentAnnouncement[] @relation("AnnouncementAuthor")
+  chatMessages         TournamentChat[]
+  doublesAsPlayer1     DoublesTeam[]           @relation("Player1")
+  doublesAsPlayer2     DoublesTeam[]           @relation("Player2")
 
   @@unique([authProvider, providerId])
 }
 
 model Tournament {
-  id            String           @id @default(cuid())
-  name          String
-  sport         Sport
-  format        TournamentFormat
-  status        TournamentStatus @default(REGISTRATION_OPEN)
-  description   String?
-  date          DateTime
-  location      String
-  venue         String?
-  maxPlayers    Int
-  entryFee      Int              // in cents (€10.00 = 1000)
-  organizerId   String
-  organizer     User             @relation("Organizer", fields: [organizerId], references: [id])
-  registrations Registration[]
-  matches       Match[]
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  id              String           @id @default(cuid())
+  name            String
+  sport           Sport
+  format          TournamentFormat
+  status          TournamentStatus @default(REGISTRATION_OPEN)
+  description     String?
+  date            DateTime
+  location        String
+  venue           String?
+  maxPlayers      Int
+  entryFee        Int              // in cents (€10.00 = 1000)
+  organizerId     String
+  coverImageUrl   String?
+  rules           String?
+  allowDoubles    Boolean          @default(false)
+  skillMin        Int?
+  skillMax        Int?
+  chatEnabled     Boolean          @default(true)
+  organizer       User             @relation("Organizer", fields: [organizerId], references: [id])
+  registrations   Registration[]
+  matches         Match[]
+  announcements   TournamentAnnouncement[]
+  chatMessages    TournamentChat[]
+  doublesTeams    DoublesTeam[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
 model Registration {
@@ -104,7 +151,7 @@ model Registration {
 }
 
 model Match {
-  id           String     @id @default(cuid())
+  id           String        @id @default(cuid())
   tournamentId String
   round        Int
   position     Int
@@ -114,5 +161,88 @@ model Match {
   score        String?
   scheduledAt  DateTime?
   completedAt  DateTime?
+  team1Id      String?
+  team2Id      String?
+  scheduledTime DateTime?
+  tournament   Tournament    @relation(fields: [tournamentId], references: [id])
+  results      MatchResult[]
+}
+
+model Friendship {
+  id          String           @id @default(cuid())
+  requesterId String
+  receiverId  String
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  requester   User             @relation("FriendshipRequester", fields: [requesterId], references: [id])
+  receiver    User             @relation("FriendshipReceiver", fields: [receiverId], references: [id])
+
+  @@unique([requesterId, receiverId])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  follower    User     @relation("Follower", fields: [followerId], references: [id])
+  following   User     @relation("Following", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id])
+}
+
+model MatchResult {
+  id          String   @id @default(cuid())
+  matchId     String
+  submittedBy String
+  winnerId    String
+  score       String?
+  createdAt   DateTime @default(now())
+  match       Match    @relation(fields: [matchId], references: [id])
+  submitter   User     @relation(fields: [submittedBy], references: [id])
+
+  @@unique([matchId, submittedBy])
+}
+
+model TournamentAnnouncement {
+  id           String     @id @default(cuid())
+  tournamentId String
+  organizerId  String
+  message      String
+  createdAt    DateTime   @default(now())
   tournament   Tournament @relation(fields: [tournamentId], references: [id])
+  organizer    User       @relation("AnnouncementAuthor", fields: [organizerId], references: [id])
+}
+
+model TournamentChat {
+  id           String     @id @default(cuid())
+  tournamentId String
+  userId       String
+  message      String
+  createdAt    DateTime   @default(now())
+  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+  user         User       @relation(fields: [userId], references: [id])
+}
+
+model DoublesTeam {
+  id           String     @id @default(cuid())
+  tournamentId String
+  player1Id    String
+  player2Id    String
+  createdAt    DateTime   @default(now())
+  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+  player1      User       @relation("Player1", fields: [player1Id], references: [id])
+  player2      User       @relation("Player2", fields: [player2Id], references: [id])
 }

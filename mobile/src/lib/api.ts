@@ -3,9 +3,17 @@ import type {
   Tournament,
   Registration,
   Match,
+  MatchResult,
   Sport,
   TournamentStatus,
   ProfileUpdate,
+  UserPublic,
+  UserStats,
+  Friendship,
+  Follow,
+  Notification,
+  TournamentAnnouncement,
+  TournamentChatMessage,
 } from './types';
 import { getToken, clearToken } from './storage';
 
@@ -174,5 +182,194 @@ export async function submitMatchResult(
   return apiFetch<Match>(`/api/matches/${matchId}/result`, {
     method: 'PUT',
     body: JSON.stringify({ score, winnerId }),
+  });
+}
+
+export async function playerSubmitResult(
+  matchId: string,
+  winnerId: string,
+  score?: string
+): Promise<MatchResult> {
+  return apiFetch<MatchResult>(`/api/matches/${matchId}/submit-result`, {
+    method: 'POST',
+    body: JSON.stringify({ winnerId, score }),
+  });
+}
+
+export async function getMatchResults(matchId: string): Promise<MatchResult[]> {
+  return apiFetch<MatchResult[]>(`/api/matches/${matchId}/results`);
+}
+
+// ── Users ────────────────────────────────────────────────────────────
+
+export async function searchUsers(q: string): Promise<UserPublic[]> {
+  return apiFetch<UserPublic[]>(`/api/users/search?q=${encodeURIComponent(q)}`);
+}
+
+export async function getUserProfile(id: string): Promise<User> {
+  return apiFetch<User>(`/api/users/${id}`);
+}
+
+export async function getUserStats(id: string): Promise<UserStats> {
+  return apiFetch<UserStats>(`/api/users/${id}/stats`);
+}
+
+export async function getUserTournaments(id: string): Promise<Registration[]> {
+  return apiFetch<Registration[]>(`/api/users/${id}/tournaments`);
+}
+
+// ── Friends ──────────────────────────────────────────────────────────
+
+export async function sendFriendRequest(userId: string): Promise<Friendship> {
+  return apiFetch<Friendship>(`/api/friends/request/${userId}`, {
+    method: 'POST',
+  });
+}
+
+export async function acceptFriendRequest(userId: string): Promise<Friendship> {
+  return apiFetch<Friendship>(`/api/friends/accept/${userId}`, {
+    method: 'POST',
+  });
+}
+
+export async function declineFriendRequest(userId: string): Promise<Friendship> {
+  return apiFetch<Friendship>(`/api/friends/decline/${userId}`, {
+    method: 'POST',
+  });
+}
+
+export async function removeFriend(userId: string): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(`/api/friends/${userId}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function getFriends(): Promise<User[]> {
+  return apiFetch<User[]>('/api/friends');
+}
+
+export async function getFriendRequests(): Promise<Friendship[]> {
+  return apiFetch<Friendship[]>('/api/friends/requests');
+}
+
+// ── Follows ──────────────────────────────────────────────────────────
+
+export async function followUser(userId: string): Promise<Follow> {
+  return apiFetch<Follow>(`/api/follows/${userId}`, {
+    method: 'POST',
+  });
+}
+
+export async function unfollowUser(userId: string): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(`/api/follows/${userId}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function getFollowing(): Promise<Follow[]> {
+  return apiFetch<Follow[]>('/api/follows/following');
+}
+
+export async function getFollowers(): Promise<Follow[]> {
+  return apiFetch<Follow[]>('/api/follows/followers');
+}
+
+// ── Notifications ────────────────────────────────────────────────────
+
+export async function getNotifications(): Promise<Notification[]> {
+  return apiFetch<Notification[]>('/api/notifications');
+}
+
+export async function markNotificationRead(id: string): Promise<Notification> {
+  return apiFetch<Notification>(`/api/notifications/${id}/read`, {
+    method: 'PUT',
+  });
+}
+
+export async function markAllNotificationsRead(): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>('/api/notifications/read-all', {
+    method: 'PUT',
+  });
+}
+
+export async function deleteNotification(id: string): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(`/api/notifications/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+// ── Tournament Social ────────────────────────────────────────────────
+
+export async function postAnnouncement(
+  tournamentId: string,
+  message: string
+): Promise<TournamentAnnouncement> {
+  return apiFetch<TournamentAnnouncement>(`/api/tournaments/${tournamentId}/announce`, {
+    method: 'POST',
+    body: JSON.stringify({ message }),
+  });
+}
+
+export async function getAnnouncements(
+  tournamentId: string
+): Promise<TournamentAnnouncement[]> {
+  return apiFetch<TournamentAnnouncement[]>(`/api/tournaments/${tournamentId}/announcements`);
+}
+
+export async function sendChatMessage(
+  tournamentId: string,
+  message: string
+): Promise<TournamentChatMessage> {
+  return apiFetch<TournamentChatMessage>(`/api/tournaments/${tournamentId}/chat`, {
+    method: 'POST',
+    body: JSON.stringify({ message }),
+  });
+}
+
+export async function getChatMessages(
+  tournamentId: string
+): Promise<TournamentChatMessage[]> {
+  return apiFetch<TournamentChatMessage[]>(`/api/tournaments/${tournamentId}/chat`);
+}
+
+export async function inviteToTournament(
+  tournamentId: string,
+  userId: string
+): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(`/api/tournaments/${tournamentId}/invite/${userId}`, {
+    method: 'POST',
+  });
+}
+
+export async function createTournament(data: {
+  name: string;
+  sport: Sport;
+  format: string;
+  date: string;
+  location: string;
+  venue?: string;
+  maxPlayers: number;
+  entryFee: number;
+  description?: string;
+  coverImageUrl?: string;
+  rules?: string;
+  allowDoubles?: boolean;
+  skillMin?: number;
+  skillMax?: number;
+  chatEnabled?: boolean;
+}): Promise<Tournament> {
+  return apiFetch<Tournament>('/api/tournaments', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function registerDoubles(
+  tournamentId: string,
+  partnerId: string
+): Promise<{ id: string }> {
+  return apiFetch<{ id: string }>(`/api/tournaments/${tournamentId}/doubles`, {
+    method: 'POST',
+    body: JSON.stringify({ partnerId }),
   });
 }

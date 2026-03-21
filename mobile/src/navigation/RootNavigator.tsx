@@ -3,6 +3,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { AppNavigator } from './AppNavigator';
+import { OnboardingNavigator } from './OnboardingNavigator';
 import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
 import type { RootStackParamList, AuthStackParamList } from './types';
@@ -34,7 +35,11 @@ export function RootNavigator() {
   return (
     <RootStack.Navigator screenOptions={{ headerShown: false }}>
       {user ? (
-        <RootStack.Screen name="App" component={AppNavigator} />
+        user.onboardingDone === false ? (
+          <RootStack.Screen name="Onboarding" component={OnboardingNavigator} />
+        ) : (
+          <RootStack.Screen name="App" component={AppNavigator} />
+        )
       ) : (
         <RootStack.Screen name="Auth" component={AuthNavigator} />
       )}
