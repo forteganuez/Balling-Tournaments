@@ -204,6 +204,12 @@ export interface UserPublic {
   sports?: Sport[];
 }
 
+export interface AdminManagedUser extends UserPublic {
+  email: string;
+  role: UserRole;
+  createdAt: string;
+}
+
 export interface UserStats {
   wins: number;
   losses: number;

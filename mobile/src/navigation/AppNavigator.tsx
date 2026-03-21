@@ -6,9 +6,11 @@ import { HostMatchScreen } from '../screens/HostMatchScreen';
 import { MatchScheduleScreen } from '../screens/MatchScheduleScreen';
 import { TournamentsScreen } from '../screens/TournamentsScreen';
 import { TournamentDetailScreen } from '../screens/TournamentDetailScreen';
+import { CreateTournamentScreen } from '../screens/CreateTournamentScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { EditProfileScreen } from '../screens/EditProfileScreen';
 import { PlayerProfileScreen } from '../screens/PlayerProfileScreen';
+import { AdminUsersScreen } from '../screens/AdminUsersScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import type {
   AppTabParamList,
@@ -59,6 +61,11 @@ function TournamentsNavigator() {
         component={TournamentDetailScreen}
         options={{ title: 'Tournament' }}
       />
+      <TournamentsStack.Screen
+        name="CreateTournament"
+        component={CreateTournamentScreen}
+        options={{ headerShown: false }}
+      />
     </TournamentsStack.Navigator>
   );
 }
@@ -85,6 +92,11 @@ function ProfileNavigator() {
         name="Settings"
         component={SettingsScreen}
         options={{ title: 'Settings' }}
+      />
+      <ProfileStack.Screen
+        name="AdminUsers"
+        component={AdminUsersScreen}
+        options={{ title: 'Manage Roles' }}
       />
     </ProfileStack.Navigator>
   );

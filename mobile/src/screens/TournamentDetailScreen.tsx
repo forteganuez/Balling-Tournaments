@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable, AppState, Linking } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { TournamentsStackParamList } from '../navigation/types';
 import { useAuth } from '../hooks/useAuth';
@@ -12,7 +13,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 
 type Props = NativeStackScreenProps<TournamentsStackParamList, 'TournamentDetail'>;
 
-export function TournamentDetailScreen({ route }: Props) {
+export function TournamentDetailScreen({ navigation, route }: Props) {
   const { id } = route.params;
   const { user } = useAuth();
   const [tournament, setTournament] = useState<Tournament | null>(null);
@@ -32,9 +33,11 @@ export function TournamentDetailScreen({ route }: Props) {
     }
   }, [id]);
 
-  useEffect(() => {
-    fetchTournament();
-  }, [fetchTournament]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchTournament();
+    }, [fetchTournament]),
+  );
 
   // TODO: Replace with proper deep link handling post-launch
   useEffect(() => {
@@ -78,6 +81,7 @@ export function TournamentDetailScreen({ route }: Props) {
   const isFull = filled >= tournament.maxPlayers;
   const isRegistered = tournament.registrations?.some((r) => r.userId === user?.id) ?? false;
   const isOpen = tournament.status === 'REGISTRATION_OPEN';
+  const canEditTournament = user?.role === 'ADMIN' || user?.id === tournament.organizerId;
   const dateStr = new Date(tournament.date).toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
@@ -146,6 +150,23 @@ export function TournamentDetailScreen({ route }: Props) {
 
         {tournament.description && (
           <Text className="text-muted mb-4">{tournament.description}</Text>
+        )}
+
+        {canEditTournament && (
+          <Pressable
+            onPress={() => navigation.navigate('CreateTournament', { id: tournament.id })}
+            className="mb-4 rounded-2xl border border-[#dbeafe] bg-[#eff6ff] px-4 py-3"
+          >
+            <Text className="text-xs font-semibold uppercase tracking-[1.5px] text-[#2563eb]">
+              Organizer Tools
+            </Text>
+            <Text className="mt-1 text-base font-semibold text-secondary">
+              Edit this tournament
+            </Text>
+            <Text className="mt-1 text-sm text-muted">
+              Update the date, pricing, player limits, description, or cover image.
+            </Text>
+          </Pressable>
         )}
 
         <View className="bg-surface rounded-lg p-4 mb-4">

@@ -1,8 +1,20 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
 import { authenticate } from '../middleware/auth.js';
+import { requireRole } from '../middleware/roleCheck.js';
+import { updateUserRoleSchema } from '../lib/validation.js';
 
 export const usersRouter = Router();
+
+const publicUserSearchSelect = {
+  id: true,
+  name: true,
+  email: true,
+  avatarUrl: true,
+  city: true,
+  skillLevel: true,
+  sports: true,
+} as const;
 
 // GET /search?q= — search users by name
 usersRouter.get(
@@ -16,15 +28,7 @@ usersRouter.get(
         where: {
           name: { contains: q, mode: 'insensitive' },
         },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          avatarUrl: true,
-          city: true,
-          skillLevel: true,
-          sports: true,
-        },
+        select: publicUserSearchSelect,
         take: 20,
       });
 
@@ -33,6 +37,82 @@ usersRouter.get(
       next(err);
     }
   }
+);
+
+// GET /admin/search?q= — admin user search for role management
+usersRouter.get(
+  '/admin/search',
+  authenticate,
+  requireRole('ADMIN'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+
+      const users = await prisma.user.findMany({
+        where: q
+          ? {
+              OR: [
+                { name: { contains: q, mode: 'insensitive' } },
+                { email: { contains: q, mode: 'insensitive' } },
+                { city: { contains: q, mode: 'insensitive' } },
+              ],
+            }
+          : undefined,
+        select: {
+          ...publicUserSearchSelect,
+          role: true,
+          createdAt: true,
+        },
+        orderBy: [{ role: 'desc' }, { createdAt: 'desc' }],
+        take: 25,
+      });
+
+      res.json(users);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// PUT /:id/role — admin updates a user's role
+usersRouter.put(
+  '/:id/role',
+  authenticate,
+  requireRole('ADMIN'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const data = updateUserRoleSchema.parse(req.body);
+
+      if (req.params.id === req.user!.id && data.role !== 'ADMIN') {
+        res.status(400).json({ error: 'Admins cannot remove their own admin access from the app.' });
+        return;
+      }
+
+      const existingUser = await prisma.user.findUnique({
+        where: { id: req.params.id },
+        select: { id: true },
+      });
+
+      if (!existingUser) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+
+      const updatedUser = await prisma.user.update({
+        where: { id: req.params.id },
+        data: { role: data.role },
+        select: {
+          ...publicUserSearchSelect,
+          role: true,
+          createdAt: true,
+        },
+      });
+
+      res.json(updatedUser);
+    } catch (err) {
+      next(err);
+    }
+  },
 );
 
 // GET /:id — get public profile

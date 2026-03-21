@@ -201,6 +201,23 @@ export function SettingsScreen() {
           />
         </SettingsCard>
 
+        {user?.role === 'ADMIN' ? (
+          <>
+            <SectionHeader
+              title="Admin"
+              subtitle="Manage who can organize tournaments."
+            />
+            <SettingsCard>
+              <SettingsRow
+                label="Manage user roles"
+                detail="Promote players into organizers or admins"
+                onPress={() => navigation.navigate('AdminUsers')}
+                isLast
+              />
+            </SettingsCard>
+          </>
+        ) : null}
+
         <SectionHeader
           title="Appearance"
           subtitle="Choose how Balling should look on your device."

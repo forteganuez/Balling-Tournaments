@@ -44,6 +44,10 @@ app.use('/api/follows', followsRouter);
 app.use('/api/notifications', notificationsRouter);
 app.get('/api/my-tournaments', authenticate, myTournamentsHandler);
 
+app.use('/api', (_req, res) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
 // Global error handler (must be last)
 app.use(errorHandler);
 

@@ -16,12 +16,18 @@ export const createTournamentSchema = z.object({
   name: z.string().min(3, 'Name must be at least 3 characters'),
   sport: z.enum(['PADEL', 'TENNIS', 'SQUASH']),
   format: z.enum(['SINGLE_ELIMINATION', 'DOUBLE_ELIMINATION', 'ROUND_ROBIN']),
-  description: z.string().optional(),
+  description: z.string().nullable().optional(),
   date: z.coerce.date(),
   location: z.string().min(2, 'Location must be at least 2 characters'),
-  venue: z.string().optional(),
+  venue: z.string().nullable().optional(),
   maxPlayers: z.number().int().min(2, 'Must have at least 2 players'),
   entryFee: z.number().int().min(0, 'Entry fee cannot be negative'),
+  coverImageUrl: z.string().url().nullable().optional(),
+  rules: z.string().nullable().optional(),
+  allowDoubles: z.boolean().optional(),
+  skillMin: z.number().int().min(1).max(10).nullable().optional(),
+  skillMax: z.number().int().min(1).max(10).nullable().optional(),
+  chatEnabled: z.boolean().optional(),
 });
 
 export const updateTournamentSchema = createTournamentSchema.partial();
@@ -52,4 +58,8 @@ export const createOpenMatchSchema = z.object({
   venue: z.string().max(120).optional(),
   notes: z.string().max(240).optional(),
   scheduledFor: z.coerce.date(),
+});
+
+export const updateUserRoleSchema = z.object({
+  role: z.enum(['PLAYER', 'ORGANIZER', 'ADMIN']),
 });

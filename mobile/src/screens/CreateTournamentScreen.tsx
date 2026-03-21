@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,14 +13,15 @@ import {
   Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthContext } from '../context/AuthContext';
 import { CalendarPickerModal } from '../components/CalendarPickerModal';
-import { createTournament } from '../lib/api';
+import * as api from '../lib/api';
 import { formatLongDate, getTodayDateKey } from '../lib/dateUtils';
 import { uploadImage } from '../lib/uploadImage';
-import type { Sport, TournamentFormat } from '../lib/types';
+import type { Sport, Tournament, TournamentFormat } from '../lib/types';
+import type { TournamentsStackParamList } from '../navigation/types';
 
 // ── Constants ────────────────────────────────────────────────────────
 
@@ -98,18 +99,91 @@ function centsToEuros(cents: number): string {
   return (cents / 100).toFixed(2);
 }
 
+function getDateKey(value: string): string {
+  return value.slice(0, 10);
+}
+
+function isRemoteImage(value: string): boolean {
+  return /^https?:\/\//i.test(value);
+}
+
+function mapTournamentToForm(tournament: Tournament): FormState {
+  return {
+    name: tournament.name,
+    sport: tournament.sport,
+    format: tournament.format,
+    allowDoubles: tournament.allowDoubles ?? false,
+    date: getDateKey(tournament.date),
+    location: tournament.location,
+    venue: tournament.venue ?? '',
+    maxPlayers: tournament.maxPlayers,
+    entryFeeDisplay: tournament.entryFee > 0 ? centsToEuros(tournament.entryFee) : '',
+    skillMin: tournament.skillMin ?? null,
+    skillMax: tournament.skillMax ?? null,
+    coverImageUri: tournament.coverImageUrl ?? null,
+    description: tournament.description ?? '',
+    rules: tournament.rules ?? '',
+    chatEnabled: tournament.chatEnabled ?? true,
+  };
+}
+
 // ── Component ────────────────────────────────────────────────────────
 
-export function CreateTournamentScreen() {
-  const navigation = useNavigation();
+type Props = NativeStackScreenProps<TournamentsStackParamList, 'CreateTournament'>;
+
+export function CreateTournamentScreen({ navigation, route }: Props) {
   const { user } = useAuthContext();
+  const tournamentId = route.params?.id;
+  const isEditing = Boolean(tournamentId);
 
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(isEditing);
   const [error, setError] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
+
+  useEffect(() => {
+    const editTournamentId = tournamentId;
+
+    if (!editTournamentId) {
+      setInitializing(false);
+      return;
+    }
+
+    let isMounted = true;
+
+    async function loadTournament() {
+      setInitializing(true);
+      setError(null);
+
+      try {
+        const tournament = await api.getTournament(editTournamentId!);
+        if (!isMounted) {
+          return;
+        }
+        setForm(mapTournamentToForm(tournament));
+      } catch (err: unknown) {
+        if (!isMounted) {
+          return;
+        }
+        const message = err instanceof Error ? err.message : 'Failed to load tournament';
+        setError(message);
+      } finally {
+        if (isMounted) {
+          setInitializing(false);
+        }
+      }
+    }
+
+    loadTournament();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [tournamentId]);
 
   // ── Field updaters ───────────────────────────────────────────────
 
@@ -186,9 +260,9 @@ export function CreateTournamentScreen() {
 
   // ── Submit ───────────────────────────────────────────────────────
 
-  const handleCreate = useCallback(async () => {
+  const handleSubmit = useCallback(async () => {
     if (!user) {
-      setError('You must be logged in to create a tournament');
+      setError(`You must be logged in to ${isEditing ? 'edit' : 'create'} a tournament`);
       return;
     }
     if (!form.name.trim() || !form.sport || !form.format || !form.date.trim() || !form.location.trim() || !form.maxPlayers) {
@@ -200,43 +274,94 @@ export function CreateTournamentScreen() {
     setError(null);
 
     try {
-      let coverImageUrl: string | undefined;
+      let coverImageUrl: string | null | undefined;
 
       if (form.coverImageUri) {
-        setUploadingImage(true);
-        coverImageUrl = await uploadImage(form.coverImageUri, 'covers');
-        setUploadingImage(false);
+        if (isRemoteImage(form.coverImageUri)) {
+          coverImageUrl = form.coverImageUri;
+        } else {
+          setUploadingImage(true);
+          coverImageUrl = await uploadImage(form.coverImageUri, 'covers');
+          setUploadingImage(false);
+        }
+      } else if (isEditing) {
+        coverImageUrl = null;
       }
 
-      await createTournament({
+      const payload = {
         name: form.name.trim(),
         sport: form.sport,
         format: form.format,
         date: form.date.trim(),
         location: form.location.trim(),
-        venue: form.venue.trim() || undefined,
+        venue: form.venue.trim() || null,
         maxPlayers: form.maxPlayers,
         entryFee: eurosToCents(form.entryFeeDisplay),
-        description: form.description.trim() || undefined,
+        description: form.description.trim() || null,
         coverImageUrl,
-        rules: form.rules.trim() || undefined,
+        rules: form.rules.trim() || null,
         allowDoubles: form.sport === 'TENNIS' ? form.allowDoubles : undefined,
-        skillMin: form.skillMin ?? undefined,
-        skillMax: form.skillMax ?? undefined,
+        skillMin: form.skillMin ?? null,
+        skillMax: form.skillMax ?? null,
         chatEnabled: form.chatEnabled,
-      });
+      };
 
-      Alert.alert('Success', 'Tournament created successfully!', [
+      if (tournamentId) {
+        await api.updateTournament(tournamentId, payload);
+      } else {
+        await api.createTournament(payload);
+      }
+
+      Alert.alert('Success', `Tournament ${isEditing ? 'updated' : 'created'} successfully!`, [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to create tournament';
+      const message = err instanceof Error
+        ? err.message
+        : `Failed to ${isEditing ? 'update' : 'create'} tournament`;
       setError(message);
     } finally {
       setLoading(false);
       setUploadingImage(false);
     }
-  }, [form, user, navigation]);
+  }, [form, isEditing, navigation, tournamentId, user]);
+
+  const confirmDelete = useCallback(() => {
+    if (!tournamentId) {
+      return;
+    }
+
+    Alert.alert(
+      'Delete tournament?',
+      'This will permanently remove the tournament, registrations, matches, chat, and announcements.',
+      [
+        { text: 'Keep tournament', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            setError(null);
+
+            try {
+              await api.deleteTournament(tournamentId);
+              Alert.alert('Deleted', 'Tournament deleted successfully.', [
+                {
+                  text: 'OK',
+                  onPress: () => navigation.popToTop(),
+                },
+              ]);
+            } catch (err: unknown) {
+              const message = err instanceof Error ? err.message : 'Failed to delete tournament';
+              setError(message);
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ],
+    );
+  }, [navigation, tournamentId]);
 
   // ── Step Indicator ───────────────────────────────────────────────
 
@@ -582,8 +707,10 @@ export function CreateTournamentScreen() {
 
     return (
       <View>
-        <Text className="text-xl font-bold text-secondary mb-1">Review</Text>
-        <Text className="text-sm text-muted mb-4">Confirm your tournament details before creating</Text>
+      <Text className="text-xl font-bold text-secondary mb-1">Review</Text>
+      <Text className="text-sm text-muted mb-4">
+        Confirm your tournament details before {isEditing ? 'saving' : 'creating'}
+      </Text>
 
         {form.coverImageUri && (
           <Image
@@ -665,6 +792,17 @@ export function CreateTournamentScreen() {
 
   const isFirstStep = step === 0;
   const isLastStep = step === TOTAL_STEPS - 1;
+  const isBusy = loading || deleting;
+  const screenTitle = isEditing ? 'Edit Tournament' : 'Create Tournament';
+
+  if (initializing) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center bg-white">
+        <ActivityIndicator size="large" color="#6C63FF" />
+        <Text className="mt-4 text-sm text-muted">Loading tournament details...</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
@@ -674,11 +812,15 @@ export function CreateTournamentScreen() {
       >
         {/* Header */}
         <View className="flex-row items-center justify-between px-4 py-2 border-b border-gray-100">
-          <Pressable onPress={() => navigation.goBack()} className="py-2 pr-4">
+          <Pressable
+            onPress={() => navigation.goBack()}
+            disabled={isBusy}
+            className="py-2 pr-4"
+          >
             <Text className="text-primary font-medium text-base">Cancel</Text>
           </Pressable>
           <Text className="text-base font-semibold text-secondary">
-            {STEPS[step]}
+            {screenTitle}
           </Text>
           <View className="w-16" />
         </View>
@@ -701,6 +843,23 @@ export function CreateTournamentScreen() {
             </View>
           )}
 
+          {isEditing && isLastStep && (
+            <Pressable
+              onPress={confirmDelete}
+              disabled={isBusy}
+              className={`mt-5 rounded-2xl border px-4 py-4 ${
+                deleting ? 'border-red-200 bg-red-50/60' : 'border-red-200 bg-red-50'
+              }`}
+            >
+              <Text className="text-sm font-semibold text-red-600">
+                {deleting ? 'Deleting tournament...' : 'Delete tournament'}
+              </Text>
+              <Text className="mt-1 text-sm leading-5 text-red-500">
+                Remove this tournament and all related registrations, matches, and chat.
+              </Text>
+            </Pressable>
+          )}
+
           {/* Spacer for bottom buttons */}
           <View className="h-24" />
         </ScrollView>
@@ -718,7 +877,7 @@ export function CreateTournamentScreen() {
             {!isFirstStep && (
               <Pressable
                 onPress={goBack}
-                disabled={loading}
+                disabled={isBusy}
                 className="flex-1 border border-gray-300 rounded-xl py-3.5 items-center"
               >
                 <Text className="text-secondary font-semibold text-base">Back</Text>
@@ -727,8 +886,8 @@ export function CreateTournamentScreen() {
 
             {isLastStep ? (
               <Pressable
-                onPress={handleCreate}
-                disabled={loading}
+                onPress={handleSubmit}
+                disabled={isBusy}
                 className={`flex-1 rounded-xl py-3.5 items-center ${
                   loading ? 'bg-primary/60' : 'bg-primary'
                 }`}
@@ -736,7 +895,9 @@ export function CreateTournamentScreen() {
                 {loading ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <Text className="text-white font-semibold text-base">Create Tournament</Text>
+                  <Text className="text-white font-semibold text-base">
+                    {isEditing ? 'Save Changes' : 'Create Tournament'}
+                  </Text>
                 )}
               </Pressable>
             ) : (

@@ -6,6 +6,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { TournamentsStackParamList } from '../navigation/types';
 import type { Sport, TournamentStatus } from '../lib/types';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuthContext } from '../context/AuthContext';
 
 type Props = NativeStackScreenProps<TournamentsStackParamList, 'TournamentList'>;
 
@@ -40,6 +41,7 @@ function SkeletonCard() {
 }
 
 export function TournamentsScreen({ navigation }: Props) {
+  const { user } = useAuthContext();
   const [searchText, setSearchText] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedSport, setSelectedSport] = useState<Sport | undefined>();
@@ -60,10 +62,33 @@ export function TournamentsScreen({ navigation }: Props) {
   }), [selectedSport, selectedStatus, debouncedSearch]);
 
   const { tournaments, loading, error, refetch } = useTournaments(filters);
+  const canCreateTournament = user?.role === 'ADMIN' || user?.role === 'ORGANIZER';
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={[]}>
       <View className="px-4 pt-3">
+        {canCreateTournament ? (
+          <View className="mb-4 rounded-[28px] bg-[#102a43] px-4 py-4">
+            <Text className="text-xs font-semibold uppercase tracking-[1.5px] text-[#d9e2ec]">
+              Organizer Tools
+            </Text>
+            <Text className="mt-2 text-2xl font-bold text-white">
+              Ready to launch a tournament?
+            </Text>
+            <Text className="mt-2 text-sm leading-6 text-[#bcccdc]">
+              Create a new bracket, set the details, and open registrations for players.
+            </Text>
+            <Pressable
+              onPress={() => navigation.navigate('CreateTournament')}
+              className="mt-4 self-start rounded-2xl bg-[#f0b429] px-5 py-3"
+            >
+              <Text className="text-base font-semibold text-[#102a43]">
+                Create tournament
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
+
         <TextInput
           className="border border-border rounded-lg px-4 py-2.5 text-base text-secondary mb-3"
           placeholder="Search tournaments..."

@@ -5,9 +5,11 @@ import type {
   Match,
   MatchResult,
   Sport,
+  TournamentFormat,
   TournamentStatus,
   ProfileUpdate,
   UserPublic,
+  AdminManagedUser,
   UserStats,
   Friendship,
   Follow,
@@ -61,12 +63,19 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
       onUnauthorized?.();
     }
 
-    let message = 'Request failed';
+    let message = res.statusText || `Request failed (${res.status})`;
     try {
       const data = await res.json();
       message = data.error || message;
     } catch {
-      // ignore JSON parse errors
+      try {
+        const text = await res.text();
+        if (text.trim()) {
+          message = text.trim();
+        }
+      } catch {
+        // ignore body parse errors
+      }
     }
     throw new ApiError(message, res.status);
   }
@@ -170,6 +179,12 @@ export async function cancelTournament(id: string): Promise<Tournament> {
   });
 }
 
+export async function deleteTournament(id: string): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(`/api/tournaments/${id}`, {
+    method: 'DELETE',
+  });
+}
+
 export async function getMyTournaments(): Promise<Registration[]> {
   return apiFetch<Registration[]>('/api/tournaments/my');
 }
@@ -259,6 +274,20 @@ export async function getUserStats(id: string): Promise<UserStats> {
 
 export async function getUserTournaments(id: string): Promise<Registration[]> {
   return apiFetch<Registration[]>(`/api/users/${id}/tournaments`);
+}
+
+export async function adminSearchUsers(q = ''): Promise<AdminManagedUser[]> {
+  return apiFetch<AdminManagedUser[]>(`/api/users/admin/search?q=${encodeURIComponent(q)}`);
+}
+
+export async function adminUpdateUserRole(
+  id: string,
+  role: 'PLAYER' | 'ORGANIZER' | 'ADMIN'
+): Promise<AdminManagedUser> {
+  return apiFetch<AdminManagedUser>(`/api/users/${id}/role`, {
+    method: 'PUT',
+    body: JSON.stringify({ role }),
+  });
 }
 
 // ── Friends ──────────────────────────────────────────────────────────
@@ -384,25 +413,37 @@ export async function inviteToTournament(
   });
 }
 
-export async function createTournament(data: {
+export interface TournamentMutationInput {
   name: string;
   sport: Sport;
-  format: string;
+  format: TournamentFormat;
   date: string;
   location: string;
-  venue?: string;
+  venue?: string | null;
   maxPlayers: number;
   entryFee: number;
-  description?: string;
-  coverImageUrl?: string;
-  rules?: string;
+  description?: string | null;
+  coverImageUrl?: string | null;
+  rules?: string | null;
   allowDoubles?: boolean;
-  skillMin?: number;
-  skillMax?: number;
+  skillMin?: number | null;
+  skillMax?: number | null;
   chatEnabled?: boolean;
-}): Promise<Tournament> {
+}
+
+export async function createTournament(data: TournamentMutationInput): Promise<Tournament> {
   return apiFetch<Tournament>('/api/tournaments', {
     method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateTournament(
+  id: string,
+  data: Partial<TournamentMutationInput>
+): Promise<Tournament> {
+  return apiFetch<Tournament>(`/api/tournaments/${id}`, {
+    method: 'PUT',
     body: JSON.stringify(data),
   });
 }

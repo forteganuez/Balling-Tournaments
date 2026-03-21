@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import prisma from '../lib/prisma.js';
 
 declare global {
   namespace Express {
@@ -27,7 +28,7 @@ function extractToken(req: Request): string | undefined {
   return undefined;
 }
 
-export function authenticate(req: Request, res: Response, next: NextFunction): void {
+export async function authenticate(req: Request, res: Response, next: NextFunction): Promise<void> {
   const token = extractToken(req);
 
   if (!token) {
@@ -37,14 +38,28 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string; role: string };
-    req.user = decoded;
+    const currentUser = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: { id: true, email: true, role: true },
+    });
+
+    if (!currentUser) {
+      res.status(401).json({ error: 'Invalid or expired token' });
+      return;
+    }
+
+    req.user = {
+      id: currentUser.id,
+      email: currentUser.email,
+      role: currentUser.role,
+    };
     next();
   } catch {
     res.status(401).json({ error: 'Invalid or expired token' });
   }
 }
 
-export function optionalAuth(req: Request, _res: Response, next: NextFunction): void {
+export async function optionalAuth(req: Request, _res: Response, next: NextFunction): Promise<void> {
   const token = extractToken(req);
 
   if (!token) {
@@ -54,7 +69,18 @@ export function optionalAuth(req: Request, _res: Response, next: NextFunction): 
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string; role: string };
-    req.user = decoded;
+    const currentUser = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: { id: true, email: true, role: true },
+    });
+
+    if (currentUser) {
+      req.user = {
+        id: currentUser.id,
+        email: currentUser.email,
+        role: currentUser.role,
+      };
+    }
   } catch {
     // Token invalid — just proceed without user
   }

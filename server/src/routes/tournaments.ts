@@ -172,6 +172,63 @@ tournamentRouter.put('/:id', authenticate, async (req: Request, res: Response, n
   }
 });
 
+// DELETE /:id — delete tournament and related records
+tournamentRouter.delete('/:id', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tournament = await prisma.tournament.findUnique({
+      where: { id: req.params.id },
+      select: { id: true, organizerId: true },
+    });
+
+    if (!tournament) {
+      res.status(404).json({ error: 'Tournament not found' });
+      return;
+    }
+
+    if (tournament.organizerId !== req.user!.id && req.user!.role !== 'ADMIN') {
+      res.status(403).json({ error: 'Insufficient permissions' });
+      return;
+    }
+
+    const matches = await prisma.match.findMany({
+      where: { tournamentId: req.params.id },
+      select: { id: true },
+    });
+    const matchIds = matches.map((match) => match.id);
+
+    await prisma.$transaction(async (tx) => {
+      if (matchIds.length > 0) {
+        await tx.matchResult.deleteMany({
+          where: { matchId: { in: matchIds } },
+        });
+      }
+
+      await tx.tournamentChat.deleteMany({
+        where: { tournamentId: req.params.id },
+      });
+      await tx.tournamentAnnouncement.deleteMany({
+        where: { tournamentId: req.params.id },
+      });
+      await tx.doublesTeam.deleteMany({
+        where: { tournamentId: req.params.id },
+      });
+      await tx.registration.deleteMany({
+        where: { tournamentId: req.params.id },
+      });
+      await tx.match.deleteMany({
+        where: { tournamentId: req.params.id },
+      });
+      await tx.tournament.delete({
+        where: { id: req.params.id },
+      });
+    });
+
+    res.json({ message: 'Tournament deleted successfully' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /:id/close-registration — close registration and generate bracket
 tournamentRouter.post(
   '/:id/close-registration',

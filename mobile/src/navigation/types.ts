@@ -39,7 +39,7 @@ export type TournamentsStackParamList = {
   TournamentChat: { tournamentId: string; organizerId: string };
   SpectatorBracket: { id: string };
   SubmitResult: SubmitResultParams;
-  CreateTournament: undefined;
+  CreateTournament: { id?: string } | undefined;
 };
 
 export type ProfileStackParamList = {
@@ -47,6 +47,7 @@ export type ProfileStackParamList = {
   EditProfile: undefined;
   PlayerProfile: { id: string };
   Settings: undefined;
+  AdminUsers: undefined;
 };
 
 declare global {
