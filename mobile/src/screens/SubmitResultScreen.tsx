@@ -214,7 +214,7 @@ export function SubmitResultScreen({ route }: SubmitResultScreenProps) {
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       <ScrollView
         className="flex-1"
-        contentContainerClassName="px-4 pt-4 pb-8"
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 32 }}
         keyboardShouldPersistTaps="handled"
       >
         {/* Header */}

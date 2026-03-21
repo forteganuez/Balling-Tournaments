@@ -43,3 +43,57 @@ export const typography = {
     fontWeight: '400' as const,
   },
 } as const;
+
+export interface Theme {
+  background: string;
+  card: string;
+  text: string;
+  textSecondary: string;
+  border: string;
+  surface: string;
+  primary: string;
+  secondary: string;
+  accent: string;
+  muted: string;
+  success: string;
+  warning: string;
+  error: string;
+  white: string;
+  black: string;
+}
+
+export const lightTheme: Theme = {
+  background: '#FFFFFF',
+  card: '#F8F9FA',
+  text: '#1E1E2E',
+  textSecondary: '#6B7280',
+  border: '#E5E7EB',
+  surface: '#F8F9FA',
+  primary: '#6C63FF',
+  secondary: '#1E1E2E',
+  accent: '#FF6B6B',
+  muted: '#6B7280',
+  success: '#10B981',
+  warning: '#F59E0B',
+  error: '#EF4444',
+  white: '#FFFFFF',
+  black: '#000000',
+};
+
+export const darkTheme: Theme = {
+  background: '#121212',
+  card: '#1E1E2E',
+  text: '#F8F9FA',
+  textSecondary: '#9CA3AF',
+  border: '#374151',
+  surface: '#1E1E2E',
+  primary: '#8B83FF',
+  secondary: '#F8F9FA',
+  accent: '#FF8A8A',
+  muted: '#9CA3AF',
+  success: '#34D399',
+  warning: '#FBBF24',
+  error: '#F87171',
+  white: '#FFFFFF',
+  black: '#000000',
+};

@@ -1,5 +1,6 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { OnboardingStackParamList } from './OnboardingNavigator';
+import type { SubmitResultParams } from '../screens/SubmitResultScreen';
 
 export type RootStackParamList = {
   Auth: undefined;
@@ -23,6 +24,10 @@ export type AppTabParamList = {
 export type TournamentsStackParamList = {
   TournamentList: undefined;
   TournamentDetail: { id: string };
+  TournamentChat: { tournamentId: string; organizerId: string };
+  SpectatorBracket: { id: string };
+  SubmitResult: SubmitResultParams;
+  CreateTournament: undefined;
 };
 
 export type ProfileStackParamList = {

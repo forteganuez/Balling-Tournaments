@@ -1,19 +1,29 @@
 import React from 'react';
-import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from './src/context/AuthContext';
-import { RootNavigator } from './src/navigation/RootNavigator';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { RootNavigator, linking } from './src/navigation/RootNavigator';
+
+function AppInner() {
+  const { isDark } = useTheme();
+
+  return (
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <NavigationContainer linking={linking}>
+        <RootNavigator />
+      </NavigationContainer>
+    </>
+  );
+}
 
 export default function App() {
   return (
-    <SafeAreaProvider>
+    <ThemeProvider>
       <AuthProvider>
-        <NavigationContainer>
-          <RootNavigator />
-          <StatusBar style="auto" />
-        </NavigationContainer>
+        <AppInner />
       </AuthProvider>
-    </SafeAreaProvider>
+    </ThemeProvider>
   );
 }

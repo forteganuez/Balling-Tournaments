@@ -17,6 +17,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   ios: {
     supportsTablet: true,
+    bundleIdentifier: 'com.balling.app',
   },
   android: {
     adaptiveIcon: {
@@ -27,7 +28,23 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   platforms: ['ios', 'android'],
-  plugins: ['expo-web-browser', 'expo-apple-authentication'],
+  plugins: [
+    'expo-web-browser',
+    'expo-apple-authentication',
+    [
+      'expo-image-picker',
+      {
+        photosPermission: 'Allow Balling to access your photos to set your profile picture.',
+      },
+    ],
+    [
+      'expo-notifications',
+      {
+        icon: './assets/icon.png',
+        color: '#4F46E5',
+      },
+    ],
+  ],
   extra: {
     apiUrl: process.env.EXPO_PUBLIC_API_URL,
   },
