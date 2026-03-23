@@ -7,6 +7,7 @@ import type { TournamentsStackParamList } from '../navigation/types';
 import type { Sport, TournamentStatus } from '../lib/types';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthContext } from '../context/AuthContext';
+import { EmptyState } from '../components/EmptyState';
 
 type Props = NativeStackScreenProps<TournamentsStackParamList, 'TournamentList'>;
 
@@ -26,7 +27,7 @@ const statuses: Array<{ label: string; value: TournamentStatus | undefined }> = 
 
 function SkeletonCard() {
   return (
-    <View className="bg-surface rounded-xl p-4 mb-3 border border-border">
+    <View className="bg-surface dark:bg-surface-dark rounded-xl p-4 mb-3 border border-border dark:border-border-dark">
       <View className="flex-row items-center mb-3">
         <View className="w-8 h-8 bg-gray-200 rounded-full" />
         <View className="ml-3 flex-1">
@@ -65,7 +66,7 @@ export function TournamentsScreen({ navigation }: Props) {
   const canCreateTournament = user?.role === 'ADMIN' || user?.role === 'ORGANIZER';
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={[]}>
+    <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={[]}>
       <View className="px-4 pt-3">
         {canCreateTournament ? (
           <View className="mb-4 rounded-[28px] bg-[#102a43] px-4 py-4">
@@ -82,7 +83,7 @@ export function TournamentsScreen({ navigation }: Props) {
               onPress={() => navigation.navigate('CreateTournament')}
               className="mt-4 self-start rounded-2xl bg-[#f0b429] px-5 py-3"
             >
-              <Text className="text-base font-semibold text-[#102a43]">
+              <Text className="text-base font-semibold text-slate-900">
                 Create tournament
               </Text>
             </Pressable>
@@ -90,7 +91,7 @@ export function TournamentsScreen({ navigation }: Props) {
         ) : null}
 
         <TextInput
-          className="border border-border rounded-lg px-4 py-2.5 text-base text-secondary mb-3"
+          className="border border-border dark:border-border-dark rounded-lg px-4 py-2.5 text-base text-secondary dark:text-secondary-dark mb-3"
           placeholder="Search tournaments..."
           placeholderTextColor="#9CA3AF"
           value={searchText}
@@ -108,12 +109,12 @@ export function TournamentsScreen({ navigation }: Props) {
             <Pressable
               onPress={() => setSelectedSport(item.value)}
               className={`px-4 py-1.5 rounded-full mr-2 ${
-                selectedSport === item.value ? 'bg-primary' : 'bg-surface'
+                selectedSport === item.value ? 'bg-primary' : 'bg-surface dark:bg-surface-dark'
               }`}
             >
               <Text
                 className={`text-sm font-medium ${
-                  selectedSport === item.value ? 'text-white' : 'text-muted'
+                  selectedSport === item.value ? 'text-white' : 'text-muted dark:text-muted-dark'
                 }`}
               >
                 {item.label}
@@ -132,12 +133,12 @@ export function TournamentsScreen({ navigation }: Props) {
             <Pressable
               onPress={() => setSelectedStatus(item.value)}
               className={`px-4 py-1.5 rounded-full mr-2 ${
-                selectedStatus === item.value ? 'bg-primary' : 'bg-surface'
+                selectedStatus === item.value ? 'bg-primary' : 'bg-surface dark:bg-surface-dark'
               }`}
             >
               <Text
                 className={`text-sm font-medium ${
-                  selectedStatus === item.value ? 'text-white' : 'text-muted'
+                  selectedStatus === item.value ? 'text-white' : 'text-muted dark:text-muted-dark'
                 }`}
               >
                 {item.label}
@@ -156,7 +157,7 @@ export function TournamentsScreen({ navigation }: Props) {
         </View>
       ) : error ? (
         <View className="flex-1 items-center justify-center px-4">
-          <Text className="text-red-600 text-center mb-4">{error}</Text>
+          <Text className="text-red-600 dark:text-red-300 text-center mb-4">{error}</Text>
           <Pressable onPress={refetch} className="bg-primary px-6 py-2 rounded-lg">
             <Text className="text-white font-medium">Retry</Text>
           </Pressable>
@@ -179,11 +180,11 @@ export function TournamentsScreen({ navigation }: Props) {
             />
           )}
           ListEmptyComponent={
-            <View className="flex-1 items-center justify-center py-12">
-              <Text className="text-muted text-center">
-                No tournaments found. Try adjusting your filters.
-              </Text>
-            </View>
+            <EmptyState
+              icon="🏆"
+              title="No tournaments found"
+              message="Try adjusting your filters or check back later for new events."
+            />
           }
         />
       )}

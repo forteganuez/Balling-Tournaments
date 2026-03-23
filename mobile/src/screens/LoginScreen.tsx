@@ -41,7 +41,7 @@ export function LoginScreen({ navigation }: Props) {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top']}>
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1"
@@ -54,27 +54,27 @@ export function LoginScreen({ navigation }: Props) {
         }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text className="text-3xl font-bold text-secondary text-center mb-2">
+        <Text className="text-3xl font-bold text-secondary dark:text-secondary-dark text-center mb-2">
           Balling
         </Text>
-        <Text className="text-muted text-center mb-8">
+        <Text className="text-muted dark:text-muted-dark text-center mb-8">
           Sign in to your account
         </Text>
 
         {apiError && (
-          <View className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-            <Text className="text-red-600 text-sm text-center">{apiError}</Text>
+          <View className="bg-red-50 dark:bg-red-500/15 border border-red-200 rounded-lg p-3 mb-4">
+            <Text className="text-red-600 dark:text-red-300 text-sm text-center">{apiError}</Text>
           </View>
         )}
 
         <View className="mb-4">
-          <Text className="text-sm font-medium text-secondary mb-1">Email</Text>
+          <Text className="text-sm font-medium text-secondary dark:text-secondary-dark mb-1">Email</Text>
           <Controller
             control={control}
             name="email"
             render={({ field: { onChange, onBlur, value } }) => (
               <TextInput
-                className="border border-border rounded-lg px-4 py-3 text-base text-secondary"
+                className="border border-border dark:border-border-dark rounded-lg px-4 py-3 text-base text-secondary dark:text-secondary-dark"
                 placeholder="you@example.com"
                 placeholderTextColor="#9CA3AF"
                 keyboardType="email-address"
@@ -87,18 +87,18 @@ export function LoginScreen({ navigation }: Props) {
             )}
           />
           {errors.email && (
-            <Text className="text-red-500 text-xs mt-1">{errors.email.message}</Text>
+            <Text className="text-red-500 dark:text-red-300 text-xs mt-1">{errors.email.message}</Text>
           )}
         </View>
 
         <View className="mb-6">
-          <Text className="text-sm font-medium text-secondary mb-1">Password</Text>
+          <Text className="text-sm font-medium text-secondary dark:text-secondary-dark mb-1">Password</Text>
           <Controller
             control={control}
             name="password"
             render={({ field: { onChange, onBlur, value } }) => (
               <TextInput
-                className="border border-border rounded-lg px-4 py-3 text-base text-secondary"
+                className="border border-border dark:border-border-dark rounded-lg px-4 py-3 text-base text-secondary dark:text-secondary-dark"
                 placeholder="••••••••"
                 placeholderTextColor="#9CA3AF"
                 secureTextEntry
@@ -110,7 +110,7 @@ export function LoginScreen({ navigation }: Props) {
             )}
           />
           {errors.password && (
-            <Text className="text-red-500 text-xs mt-1">{errors.password.message}</Text>
+            <Text className="text-red-500 dark:text-red-300 text-xs mt-1">{errors.password.message}</Text>
           )}
         </View>
 
@@ -130,7 +130,7 @@ export function LoginScreen({ navigation }: Props) {
           onPress={() => navigation.navigate('Register')}
           className="mt-4 items-center"
         >
-          <Text className="text-muted text-sm">
+          <Text className="text-muted dark:text-muted-dark text-sm">
             Don't have an account?{' '}
             <Text className="text-primary font-semibold">Sign Up</Text>
           </Text>

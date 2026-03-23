@@ -107,10 +107,10 @@ export function AdminUsersScreen() {
 
   if (user?.role !== 'ADMIN') {
     return (
-      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top']}>
         <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-2xl font-bold text-secondary">Admins only</Text>
-          <Text className="mt-2 text-center text-sm text-muted">
+          <Text className="text-2xl font-bold text-secondary dark:text-secondary-dark">Admins only</Text>
+          <Text className="mt-2 text-center text-sm text-muted dark:text-muted-dark">
             You need admin access to manage organizer permissions.
           </Text>
         </View>
@@ -119,7 +119,7 @@ export function AdminUsersScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top']}>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32 }}
@@ -144,8 +144,8 @@ export function AdminUsersScreen() {
             </Text>
           </View>
 
-          <View className="mt-5 rounded-2xl border border-border bg-white px-4 py-3">
-            <Text className="text-xs font-semibold uppercase tracking-[1px] text-muted">
+          <View className="mt-5 rounded-2xl border border-border dark:border-border-dark bg-white dark:bg-card-dark px-4 py-3">
+            <Text className="text-xs font-semibold uppercase tracking-[1px] text-muted dark:text-muted-dark">
               Search users
             </Text>
             <TextInput
@@ -153,7 +153,7 @@ export function AdminUsersScreen() {
               onChangeText={setQuery}
               placeholder="Name, email, or city"
               placeholderTextColor="#9CA3AF"
-              className="mt-2 text-base text-secondary"
+              className="mt-2 text-base text-secondary dark:text-secondary-dark"
               autoCapitalize="none"
             />
           </View>
@@ -165,9 +165,9 @@ export function AdminUsersScreen() {
               <ActivityIndicator color={colors.primary} />
             </View>
           ) : users.length === 0 ? (
-            <View className="rounded-2xl border border-border bg-surface px-5 py-6">
-              <Text className="text-base font-semibold text-secondary">No users found</Text>
-              <Text className="mt-2 text-sm text-muted">
+            <View className="rounded-2xl border border-border dark:border-border-dark bg-surface dark:bg-surface-dark px-5 py-6">
+              <Text className="text-base font-semibold text-secondary dark:text-secondary-dark">No users found</Text>
+              <Text className="mt-2 text-sm text-muted dark:text-muted-dark">
                 Try a different name, email, or city.
               </Text>
             </View>
@@ -175,7 +175,7 @@ export function AdminUsersScreen() {
             users.map((entry) => (
               <View
                 key={entry.id}
-                className="mb-4 rounded-2xl border border-border bg-white px-4 py-4"
+                className="mb-4 rounded-2xl border border-border dark:border-border-dark bg-white dark:bg-card-dark px-4 py-4"
               >
                 <View className="flex-row items-center">
                   {entry.avatarUrl ? (
@@ -188,10 +188,10 @@ export function AdminUsersScreen() {
                     </View>
                   )}
                   <View className="ml-3 flex-1">
-                    <Text className="text-base font-semibold text-secondary">{entry.name}</Text>
-                    <Text className="text-sm text-muted">{entry.email}</Text>
+                    <Text className="text-base font-semibold text-secondary dark:text-secondary-dark">{entry.name}</Text>
+                    <Text className="text-sm text-muted dark:text-muted-dark">{entry.email}</Text>
                     {entry.city ? (
-                      <Text className="mt-1 text-xs text-muted">{entry.city}</Text>
+                      <Text className="mt-1 text-xs text-muted dark:text-muted-dark">{entry.city}</Text>
                     ) : null}
                   </View>
                   <View className={`rounded-full px-3 py-1.5 ${ROLE_STYLES[entry.role].bg}`}>
@@ -213,12 +213,12 @@ export function AdminUsersScreen() {
                         className={`mr-2 mt-2 rounded-full border px-4 py-2 ${
                           isCurrent
                             ? 'border-[#102a43] bg-[#102a43]'
-                            : 'border-border bg-white'
+                            : 'border-border dark:border-border-dark bg-white dark:bg-card-dark'
                         }`}
                       >
                         <Text
                           className={`text-sm font-semibold ${
-                            isCurrent ? 'text-white' : 'text-secondary'
+                            isCurrent ? 'text-white' : 'text-secondary dark:text-secondary-dark'
                           }`}
                         >
                           {isBusy && !isCurrent ? 'Updating...' : ROLE_LABELS[role]}

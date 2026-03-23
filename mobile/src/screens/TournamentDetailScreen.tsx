@@ -79,7 +79,7 @@ export function TournamentDetailScreen({ navigation, route }: Props) {
   if (error || !tournament) {
     return (
       <View className="flex-1 items-center justify-center px-4">
-        <Text className="text-red-600 text-center mb-4">{error ?? 'Tournament not found'}</Text>
+        <Text className="text-red-600 dark:text-red-300 text-center mb-4">{error ?? 'Tournament not found'}</Text>
         <Pressable onPress={fetchTournament} className="bg-primary px-6 py-2 rounded-lg">
           <Text className="text-white font-medium">Retry</Text>
         </Pressable>
@@ -150,17 +150,17 @@ export function TournamentDetailScreen({ navigation, route }: Props) {
   const remainingCount = (tournament.registrations?.length ?? 0) - displayedPlayers.length;
 
   return (
-    <ScrollView className="flex-1 bg-white">
+    <ScrollView className="flex-1 bg-white dark:bg-background-dark">
       <View className="px-4 pt-4 pb-8">
         <View className="flex-row items-center mb-2">
           <SportIcon sport={tournament.sport} size={32} />
-          <Text className="text-2xl font-bold text-secondary ml-3 flex-1">
+          <Text className="text-2xl font-bold text-secondary dark:text-secondary-dark ml-3 flex-1">
             {tournament.name}
           </Text>
         </View>
 
         {tournament.description && (
-          <Text className="text-muted mb-4">{tournament.description}</Text>
+          <Text className="text-muted dark:text-muted-dark mb-4">{tournament.description}</Text>
         )}
 
         {canEditTournament && (
@@ -171,38 +171,38 @@ export function TournamentDetailScreen({ navigation, route }: Props) {
             <Text className="text-xs font-semibold uppercase tracking-[1.5px] text-[#2563eb]">
               Organizer Tools
             </Text>
-            <Text className="mt-1 text-base font-semibold text-secondary">
+            <Text className="mt-1 text-base font-semibold text-secondary dark:text-secondary-dark">
               Edit this tournament
             </Text>
-            <Text className="mt-1 text-sm text-muted">
+            <Text className="mt-1 text-sm text-muted dark:text-muted-dark">
               Update the date, pricing, player limits, description, or cover image.
             </Text>
           </Pressable>
         )}
 
-        <View className="bg-surface rounded-lg p-4 mb-4">
+        <View className="bg-surface dark:bg-surface-dark rounded-lg p-4 mb-4">
           <View className="flex-row justify-between mb-2">
-            <Text className="text-sm text-muted">Date</Text>
-            <Text className="text-sm text-secondary font-medium">{dateStr}</Text>
+            <Text className="text-sm text-muted dark:text-muted-dark">Date</Text>
+            <Text className="text-sm text-secondary dark:text-secondary-dark font-medium">{dateStr}</Text>
           </View>
           <View className="flex-row justify-between mb-2">
-            <Text className="text-sm text-muted">Location</Text>
-            <Text className="text-sm text-secondary font-medium">{tournament.location}</Text>
+            <Text className="text-sm text-muted dark:text-muted-dark">Location</Text>
+            <Text className="text-sm text-secondary dark:text-secondary-dark font-medium">{tournament.location}</Text>
           </View>
           {tournament.venue && (
             <View className="flex-row justify-between mb-2">
-              <Text className="text-sm text-muted">Venue</Text>
-              <Text className="text-sm text-secondary font-medium">{tournament.venue}</Text>
+              <Text className="text-sm text-muted dark:text-muted-dark">Venue</Text>
+              <Text className="text-sm text-secondary dark:text-secondary-dark font-medium">{tournament.venue}</Text>
             </View>
           )}
           <View className="flex-row justify-between mb-2">
-            <Text className="text-sm text-muted">Format</Text>
-            <Text className="text-sm text-secondary font-medium">
+            <Text className="text-sm text-muted dark:text-muted-dark">Format</Text>
+            <Text className="text-sm text-secondary dark:text-secondary-dark font-medium">
               {formatLabels[tournament.format]}
             </Text>
           </View>
           <View className="flex-row justify-between">
-            <Text className="text-sm text-muted">Entry Fee</Text>
+            <Text className="text-sm text-muted dark:text-muted-dark">Entry Fee</Text>
             <Text className="text-sm text-primary font-semibold">
               {tournament.entryFee === 0 ? 'Free' : `€${(tournament.entryFee / 100).toFixed(2)}`}
             </Text>
@@ -211,7 +211,7 @@ export function TournamentDetailScreen({ navigation, route }: Props) {
 
         {isOpen && (
           <View className="mb-4">
-            <Text className="text-sm font-medium text-secondary mb-2 text-center">
+            <Text className="text-sm font-medium text-secondary dark:text-secondary-dark mb-2 text-center">
               Starts in
             </Text>
             <Countdown targetDate={tournament.date} />
@@ -220,8 +220,8 @@ export function TournamentDetailScreen({ navigation, route }: Props) {
 
         <View className="mb-4">
           <View className="flex-row justify-between mb-1">
-            <Text className="text-sm text-muted">Registration</Text>
-            <Text className="text-sm text-secondary font-medium">
+            <Text className="text-sm text-muted dark:text-muted-dark">Registration</Text>
+            <Text className="text-sm text-secondary dark:text-secondary-dark font-medium">
               {filled}/{tournament.maxPlayers} spots
             </Text>
           </View>
@@ -235,21 +235,21 @@ export function TournamentDetailScreen({ navigation, route }: Props) {
 
         {displayedPlayers.length > 0 && (
           <View className="mb-4">
-            <Text className="text-base font-semibold text-secondary mb-2">
+            <Text className="text-base font-semibold text-secondary dark:text-secondary-dark mb-2">
               Registered Players
             </Text>
             {displayedPlayers.map((reg) => (
-              <View key={reg.id} className="flex-row items-center py-2 border-b border-border">
+              <View key={reg.id} className="flex-row items-center py-2 border-b border-border dark:border-border-dark">
                 <View className="w-8 h-8 bg-primary/10 rounded-full items-center justify-center mr-3">
                   <Text className="text-primary font-semibold text-sm">
                     {reg.user?.name?.charAt(0)?.toUpperCase() ?? '?'}
                   </Text>
                 </View>
-                <Text className="text-sm text-secondary">{reg.user?.name ?? 'Player'}</Text>
+                <Text className="text-sm text-secondary dark:text-secondary-dark">{reg.user?.name ?? 'Player'}</Text>
               </View>
             ))}
             {remainingCount > 0 && (
-              <Text className="text-sm text-muted mt-2 text-center">
+              <Text className="text-sm text-muted dark:text-muted-dark mt-2 text-center">
                 +{remainingCount} more
               </Text>
             )}
@@ -261,7 +261,7 @@ export function TournamentDetailScreen({ navigation, route }: Props) {
         {(tournament.status === 'IN_PROGRESS' || tournament.status === 'COMPLETED') &&
           tournament.matches && tournament.matches.length > 0 && (
           <View className="mt-6">
-            <Text className="text-base font-semibold text-secondary mb-2">
+            <Text className="text-base font-semibold text-secondary dark:text-secondary-dark mb-2">
               Bracket
             </Text>
             <BracketView matches={tournament.matches} />

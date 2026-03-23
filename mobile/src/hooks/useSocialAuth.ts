@@ -3,12 +3,15 @@ import { Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
 import { useAuthContext } from '../context/AuthContext';
+import {
+  getGoogleAuthBaseCandidates,
+  joinApiUrl,
+  rememberWorkingGoogleAuthBaseUrl,
+} from '../lib/apiConfig';
 import { getStoredValue, setStoredValue, setToken } from '../lib/storage';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001';
-const GOOGLE_AUTH_URL = process.env.EXPO_PUBLIC_GOOGLE_AUTH_URL || API_URL;
 const MICROSOFT_CLIENT_ID = process.env.EXPO_PUBLIC_MICROSOFT_CLIENT_ID || '';
 const GOOGLE_REDIRECT_PATH = 'oauth/google';
 const APPLE_PROFILE_KEY_PREFIX = 'apple_profile_';
@@ -88,8 +91,14 @@ export function useSocialAuth() {
 
       // Generate a unique state to track this auth session.
       const state = Math.random().toString(36).substring(2, 15);
+      const [googleAuthBaseUrl] = getGoogleAuthBaseCandidates();
+
+      if (!googleAuthBaseUrl) {
+        throw new Error('No Google auth URL is configured.');
+      }
+
       const authUrl =
-        `${GOOGLE_AUTH_URL}/api/auth/google/start?state=${encodeURIComponent(state)}` +
+        `${joinApiUrl(googleAuthBaseUrl, '/api/auth/google/start')}?state=${encodeURIComponent(state)}` +
         `&redirect_uri=${encodeURIComponent(googleRedirectUri)}`;
 
       const result = await WebBrowser.openAuthSessionAsync(authUrl, googleRedirectUri);
@@ -115,12 +124,28 @@ export function useSocialAuth() {
 
       // Poll for the token after the auth session redirects back into the app.
       const pollForToken = async (): Promise<string | null> => {
-        for (let i = 0; i < 20; i++) {
-          const res = await fetch(`${GOOGLE_AUTH_URL}/api/auth/google/poll?state=${state}`);
-          const data = await res.json();
-          if (data.token) return data.token;
-          await new Promise(r => setTimeout(r, 500));
+        const authBaseUrls = getGoogleAuthBaseCandidates();
+
+        for (const baseUrl of authBaseUrls) {
+          for (let i = 0; i < 20; i++) {
+            try {
+              const res = await fetch(
+                `${joinApiUrl(baseUrl, '/api/auth/google/poll')}?state=${state}`,
+              );
+              const data = await res.json();
+              if (data.token) {
+                rememberWorkingGoogleAuthBaseUrl(baseUrl);
+                return data.token;
+              }
+            } catch {
+              // Move to the next candidate URL below if this one is unreachable.
+              break;
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, 500));
+          }
         }
+
         return null;
       };
 

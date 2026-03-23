@@ -194,7 +194,7 @@ export function PlayerProfileScreen({ route, navigation }: Props) {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top']}>
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
@@ -206,9 +206,9 @@ export function PlayerProfileScreen({ route, navigation }: Props) {
 
   if (error || !profile) {
     return (
-      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top']}>
         <View className="flex-1 items-center justify-center px-8">
-          <Text className="text-red-500 text-center text-base mb-4">
+          <Text className="text-red-500 dark:text-red-300 text-center text-base mb-4">
             {error ?? 'Profile not found.'}
           </Text>
           <Pressable onPress={() => navigation.goBack()} className="px-6 py-2.5 rounded-lg bg-primary">
@@ -233,7 +233,7 @@ export function PlayerProfileScreen({ route, navigation }: Props) {
 
     if (friendLoading) {
       return (
-        <View className="flex-1 py-3 rounded-xl items-center bg-surface border border-border">
+        <View className="flex-1 py-3 rounded-xl items-center bg-surface dark:bg-surface-dark border border-border dark:border-border-dark">
           <ActivityIndicator size="small" color={colors.primary} />
         </View>
       );
@@ -251,8 +251,8 @@ export function PlayerProfileScreen({ route, navigation }: Props) {
         );
       case 'pending_sent':
         return (
-          <View className="flex-1 py-3 rounded-xl items-center bg-surface border border-border">
-            <Text className="text-muted font-semibold text-sm">Request Sent</Text>
+          <View className="flex-1 py-3 rounded-xl items-center bg-surface dark:bg-surface-dark border border-border dark:border-border-dark">
+            <Text className="text-muted dark:text-muted-dark font-semibold text-sm">Request Sent</Text>
           </View>
         );
       case 'pending_received':
@@ -283,7 +283,7 @@ export function PlayerProfileScreen({ route, navigation }: Props) {
 
     if (followLoading) {
       return (
-        <View className="flex-1 py-3 rounded-xl items-center bg-surface border border-border">
+        <View className="flex-1 py-3 rounded-xl items-center bg-surface dark:bg-surface-dark border border-border dark:border-border-dark">
           <ActivityIndicator size="small" color={colors.primary} />
         </View>
       );
@@ -293,9 +293,9 @@ export function PlayerProfileScreen({ route, navigation }: Props) {
       return (
         <Pressable
           onPress={handleUnfollow}
-          className="flex-1 py-3 rounded-xl items-center border border-border"
+          className="flex-1 py-3 rounded-xl items-center border border-border dark:border-border-dark"
         >
-          <Text className="text-muted font-semibold text-sm">Following</Text>
+          <Text className="text-muted dark:text-muted-dark font-semibold text-sm">Following</Text>
         </Pressable>
       );
     }
@@ -311,7 +311,7 @@ export function PlayerProfileScreen({ route, navigation }: Props) {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top']}>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 40 }}
@@ -330,12 +330,12 @@ export function PlayerProfileScreen({ route, navigation }: Props) {
               </Text>
             </View>
           )}
-          <Text className="text-xl font-bold text-secondary">{profile.name}</Text>
+          <Text className="text-xl font-bold text-secondary dark:text-secondary-dark">{profile.name}</Text>
           {profile.city ? (
-            <Text className="text-sm text-muted mt-0.5">📍 {profile.city}</Text>
+            <Text className="text-sm text-muted dark:text-muted-dark mt-0.5">📍 {profile.city}</Text>
           ) : null}
           {profile.bio ? (
-            <Text className="text-sm text-muted mt-1 px-8 text-center">{profile.bio}</Text>
+            <Text className="text-sm text-muted dark:text-muted-dark mt-1 px-8 text-center">{profile.bio}</Text>
           ) : null}
         </View>
 
@@ -355,7 +355,7 @@ export function PlayerProfileScreen({ route, navigation }: Props) {
           {profile.sports?.map((sport: Sport) => (
             <View
               key={sport}
-              className="flex-row items-center px-3 py-1.5 rounded-full bg-surface border border-border"
+              className="flex-row items-center px-3 py-1.5 rounded-full bg-surface dark:bg-surface-dark border border-border dark:border-border-dark"
             >
               <Text className="text-sm">
                 {SPORT_ICONS[sport] ?? '🏅'} {sport.charAt(0) + sport.slice(1).toLowerCase()}
@@ -374,44 +374,44 @@ export function PlayerProfileScreen({ route, navigation }: Props) {
 
         {/* Stats Row */}
         {stats ? (
-          <View className="flex-row mx-4 mb-5 bg-surface rounded-xl p-4">
+          <View className="flex-row mx-4 mb-5 bg-surface dark:bg-surface-dark rounded-xl p-4">
             <View className="flex-1 items-center">
-              <Text className="text-lg font-bold text-secondary">{stats.matchesPlayed}</Text>
-              <Text className="text-xs text-muted">Matches</Text>
+              <Text className="text-lg font-bold text-secondary dark:text-secondary-dark">{stats.matchesPlayed}</Text>
+              <Text className="text-xs text-muted dark:text-muted-dark">Matches</Text>
             </View>
-            <View className="flex-1 items-center border-l border-border">
+            <View className="flex-1 items-center border-l border-border dark:border-border-dark">
               <Text className="text-lg font-bold text-green-600">{stats.wins}</Text>
-              <Text className="text-xs text-muted">Wins</Text>
+              <Text className="text-xs text-muted dark:text-muted-dark">Wins</Text>
             </View>
-            <View className="flex-1 items-center border-l border-border">
-              <Text className="text-lg font-bold text-red-500">{stats.losses}</Text>
-              <Text className="text-xs text-muted">Losses</Text>
+            <View className="flex-1 items-center border-l border-border dark:border-border-dark">
+              <Text className="text-lg font-bold text-red-500 dark:text-red-300">{stats.losses}</Text>
+              <Text className="text-xs text-muted dark:text-muted-dark">Losses</Text>
             </View>
-            <View className="flex-1 items-center border-l border-border">
+            <View className="flex-1 items-center border-l border-border dark:border-border-dark">
               <Text className="text-lg font-bold text-primary">{winRate}%</Text>
-              <Text className="text-xs text-muted">Win Rate</Text>
+              <Text className="text-xs text-muted dark:text-muted-dark">Win Rate</Text>
             </View>
           </View>
         ) : null}
 
         {/* Tournament History */}
         <View className="px-4 mb-5">
-          <Text className="text-base font-semibold text-secondary mb-3">Recent Tournaments</Text>
+          <Text className="text-base font-semibold text-secondary dark:text-secondary-dark mb-3">Recent Tournaments</Text>
           {tournaments.length === 0 ? (
-            <View className="bg-surface rounded-xl p-4 items-center">
-              <Text className="text-muted text-sm">No tournaments yet</Text>
+            <View className="bg-surface dark:bg-surface-dark rounded-xl p-4 items-center">
+              <Text className="text-muted dark:text-muted-dark text-sm">No tournaments yet</Text>
             </View>
           ) : (
             tournaments.slice(0, 10).map((reg) => (
-              <View key={reg.id} className="flex-row items-center bg-surface rounded-xl p-3 mb-2">
+              <View key={reg.id} className="flex-row items-center bg-surface dark:bg-surface-dark rounded-xl p-3 mb-2">
                 <Text className="text-xl mr-3">
                   {reg.tournament ? SPORT_ICONS[reg.tournament.sport] ?? '🏅' : '🏅'}
                 </Text>
                 <View className="flex-1">
-                  <Text className="text-sm font-medium text-secondary">
+                  <Text className="text-sm font-medium text-secondary dark:text-secondary-dark">
                     {reg.tournament?.name ?? 'Tournament'}
                   </Text>
-                  <Text className="text-xs text-muted">
+                  <Text className="text-xs text-muted dark:text-muted-dark">
                     {reg.tournament?.date
                       ? new Date(reg.tournament.date).toLocaleDateString()
                       : ''}
@@ -427,7 +427,7 @@ export function PlayerProfileScreen({ route, navigation }: Props) {
                           ? 'bg-blue-100'
                           : reg.tournament.status === 'CANCELLED'
                             ? 'bg-red-100'
-                            : 'bg-surface'
+                            : 'bg-surface dark:bg-surface-dark'
                     }`}
                   >
                     <Text
@@ -437,8 +437,8 @@ export function PlayerProfileScreen({ route, navigation }: Props) {
                           : reg.tournament.status === 'IN_PROGRESS'
                             ? 'text-blue-600'
                             : reg.tournament.status === 'CANCELLED'
-                              ? 'text-red-500'
-                              : 'text-muted'
+                              ? 'text-red-500 dark:text-red-300'
+                              : 'text-muted dark:text-muted-dark'
                       }`}
                     >
                       {reg.tournament.status.replace(/_/g, ' ')}

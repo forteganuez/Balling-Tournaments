@@ -49,8 +49,8 @@ export function DashboardScreen() {
 
   if (!user) {
     return (
-      <View className="flex-1 items-center justify-center px-4 bg-white">
-        <Text className="text-lg text-muted text-center mb-4">
+      <View className="flex-1 items-center justify-center px-4 bg-white dark:bg-background-dark">
+        <Text className="text-lg text-muted dark:text-muted-dark text-center mb-4">
           Sign in to see your tournaments
         </Text>
       </View>
@@ -62,7 +62,7 @@ export function DashboardScreen() {
   if (error) {
     return (
       <View className="flex-1 items-center justify-center px-4">
-        <Text className="text-red-600 text-center mb-4">{error}</Text>
+        <Text className="text-red-600 dark:text-red-300 text-center mb-4">{error}</Text>
         <Pressable onPress={fetchRegistrations} className="bg-primary px-6 py-2 rounded-lg">
           <Text className="text-white font-medium">Retry</Text>
         </Pressable>
@@ -91,14 +91,14 @@ export function DashboardScreen() {
       <Pressable
         key={reg.id}
         onPress={() => navigation.navigate('TournamentDetail', { id: t.id })}
-        className="bg-white rounded-xl p-4 mb-3 border border-border flex-row items-center"
+        className="bg-white dark:bg-card-dark rounded-xl p-4 mb-3 border border-border dark:border-border-dark flex-row items-center"
       >
         <SportIcon sport={t.sport} size={28} />
         <View className="ml-3 flex-1">
-          <Text className="text-base font-semibold text-secondary" numberOfLines={1}>
+          <Text className="text-base font-semibold text-secondary dark:text-secondary-dark" numberOfLines={1}>
             {t.name}
           </Text>
-          <Text className="text-sm text-muted">{dateStr} · {t.location}</Text>
+          <Text className="text-sm text-muted dark:text-muted-dark">{dateStr} · {t.location}</Text>
         </View>
         <View className={`px-2 py-1 rounded-full ${statusColors[t.status]?.split(' ')[0] ?? 'bg-gray-100'}`}>
           <Text className={`text-xs font-medium ${statusColors[t.status]?.split(' ')[1] ?? 'text-gray-800'}`}>
@@ -111,13 +111,13 @@ export function DashboardScreen() {
 
   if (registrations.length === 0) {
     return (
-      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top']}>
         <View className="flex-1 items-center justify-center px-4">
           <Text className="text-4xl mb-4">🏆</Text>
-          <Text className="text-lg font-semibold text-secondary mb-2">
+          <Text className="text-lg font-semibold text-secondary dark:text-secondary-dark mb-2">
             No tournaments yet
           </Text>
-          <Text className="text-muted text-center mb-6">
+          <Text className="text-muted dark:text-muted-dark text-center mb-6">
             Join your first tournament and start competing!
           </Text>
           <Pressable
@@ -132,20 +132,20 @@ export function DashboardScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-surface dark:bg-background-dark" edges={['top']}>
       <ScrollView
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={fetchRegistrations} />
         }
       >
         <View className="px-4 pt-4 pb-8">
-          <Text className="text-2xl font-bold text-secondary mb-4">
+          <Text className="text-2xl font-bold text-secondary dark:text-secondary-dark mb-4">
             My Tournaments
           </Text>
 
           {upcoming.length > 0 && (
             <View className="mb-6">
-              <Text className="text-base font-semibold text-muted mb-2 uppercase tracking-wide">
+              <Text className="text-base font-semibold text-muted dark:text-muted-dark mb-2 uppercase tracking-wide">
                 Upcoming
               </Text>
               {upcoming.map(renderRegistrationItem)}
@@ -154,7 +154,7 @@ export function DashboardScreen() {
 
           {past.length > 0 && (
             <View>
-              <Text className="text-base font-semibold text-muted mb-2 uppercase tracking-wide">
+              <Text className="text-base font-semibold text-muted dark:text-muted-dark mb-2 uppercase tracking-wide">
                 Past
               </Text>
               {past.map(renderRegistrationItem)}

@@ -15,6 +15,7 @@ import { useAuth } from '../hooks/useAuth';
 import type { HomeStackParamList } from '../navigation/types';
 import type { Sport } from '../lib/types';
 import * as api from '../lib/api';
+import { useTheme } from '../context/ThemeContext';
 import { combineDateAndTime, formatLongDate, formatTimeLabel } from '../lib/dateUtils';
 
 type HostMatchScreenProps = NativeStackScreenProps<HomeStackParamList, 'HostMatch'>;
@@ -23,6 +24,7 @@ const SPORTS: Sport[] = ['PADEL', 'TENNIS', 'SQUASH'];
 
 export function HostMatchScreen({ navigation, route }: HostMatchScreenProps) {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [sport, setSport] = useState<Sport>(user?.preferredSport ?? 'PADEL');
   const [location, setLocation] = useState(user?.city ?? '');
   const [venue, setVenue] = useState('');
@@ -76,7 +78,7 @@ export function HostMatchScreen({ navigation, route }: HostMatchScreenProps) {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
@@ -94,14 +96,14 @@ export function HostMatchScreen({ navigation, route }: HostMatchScreenProps) {
             </Text>
           </View>
 
-          <View className="mt-6 rounded-[30px] border border-[#d9e2ec] bg-[#f8fbff] px-4 py-4">
-            <Text className="text-xs font-semibold uppercase tracking-[1.5px] text-[#829ab1]">
+          <View className="mt-6 rounded-[30px] border border-border dark:border-border-dark bg-slate-50 dark:bg-slate-900/60 px-4 py-4">
+            <Text className="text-xs font-semibold uppercase tracking-[1.5px] text-slate-400 dark:text-slate-500">
               Schedule
             </Text>
-            <Text className="mt-2 text-xl font-bold text-[#102a43]">
+            <Text className="mt-2 text-xl font-bold text-slate-900 dark:text-slate-50">
               {scheduledDate ? formatLongDate(scheduledDate) : 'No date selected'}
             </Text>
-            <Text className="mt-1 text-base text-[#486581]">
+            <Text className="mt-1 text-base text-slate-600 dark:text-slate-300">
               {scheduledTime ? formatTimeLabel(scheduledTime) : 'No time slot selected'}
             </Text>
             <Pressable
@@ -118,68 +120,68 @@ export function HostMatchScreen({ navigation, route }: HostMatchScreenProps) {
           </View>
 
           <View className="mt-6">
-            <Text className="mb-2 text-sm font-semibold text-[#102a43]">Sport</Text>
+            <Text className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-50">Sport</Text>
             <View className="mb-4 flex-row">
               {SPORTS.map((value) => (
                 <Pressable
                   key={value}
                   onPress={() => setSport(value)}
                   className={`mr-2 rounded-full px-4 py-2.5 ${
-                    sport === value ? 'bg-[#102a43]' : 'bg-[#f5f7fa]'
+                    sport === value ? 'bg-slate-900 dark:bg-primary-dark' : 'bg-slate-100 dark:bg-slate-800'
                   }`}
                 >
-                  <Text className={`font-semibold ${sport === value ? 'text-white' : 'text-[#102a43]'}`}>
+                  <Text className={`font-semibold ${sport === value ? 'text-white' : 'text-slate-900 dark:text-slate-100'}`}>
                     {value}
                   </Text>
                 </Pressable>
               ))}
             </View>
 
-            <Text className="mb-2 text-sm font-semibold text-[#102a43]">Location</Text>
+            <Text className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-50">Location</Text>
             <TextInput
               value={location}
               onChangeText={setLocation}
               placeholder="Amsterdam, Noord"
-              placeholderTextColor="#9aa5b1"
-              className="mb-4 rounded-2xl border border-[#d9e2ec] bg-white px-4 py-3 text-base text-[#102a43]"
+              placeholderTextColor={theme.textSecondary}
+              className="mb-4 rounded-2xl border border-border dark:border-border-dark bg-white dark:bg-card-dark px-4 py-3 text-base text-slate-900 dark:text-slate-50"
             />
 
-            <Text className="mb-2 text-sm font-semibold text-[#102a43]">Venue</Text>
+            <Text className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-50">Venue</Text>
             <TextInput
               value={venue}
               onChangeText={setVenue}
               placeholder="Optional club or court"
-              placeholderTextColor="#9aa5b1"
-              className="mb-4 rounded-2xl border border-[#d9e2ec] bg-white px-4 py-3 text-base text-[#102a43]"
+              placeholderTextColor={theme.textSecondary}
+              className="mb-4 rounded-2xl border border-border dark:border-border-dark bg-white dark:bg-card-dark px-4 py-3 text-base text-slate-900 dark:text-slate-50"
             />
 
-            <Text className="mb-2 text-sm font-semibold text-[#102a43]">Notes</Text>
+            <Text className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-50">Notes</Text>
             <TextInput
               value={notes}
               onChangeText={setNotes}
               placeholder="Optional: level, format, or anything players should know"
-              placeholderTextColor="#9aa5b1"
+              placeholderTextColor={theme.textSecondary}
               multiline
               numberOfLines={5}
               textAlignVertical="top"
-              className="mb-6 rounded-2xl border border-[#d9e2ec] bg-white px-4 py-3 text-base text-[#102a43]"
+              className="mb-6 rounded-2xl border border-border dark:border-border-dark bg-white dark:bg-card-dark px-4 py-3 text-base text-slate-900 dark:text-slate-50"
             />
           </View>
         </ScrollView>
 
-        <View className="border-t border-[#e6edf3] bg-white px-5 pb-4 pt-3">
+        <View className="border-t border-border dark:border-border-dark bg-white dark:bg-card-dark px-5 pb-4 pt-3">
           <View className="flex-row gap-3">
             <Pressable
               onPress={() => navigation.goBack()}
-              className="flex-1 items-center rounded-2xl border border-[#d9e2ec] px-4 py-4"
+              className="flex-1 items-center rounded-2xl border border-border dark:border-border-dark px-4 py-4"
             >
-              <Text className="text-base font-semibold text-[#486581]">Cancel</Text>
+              <Text className="text-base font-semibold text-slate-600 dark:text-slate-300">Cancel</Text>
             </Pressable>
             <Pressable
               onPress={handleCreate}
               disabled={creating}
               className={`flex-1 items-center rounded-2xl px-4 py-4 ${
-                creating ? 'bg-[#9fb3c8]' : 'bg-[#102a43]'
+                creating ? 'bg-slate-400 dark:bg-slate-600' : 'bg-slate-900 dark:bg-primary-dark'
               }`}
             >
               <Text className="text-base font-semibold text-white">

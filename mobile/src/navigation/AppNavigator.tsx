@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Text } from 'react-native';
 import { HomeScreen } from '../screens/HomeScreen';
 import { HostMatchScreen } from '../screens/HostMatchScreen';
 import { MatchScheduleScreen } from '../screens/MatchScheduleScreen';
@@ -16,14 +17,14 @@ import { PlayerProfileScreen } from '../screens/PlayerProfileScreen';
 import { AdminUsersScreen } from '../screens/AdminUsersScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { PaymentHistoryScreen } from '../screens/PaymentHistoryScreen';
+import { NotificationPreferencesScreen } from '../screens/NotificationPreferencesScreen';
 import type {
   AppTabParamList,
   HomeStackParamList,
   TournamentsStackParamList,
   ProfileStackParamList,
 } from './types';
-import { colors } from '../constants/theme';
-import { Text } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -31,8 +32,17 @@ const TournamentsStack = createNativeStackNavigator<TournamentsStackParamList>()
 const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 
 function HomeNavigator() {
+  const { theme } = useTheme();
+
   return (
-    <HomeStack.Navigator>
+    <HomeStack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: theme.card },
+        headerTintColor: theme.text,
+        headerTitleStyle: { color: theme.text },
+        contentStyle: { backgroundColor: theme.background },
+      }}
+    >
       <HomeStack.Screen
         name="HomeMain"
         component={HomeScreen}
@@ -53,8 +63,18 @@ function HomeNavigator() {
 }
 
 function TournamentsNavigator() {
+  const { theme } = useTheme();
+
   return (
-    <TournamentsStack.Navigator>
+    <TournamentsStack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: theme.card },
+        headerTintColor: theme.text,
+        headerTitleStyle: { color: theme.text },
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: theme.background },
+      }}
+    >
       <TournamentsStack.Screen
         name="TournamentList"
         component={TournamentsScreen}
@@ -90,8 +110,18 @@ function TournamentsNavigator() {
 }
 
 function ProfileNavigator() {
+  const { theme } = useTheme();
+
   return (
-    <ProfileStack.Navigator>
+    <ProfileStack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: theme.card },
+        headerTintColor: theme.text,
+        headerTitleStyle: { color: theme.text },
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: theme.background },
+      }}
+    >
       <ProfileStack.Screen
         name="MyProfile"
         component={ProfileScreen}
@@ -122,6 +152,11 @@ function ProfileNavigator() {
         component={PaymentHistoryScreen}
         options={{ title: 'Payment History' }}
       />
+      <ProfileStack.Screen
+        name="NotificationPreferences"
+        component={NotificationPreferencesScreen}
+        options={{ title: 'Notifications' }}
+      />
     </ProfileStack.Navigator>
   );
 }
@@ -143,6 +178,8 @@ function TabIcon({ label }: { label: string; focused: boolean }) {
 }
 
 export function AppNavigator() {
+  const { theme } = useTheme();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -150,8 +187,13 @@ export function AppNavigator() {
         tabBarIcon: ({ focused }) => (
           <TabIcon label={route.name} focused={focused} />
         ),
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.muted,
+        sceneStyle: { backgroundColor: theme.background },
+        tabBarStyle: {
+          backgroundColor: theme.card,
+          borderTopColor: theme.border,
+        },
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textSecondary,
       })}
     >
       <Tab.Screen name="Home" component={HomeNavigator} />

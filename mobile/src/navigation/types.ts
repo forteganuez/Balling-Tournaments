@@ -49,6 +49,7 @@ export type ProfileStackParamList = {
   Settings: undefined;
   AdminUsers: undefined;
   PaymentHistory: undefined;
+  NotificationPreferences: undefined;
 };
 
 declare global {

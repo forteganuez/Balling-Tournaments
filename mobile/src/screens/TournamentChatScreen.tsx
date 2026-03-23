@@ -227,20 +227,20 @@ export function TournamentChatScreen({ route }: Props) {
       const avatarUrl = item.organizer?.avatarUrl ?? null;
 
       return (
-        <View className="bg-surface rounded-xl p-4 mb-3 mx-4">
+        <View className="bg-surface dark:bg-surface-dark rounded-xl p-4 mb-3 mx-4">
           <View className="flex-row items-center mb-2">
             <Avatar name={name} avatarUrl={avatarUrl} size={32} />
             <View className="ml-2.5 flex-row items-center flex-1">
-              <Text className="text-sm font-semibold text-secondary">
+              <Text className="text-sm font-semibold text-secondary dark:text-secondary-dark">
                 {name}
               </Text>
               <OrganizerBadge />
             </View>
-            <Text className="text-xs text-muted">
+            <Text className="text-xs text-muted dark:text-muted-dark">
               {relativeTime(item.createdAt)}
             </Text>
           </View>
-          <Text className="text-sm text-secondary leading-5">
+          <Text className="text-sm text-secondary dark:text-secondary-dark leading-5">
             {item.message}
           </Text>
         </View>
@@ -269,14 +269,14 @@ export function TournamentChatScreen({ route }: Props) {
           )}
           <View
             className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 ${
-              isOwn ? 'bg-primary rounded-br-sm' : 'bg-surface rounded-bl-sm'
+              isOwn ? 'bg-primary rounded-br-sm' : 'bg-surface dark:bg-surface-dark rounded-bl-sm'
             }`}
           >
             {!isOwn && (
               <View className="flex-row items-center mb-1">
                 <Text
                   className={`text-xs font-semibold ${
-                    isOwn ? 'text-white/80' : 'text-secondary'
+                    isOwn ? 'text-white/80' : 'text-secondary dark:text-secondary-dark'
                   }`}
                 >
                   {senderName}
@@ -286,14 +286,14 @@ export function TournamentChatScreen({ route }: Props) {
             )}
             <Text
               className={`text-sm leading-5 ${
-                isOwn ? 'text-white' : 'text-secondary'
+                isOwn ? 'text-white' : 'text-secondary dark:text-secondary-dark'
               }`}
             >
               {item.message}
             </Text>
             <Text
               className={`text-xs mt-1 ${
-                isOwn ? 'text-white/60 text-right' : 'text-muted'
+                isOwn ? 'text-white/60 text-right' : 'text-muted dark:text-muted-dark'
               }`}
             >
               {relativeTime(item.createdAt)}
@@ -328,11 +328,11 @@ export function TournamentChatScreen({ route }: Props) {
     if (announcementsLoading) return null;
     return (
       <View className="flex-1 items-center justify-center px-6 pt-20">
-        <Text className="text-muted text-center text-base">
+        <Text className="text-muted dark:text-muted-dark text-center text-base">
           No announcements yet
         </Text>
         {isOrganizer && (
-          <Text className="text-muted text-center text-sm mt-1">
+          <Text className="text-muted dark:text-muted-dark text-center text-sm mt-1">
             Post the first announcement below
           </Text>
         )}
@@ -344,10 +344,10 @@ export function TournamentChatScreen({ route }: Props) {
     if (chatLoading) return null;
     return (
       <View className="flex-1 items-center justify-center px-6 pt-20">
-        <Text className="text-muted text-center text-base">
+        <Text className="text-muted dark:text-muted-dark text-center text-base">
           No messages yet
         </Text>
-        <Text className="text-muted text-center text-sm mt-1">
+        <Text className="text-muted dark:text-muted-dark text-center text-sm mt-1">
           Start the conversation!
         </Text>
       </View>
@@ -357,14 +357,14 @@ export function TournamentChatScreen({ route }: Props) {
   // ── Render ──────────────────────────────────────────────────────────
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         {/* Tab bar */}
-        <View className="flex-row border-b border-gray-200">
+        <View className="flex-row border-b border-border dark:border-border-dark">
           <Pressable
             onPress={() => setActiveTab('announcements')}
             className={`flex-1 py-3 items-center border-b-2 ${
@@ -375,7 +375,7 @@ export function TournamentChatScreen({ route }: Props) {
           >
             <Text
               className={`text-sm font-semibold ${
-                activeTab === 'announcements' ? 'text-primary' : 'text-muted'
+                activeTab === 'announcements' ? 'text-primary' : 'text-muted dark:text-muted-dark'
               }`}
             >
               Announcements
@@ -389,7 +389,7 @@ export function TournamentChatScreen({ route }: Props) {
           >
             <Text
               className={`text-sm font-semibold ${
-                activeTab === 'chat' ? 'text-primary' : 'text-muted'
+                activeTab === 'chat' ? 'text-primary' : 'text-muted dark:text-muted-dark'
               }`}
             >
               Chat
@@ -406,7 +406,7 @@ export function TournamentChatScreen({ route }: Props) {
               </View>
             ) : announcementsError ? (
               <View className="flex-1 items-center justify-center px-6">
-                <Text className="text-red-600 text-center mb-4">
+                <Text className="text-red-600 dark:text-red-300 text-center mb-4">
                   {announcementsError}
                 </Text>
                 <Pressable
@@ -429,9 +429,9 @@ export function TournamentChatScreen({ route }: Props) {
 
             {/* Organizer input */}
             {isOrganizer && (
-              <View className="flex-row items-end px-4 py-3 border-t border-gray-200 bg-white">
+              <View className="flex-row items-end px-4 py-3 border-t border-border dark:border-border-dark bg-white dark:bg-card-dark">
                 <TextInput
-                  className="flex-1 bg-surface rounded-xl px-4 py-2.5 text-sm text-secondary mr-2 max-h-24"
+                  className="flex-1 bg-surface dark:bg-surface-dark rounded-xl px-4 py-2.5 text-sm text-secondary dark:text-secondary-dark mr-2 max-h-24"
                   placeholder="Post an announcement..."
                   placeholderTextColor="#6B7280"
                   value={announcementText}
@@ -472,7 +472,7 @@ export function TournamentChatScreen({ route }: Props) {
               </View>
             ) : chatError ? (
               <View className="flex-1 items-center justify-center px-6">
-                <Text className="text-red-600 text-center mb-4">
+                <Text className="text-red-600 dark:text-red-300 text-center mb-4">
                   {chatError}
                 </Text>
                 <Pressable
@@ -495,9 +495,9 @@ export function TournamentChatScreen({ route }: Props) {
             )}
 
             {/* Chat input bar */}
-            <View className="flex-row items-end px-4 py-3 border-t border-gray-200 bg-white">
+            <View className="flex-row items-end px-4 py-3 border-t border-border dark:border-border-dark bg-white dark:bg-card-dark">
               <TextInput
-                className="flex-1 bg-surface rounded-xl px-4 py-2.5 text-sm text-secondary mr-2 max-h-24"
+                className="flex-1 bg-surface dark:bg-surface-dark rounded-xl px-4 py-2.5 text-sm text-secondary dark:text-secondary-dark mr-2 max-h-24"
                 placeholder="Type a message..."
                 placeholderTextColor="#6B7280"
                 value={chatText}

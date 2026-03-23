@@ -132,7 +132,7 @@ export function EditProfileScreen() {
   const { text: skillTextColor, bg: skillBgColor } = getSkillColor(skillLevel);
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
@@ -166,9 +166,9 @@ export function EditProfileScreen() {
           <View className="px-6">
             {/* Name */}
             <View className="mb-4">
-              <Text className="text-sm font-medium text-secondary mb-1">Name</Text>
+              <Text className="text-sm font-medium text-secondary dark:text-secondary-dark mb-1">Name</Text>
               <TextInput
-                className="border border-border rounded-xl px-4 py-3 text-base text-secondary"
+                className="border border-border dark:border-border-dark rounded-xl px-4 py-3 text-base text-secondary dark:text-secondary-dark"
                 value={name}
                 onChangeText={setName}
                 placeholder="Your name"
@@ -179,9 +179,9 @@ export function EditProfileScreen() {
 
             {/* Bio */}
             <View className="mb-4">
-              <Text className="text-sm font-medium text-secondary mb-1">About me</Text>
+              <Text className="text-sm font-medium text-secondary dark:text-secondary-dark mb-1">About me</Text>
               <TextInput
-                className="border border-border rounded-xl px-4 py-3 text-base text-secondary"
+                className="border border-border dark:border-border-dark rounded-xl px-4 py-3 text-base text-secondary dark:text-secondary-dark"
                 value={bio}
                 onChangeText={setBio}
                 placeholder="Tell us about yourself..."
@@ -194,9 +194,9 @@ export function EditProfileScreen() {
 
             {/* City */}
             <View className="mb-4">
-              <Text className="text-sm font-medium text-secondary mb-1">City</Text>
+              <Text className="text-sm font-medium text-secondary dark:text-secondary-dark mb-1">City</Text>
               <TextInput
-                className="border border-border rounded-xl px-4 py-3 text-base text-secondary"
+                className="border border-border dark:border-border-dark rounded-xl px-4 py-3 text-base text-secondary dark:text-secondary-dark"
                 value={city}
                 onChangeText={setCity}
                 placeholder="Where are you based?"
@@ -206,28 +206,28 @@ export function EditProfileScreen() {
             </View>
 
             <View className="mb-4">
-              <Text className="text-sm font-medium text-secondary mb-1">
+              <Text className="text-sm font-medium text-secondary dark:text-secondary-dark mb-1">
                 Date of Birth
               </Text>
               <Pressable
                 onPress={() => setDatePickerVisible(true)}
-                className="rounded-xl border border-border px-4 py-3"
+                className="rounded-xl border border-border dark:border-border-dark px-4 py-3"
               >
-                <Text className="text-xs font-semibold uppercase tracking-[1px] text-muted">
+                <Text className="text-xs font-semibold uppercase tracking-[1px] text-muted dark:text-muted-dark">
                   Birthday
                 </Text>
-                <Text className="mt-1 text-base font-semibold text-secondary">
+                <Text className="mt-1 text-base font-semibold text-secondary dark:text-secondary-dark">
                   {dateOfBirth ? formatLongDate(dateOfBirth) : 'Choose your date of birth'}
                 </Text>
               </Pressable>
-              <Text className="text-xs text-muted mt-1.5">
+              <Text className="text-xs text-muted dark:text-muted-dark mt-1.5">
                 Optional. Tap to open the calendar.
               </Text>
             </View>
 
             {/* Skill Level */}
             <View className="mb-4">
-              <Text className="text-sm font-medium text-secondary mb-2">
+              <Text className="text-sm font-medium text-secondary dark:text-secondary-dark mb-2">
                 Skill Level
               </Text>
               <View className="items-center mb-3">
@@ -246,12 +246,12 @@ export function EditProfileScreen() {
                       key={level}
                       onPress={() => setSkillLevel(level)}
                       className={`w-8 h-8 rounded-full items-center justify-center ${
-                        isSelected ? skillBgColor : 'bg-surface'
+                        isSelected ? skillBgColor : 'bg-surface dark:bg-surface-dark'
                       }`}
                     >
                       <Text
                         className={`text-sm font-semibold ${
-                          isSelected ? 'text-white' : 'text-muted'
+                          isSelected ? 'text-white' : 'text-muted dark:text-muted-dark'
                         }`}
                       >
                         {level}
@@ -264,7 +264,7 @@ export function EditProfileScreen() {
 
             {/* Sports */}
             <View className="mb-6">
-              <Text className="text-sm font-medium text-secondary mb-2">
+              <Text className="text-sm font-medium text-secondary dark:text-secondary-dark mb-2">
                 Preferred Sports
               </Text>
               <View className="flex-row gap-3">
@@ -277,13 +277,13 @@ export function EditProfileScreen() {
                       className={`flex-1 items-center py-3 rounded-xl border ${
                         isSelected
                           ? 'bg-primary/10 border-primary'
-                          : 'bg-white border-border'
+                          : 'bg-white dark:bg-card-dark border-border dark:border-border-dark'
                       }`}
                     >
                       <Text className="text-2xl mb-1">{s.icon}</Text>
                       <Text
                         className={`text-xs font-medium ${
-                          isSelected ? 'text-primary' : 'text-muted'
+                          isSelected ? 'text-primary' : 'text-muted dark:text-muted-dark'
                         }`}
                       >
                         {s.label}

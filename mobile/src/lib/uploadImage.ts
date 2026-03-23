@@ -1,7 +1,6 @@
 import * as ImageManipulator from 'expo-image-manipulator';
+import { getApiBaseCandidates, joinApiUrl, rememberWorkingApiBaseUrl } from './apiConfig';
 import { getToken } from './storage';
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 export async function uploadImage(
   uri: string,
@@ -27,13 +26,32 @@ export async function uploadImage(
     type: 'image/jpeg',
   } as unknown as Blob);
 
-  const response = await fetch(`${API_URL}/api/uploads/image`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: formData,
-  });
+  let response: Response | null = null;
+  let networkError: unknown = null;
+
+  for (const baseUrl of getApiBaseCandidates()) {
+    try {
+      response = await fetch(joinApiUrl(baseUrl, '/api/uploads/image'), {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      rememberWorkingApiBaseUrl(baseUrl);
+      break;
+    } catch (error) {
+      networkError = error;
+    }
+  }
+
+  if (!response) {
+    if (networkError instanceof Error) {
+      throw networkError;
+    }
+
+    throw new Error('Image upload failed.');
+  }
 
   let payload: { error?: string; publicUrl?: string } = {};
   try {

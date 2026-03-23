@@ -3,6 +3,7 @@ import { View, Text, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/OnboardingNavigator';
+import { OnboardingProgress } from '../../components/OnboardingProgress';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingSkill'>;
 
@@ -25,9 +26,10 @@ export function OnboardingSkillScreen({ navigation, route }: Props) {
   const { label, colorClass, bgClass } = getLevelInfo(skillLevel);
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-      <View className="flex-1 px-6 pt-12">
-        <Text className="text-2xl font-bold text-secondary text-center mb-8">
+    <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top']}>
+      <OnboardingProgress current={3} total={5} onBack={() => navigation.goBack()} />
+      <View className="flex-1 px-6 pt-8">
+        <Text className="text-2xl font-bold text-secondary dark:text-secondary-dark text-center mb-8">
           What's your level?
         </Text>
 
@@ -48,12 +50,12 @@ export function OnboardingSkillScreen({ navigation, route }: Props) {
                 key={level}
                 onPress={() => setSkillLevel(level)}
                 className={`w-8 h-8 rounded-full items-center justify-center ${
-                  isSelected ? bgClass : 'bg-surface'
+                  isSelected ? bgClass : 'bg-surface dark:bg-surface-dark'
                 }`}
               >
                 <Text
                   className={`text-sm font-semibold ${
-                    isSelected ? 'text-white' : 'text-muted'
+                    isSelected ? 'text-white' : 'text-muted dark:text-muted-dark'
                   }`}
                 >
                   {level}

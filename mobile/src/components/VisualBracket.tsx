@@ -50,7 +50,7 @@ function PlayerBadge({
           <Text className="text-white text-xs font-bold">{initial}</Text>
         </View>
       )}
-      <Text className="ml-2 text-sm text-secondary" numberOfLines={1}>
+      <Text className="ml-2 text-sm text-secondary dark:text-secondary-dark" numberOfLines={1}>
         {name}
       </Text>
     </View>
@@ -93,7 +93,7 @@ function SingleEliminationBracket({
 
   if (rounds.length === 0) {
     return (
-      <Text className="text-muted text-center py-4">No matches generated yet</Text>
+      <Text className="text-muted dark:text-muted-dark text-center py-4">No matches generated yet</Text>
     );
   }
 
@@ -107,7 +107,7 @@ function SingleEliminationBracket({
             <View key={roundData.round} className="flex-row">
               {/* Round column */}
               <View className="items-center" style={{ width: 180 }}>
-                <Text className="text-xs font-semibold text-muted mb-3">
+                <Text className="text-xs font-semibold text-muted dark:text-muted-dark mb-3">
                   {getRoundLabel(roundData.round, totalRounds)}
                 </Text>
 
@@ -124,14 +124,14 @@ function SingleEliminationBracket({
                     return (
                       <View key={match.id} className="mb-4 items-center">
                         <View
-                          className={`rounded-lg p-3 bg-white border ${
-                            isUserMatch ? 'border-primary border-2' : 'border-border'
+                          className={`rounded-lg p-3 bg-white dark:bg-card-dark border ${
+                            isUserMatch ? 'border-primary border-2' : 'border-border dark:border-border-dark'
                           }`}
                           style={{ width: 164 }}
                         >
                           {bothEmpty ? (
                             <View className="items-center py-3">
-                              <Text className="text-xs text-muted">
+                              <Text className="text-xs text-muted dark:text-muted-dark">
                                 Awaiting players
                               </Text>
                             </View>
@@ -159,11 +159,11 @@ function SingleEliminationBracket({
                               </View>
 
                               {/* VS divider */}
-                              <View className="border-t border-gray-100 my-1" />
-                              <Text className="text-center text-xs text-muted py-0.5">
+                              <View className="border-t border-border dark:border-border-dark my-1" />
+                              <Text className="text-center text-xs text-muted dark:text-muted-dark py-0.5">
                                 VS
                               </Text>
-                              <View className="border-t border-gray-100 my-1" />
+                              <View className="border-t border-border dark:border-border-dark my-1" />
 
                               {/* Player 2 row */}
                               <View
@@ -188,8 +188,8 @@ function SingleEliminationBracket({
 
                               {/* Score */}
                               {isCompleted && match.score != null && (
-                                <View className="mt-2 pt-1 border-t border-gray-100 items-center">
-                                  <Text className="text-xs font-semibold text-secondary">
+                                <View className="mt-2 pt-1 border-t border-border dark:border-border-dark items-center">
+                                  <Text className="text-xs font-semibold text-secondary dark:text-secondary-dark">
                                     {match.score}
                                   </Text>
                                 </View>
@@ -214,9 +214,9 @@ function SingleEliminationBracket({
                     if (idx % 2 !== 0) return null;
                     return (
                       <View key={idx} className="items-center justify-center my-2">
-                        <View className="border-r border-gray-300" style={{ width: 12, height: 20 }} />
-                        <View className="border-t border-gray-300" style={{ width: 24, height: 0 }} />
-                        <View className="border-r border-gray-300" style={{ width: 12, height: 20 }} />
+                        <View className="border-r border-border dark:border-border-dark" style={{ width: 12, height: 20 }} />
+                        <View className="border-t border-border dark:border-border-dark" style={{ width: 24, height: 0 }} />
+                        <View className="border-r border-border dark:border-border-dark" style={{ width: 12, height: 20 }} />
                       </View>
                     );
                   })}
@@ -288,30 +288,30 @@ function RoundRobinStandings({
 
   if (standings.length === 0) {
     return (
-      <Text className="text-muted text-center py-4">No standings available yet</Text>
+      <Text className="text-muted dark:text-muted-dark text-center py-4">No standings available yet</Text>
     );
   }
 
   const renderHeader = () => (
-    <View className="flex-row py-2 px-3 bg-surface border-b border-border rounded-t-lg">
-      <Text className="text-xs font-semibold text-muted" style={{ width: 28 }}>
+    <View className="flex-row py-2 px-3 bg-surface dark:bg-surface-dark border-b border-border dark:border-border-dark rounded-t-lg">
+      <Text className="text-xs font-semibold text-muted dark:text-muted-dark" style={{ width: 28 }}>
         #
       </Text>
-      <Text className="text-xs font-semibold text-muted flex-1">Player</Text>
+      <Text className="text-xs font-semibold text-muted dark:text-muted-dark flex-1">Player</Text>
       <Text
-        className="text-xs font-semibold text-muted text-center"
+        className="text-xs font-semibold text-muted dark:text-muted-dark text-center"
         style={{ width: 36 }}
       >
         W
       </Text>
       <Text
-        className="text-xs font-semibold text-muted text-center"
+        className="text-xs font-semibold text-muted dark:text-muted-dark text-center"
         style={{ width: 36 }}
       >
         L
       </Text>
       <Text
-        className="text-xs font-semibold text-muted text-center"
+        className="text-xs font-semibold text-muted dark:text-muted-dark text-center"
         style={{ width: 40 }}
       >
         Pts
@@ -320,11 +320,11 @@ function RoundRobinStandings({
   );
 
   const renderItem = ({ item, index }: { item: StandingRow; index: number }) => (
-    <View className="flex-row py-3 px-3 border-b border-gray-100 bg-white items-center">
-      <Text className="text-sm font-semibold text-secondary" style={{ width: 28 }}>
+    <View className="flex-row py-3 px-3 border-b border-border dark:border-border-dark bg-white dark:bg-card-dark items-center">
+      <Text className="text-sm font-semibold text-secondary dark:text-secondary-dark" style={{ width: 28 }}>
         {index + 1}
       </Text>
-      <Text className="text-sm text-secondary flex-1" numberOfLines={1}>
+      <Text className="text-sm text-secondary dark:text-secondary-dark flex-1" numberOfLines={1}>
         {item.name}
       </Text>
       <Text
@@ -349,7 +349,7 @@ function RoundRobinStandings({
   );
 
   return (
-    <View className="rounded-lg overflow-hidden border border-border">
+    <View className="rounded-lg overflow-hidden border border-border dark:border-border-dark">
       {renderHeader()}
       <FlatList
         data={standings}
@@ -443,14 +443,14 @@ function DoubleEliminationBracket({
             return (
               <View key={match.id} className="items-center">
                 <View
-                  className={`rounded-lg p-4 bg-white border-2 ${
+                  className={`rounded-lg p-4 bg-white dark:bg-card-dark border-2 ${
                     isUserMatch ? 'border-primary' : 'border-purple-300'
                   }`}
                   style={{ width: 200 }}
                 >
                   {match.player1Id == null && match.player2Id == null ? (
                     <View className="items-center py-3">
-                      <Text className="text-xs text-muted">Awaiting finalists</Text>
+                      <Text className="text-xs text-muted dark:text-muted-dark">Awaiting finalists</Text>
                     </View>
                   ) : (
                     <>
@@ -469,9 +469,9 @@ function DoubleEliminationBracket({
                       >
                         <PlayerBadge playerId={match.player1Id} players={players} />
                       </View>
-                      <View className="border-t border-gray-100 my-1" />
-                      <Text className="text-center text-xs text-muted py-0.5">VS</Text>
-                      <View className="border-t border-gray-100 my-1" />
+                      <View className="border-t border-border dark:border-border-dark my-1" />
+                      <Text className="text-center text-xs text-muted dark:text-muted-dark py-0.5">VS</Text>
+                      <View className="border-t border-border dark:border-border-dark my-1" />
                       <View
                         className={`flex-row items-center pt-2 ${
                           isCompleted && match.winnerId === match.player2Id
@@ -488,8 +488,8 @@ function DoubleEliminationBracket({
                         <PlayerBadge playerId={match.player2Id} players={players} />
                       </View>
                       {isCompleted && match.score != null && (
-                        <View className="mt-2 pt-1 border-t border-gray-100 items-center">
-                          <Text className="text-xs font-semibold text-secondary">
+                        <View className="mt-2 pt-1 border-t border-border dark:border-border-dark items-center">
+                          <Text className="text-xs font-semibold text-secondary dark:text-secondary-dark">
                             {match.score}
                           </Text>
                         </View>
@@ -518,7 +518,7 @@ export function VisualBracket({
 }: VisualBracketProps) {
   if (matches.length === 0) {
     return (
-      <Text className="text-muted text-center py-4">No matches yet</Text>
+      <Text className="text-muted dark:text-muted-dark text-center py-4">No matches yet</Text>
     );
   }
 
@@ -543,7 +543,7 @@ export function VisualBracket({
       );
     default:
       return (
-        <Text className="text-muted text-center py-4">
+        <Text className="text-muted dark:text-muted-dark text-center py-4">
           Unsupported bracket format
         </Text>
       );

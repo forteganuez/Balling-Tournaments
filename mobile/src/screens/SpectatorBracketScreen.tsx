@@ -140,17 +140,17 @@ export function SpectatorBracketScreen({ route }: SpectatorBracketScreenProps) {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-white items-center justify-center">
+      <SafeAreaView className="flex-1 bg-white dark:bg-background-dark items-center justify-center">
         <ActivityIndicator size="large" color="#6366f1" />
-        <Text className="text-muted mt-3 text-sm">Loading bracket...</Text>
+        <Text className="text-muted dark:text-muted-dark mt-3 text-sm">Loading bracket...</Text>
       </SafeAreaView>
     );
   }
 
   if (error || !tournament) {
     return (
-      <SafeAreaView className="flex-1 bg-white items-center justify-center px-4">
-        <Text className="text-red-600 text-center text-base mb-4">
+      <SafeAreaView className="flex-1 bg-white dark:bg-background-dark items-center justify-center px-4">
+        <Text className="text-red-600 dark:text-red-300 text-center text-base mb-4">
           {error ?? 'Tournament not found'}
         </Text>
         <Pressable
@@ -168,7 +168,7 @@ export function SpectatorBracketScreen({ route }: SpectatorBracketScreenProps) {
   const matches = tournament.matches ?? [];
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-white dark:bg-background-dark">
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ flexGrow: 1 }}
@@ -182,7 +182,7 @@ export function SpectatorBracketScreen({ route }: SpectatorBracketScreenProps) {
             <View className="flex-row items-center flex-1 mr-3">
               <SportIcon sport={tournament.sport} size={28} />
               <Text
-                className="text-xl font-bold text-secondary ml-2 flex-1"
+                className="text-xl font-bold text-secondary dark:text-secondary-dark ml-2 flex-1"
                 numberOfLines={2}
               >
                 {tournament.name}
@@ -192,7 +192,7 @@ export function SpectatorBracketScreen({ route }: SpectatorBracketScreenProps) {
             {/* Share button */}
             <Pressable
               onPress={handleShare}
-              className="bg-surface rounded-full p-2.5"
+              className="bg-surface dark:bg-surface-dark rounded-full p-2.5"
               hitSlop={8}
             >
               <Text className="text-lg">&#x1F517;</Text>
@@ -224,10 +224,10 @@ export function SpectatorBracketScreen({ route }: SpectatorBracketScreenProps) {
             />
           ) : (
             <View className="flex-1 items-center justify-center py-16">
-              <Text className="text-muted text-base text-center">
+              <Text className="text-muted dark:text-muted-dark text-base text-center">
                 No matches generated yet
               </Text>
-              <Text className="text-muted text-sm text-center mt-1">
+              <Text className="text-muted dark:text-muted-dark text-sm text-center mt-1">
                 Pull down to refresh
               </Text>
             </View>

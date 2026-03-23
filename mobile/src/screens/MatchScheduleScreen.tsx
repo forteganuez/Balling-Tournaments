@@ -50,17 +50,17 @@ export function MatchScheduleScreen({ navigation, route }: MatchScheduleScreenPr
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
-      <View className="border-b border-[#e6edf3] px-5 pb-4 pt-2">
+    <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top', 'bottom']}>
+      <View className="border-b border-border dark:border-border-dark px-5 pb-4 pt-2">
         <View className="flex-row items-start justify-between">
           <View className="flex-1 pr-4">
-            <Text className="text-3xl font-bold text-[#102a43]">Pick match schedule</Text>
-            <Text className="mt-2 text-base leading-6 text-[#6b7c93]">
+            <Text className="text-3xl font-bold text-slate-900 dark:text-slate-50">Pick match schedule</Text>
+            <Text className="mt-2 text-base leading-6 text-slate-500 dark:text-slate-400">
               Choose the date and a 30-minute slot so the host post feels definite.
             </Text>
           </View>
-          <Pressable onPress={() => navigation.goBack()} className="rounded-full bg-[#f5f7fa] px-3 py-2">
-            <Text className="font-semibold text-[#102a43]">Back</Text>
+          <Pressable onPress={() => navigation.goBack()} className="rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-2">
+            <Text className="font-semibold text-slate-900 dark:text-slate-100">Back</Text>
           </Pressable>
         </View>
 
@@ -78,21 +78,21 @@ export function MatchScheduleScreen({ navigation, route }: MatchScheduleScreenPr
       </View>
 
       <ScrollView className="flex-1 px-5 pt-5" contentContainerStyle={{ paddingBottom: 40 }}>
-        <View className="rounded-[28px] border border-[#d9e2ec] bg-[#f8fbff] px-4 py-4">
+        <View className="rounded-[28px] border border-border dark:border-border-dark bg-slate-50 dark:bg-slate-900/60 px-4 py-4">
           <View className="mb-4 flex-row items-center justify-between">
-            <Pressable onPress={() => goToMonth(-1)} className="rounded-full bg-white px-4 py-2">
-              <Text className="font-semibold text-[#102a43]">Prev</Text>
+            <Pressable onPress={() => goToMonth(-1)} className="rounded-full bg-white dark:bg-card-dark px-4 py-2">
+              <Text className="font-semibold text-slate-900 dark:text-slate-100">Prev</Text>
             </Pressable>
-            <Text className="text-lg font-bold text-[#102a43]">{formatMonthLabel(monthDate)}</Text>
-            <Pressable onPress={() => goToMonth(1)} className="rounded-full bg-white px-4 py-2">
-              <Text className="font-semibold text-[#102a43]">Next</Text>
+            <Text className="text-lg font-bold text-slate-900 dark:text-slate-50">{formatMonthLabel(monthDate)}</Text>
+            <Pressable onPress={() => goToMonth(1)} className="rounded-full bg-white dark:bg-card-dark px-4 py-2">
+              <Text className="font-semibold text-slate-900 dark:text-slate-100">Next</Text>
             </Pressable>
           </View>
 
           <View className="mb-3 flex-row">
             {weekdayLabels.map((label) => (
               <View key={label} className="flex-1 items-center">
-                <Text className="text-xs font-semibold uppercase tracking-[1px] text-[#829ab1]">
+                <Text className="text-xs font-semibold uppercase tracking-[1px] text-slate-400 dark:text-slate-500">
                   {label}
                 </Text>
               </View>
@@ -115,17 +115,17 @@ export function MatchScheduleScreen({ navigation, route }: MatchScheduleScreenPr
                       disabled={!enabled}
                       className={`mx-1 h-12 flex-1 items-center justify-center rounded-2xl border ${
                         isSelected
-                          ? 'border-[#102a43] bg-[#102a43]'
-                          : 'border-transparent bg-white'
+                          ? 'border-slate-900 dark:border-primary-dark bg-slate-900 dark:bg-primary-dark'
+                          : 'border-transparent bg-white dark:bg-card-dark'
                       }`}
                     >
                       <Text
                         className={`text-base font-semibold ${
                           !inCurrentMonth || !enabled
-                            ? 'text-[#cbd2d9]'
+                            ? 'text-slate-300 dark:text-slate-600'
                             : isSelected
                               ? 'text-white'
-                              : 'text-[#102a43]'
+                              : 'text-slate-900 dark:text-slate-50'
                         }`}
                       >
                         {day.getDate()}
@@ -139,7 +139,7 @@ export function MatchScheduleScreen({ navigation, route }: MatchScheduleScreenPr
         </View>
 
         <View className="mt-6">
-          <Text className="mb-3 text-lg font-bold text-[#102a43]">Time slots</Text>
+          <Text className="mb-3 text-lg font-bold text-slate-900 dark:text-slate-50">Time slots</Text>
           <View className="flex-row flex-wrap justify-between">
             {timeSlots.map((slot) => {
               const isSelected = selectedTime === slot;
@@ -148,19 +148,21 @@ export function MatchScheduleScreen({ navigation, route }: MatchScheduleScreenPr
                   key={slot}
                   onPress={() => setSelectedTime(slot)}
                   className={`mb-3 w-[48%] rounded-3xl border px-4 py-4 ${
-                    isSelected ? 'border-[#102a43] bg-[#102a43]' : 'border-[#d9e2ec] bg-white'
+                    isSelected
+                      ? 'border-slate-900 dark:border-primary-dark bg-slate-900 dark:bg-primary-dark'
+                      : 'border-border dark:border-border-dark bg-white dark:bg-card-dark'
                   }`}
                 >
                   <Text
                     className={`text-lg font-semibold ${
-                      isSelected ? 'text-white' : 'text-[#102a43]'
+                      isSelected ? 'text-white' : 'text-slate-900 dark:text-slate-50'
                     }`}
                   >
                     {formatTimeLabel(slot)}
                   </Text>
                   <Text
                     className={`mt-1 text-sm ${
-                      isSelected ? 'text-[#d9e2ec]' : 'text-[#829ab1]'
+                      isSelected ? 'text-slate-200' : 'text-slate-400 dark:text-slate-500'
                     }`}
                   >
                     {slot}
@@ -172,12 +174,12 @@ export function MatchScheduleScreen({ navigation, route }: MatchScheduleScreenPr
         </View>
       </ScrollView>
 
-      <View className="border-t border-[#e6edf3] bg-white px-5 pb-4 pt-3">
+      <View className="border-t border-border dark:border-border-dark bg-white dark:bg-card-dark px-5 pb-4 pt-3">
         <Pressable
           onPress={handleSave}
           disabled={!selectedDate || !selectedTime}
           className={`items-center rounded-2xl px-4 py-4 ${
-            selectedDate && selectedTime ? 'bg-[#102a43]' : 'bg-[#bcccdc]'
+            selectedDate && selectedTime ? 'bg-slate-900 dark:bg-primary-dark' : 'bg-slate-300 dark:bg-slate-700'
           }`}
         >
           <Text className="text-base font-semibold text-white">Use this schedule</Text>

@@ -12,6 +12,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthContext } from '../context/AuthContext';
 import { colors } from '../constants/theme';
+import { SkeletonNotificationRow } from '../components/SkeletonLoader';
+import { EmptyState } from '../components/EmptyState';
 import type { Notification, NotificationType } from '../lib/types';
 import {
   getNotifications,
@@ -198,7 +200,7 @@ export function NotificationsScreen() {
         onPress={() => handleTap(item)}
         onLongPress={() => handleDelete(item)}
         className={`flex-row items-start px-4 py-3 mb-2 mx-4 rounded-lg ${
-          item.read ? 'bg-surface opacity-70' : 'bg-white border-l-4'
+          item.read ? 'bg-surface dark:bg-surface-dark opacity-70' : 'bg-white dark:bg-card-dark border-l-4'
         }`}
         style={!item.read ? { borderLeftColor: colors.primary } : undefined}
       >
@@ -206,7 +208,7 @@ export function NotificationsScreen() {
         <View className="flex-1">
           <Text
             className={`text-base font-bold ${
-              item.read ? 'text-muted' : 'text-secondary'
+              item.read ? 'text-muted dark:text-muted-dark' : 'text-secondary dark:text-secondary-dark'
             }`}
             numberOfLines={1}
           >
@@ -214,13 +216,13 @@ export function NotificationsScreen() {
           </Text>
           <Text
             className={`text-sm mt-0.5 ${
-              item.read ? 'text-muted' : 'text-secondary'
+              item.read ? 'text-muted dark:text-muted-dark' : 'text-secondary dark:text-secondary-dark'
             }`}
             numberOfLines={2}
           >
             {item.body}
           </Text>
-          <Text className="text-xs text-muted mt-1">
+          <Text className="text-xs text-muted dark:text-muted-dark mt-1">
             {formatRelativeTime(item.createdAt)}
           </Text>
         </View>
@@ -234,10 +236,10 @@ export function NotificationsScreen() {
   // ── Main render ────────────────────────────────────────────────────
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top']}>
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-border">
-        <Text className="text-2xl font-bold text-secondary">Notifications</Text>
+      <View className="flex-row items-center justify-between px-4 py-3 border-b border-border dark:border-border-dark">
+        <Text className="text-2xl font-bold text-secondary dark:text-secondary-dark">Notifications</Text>
         {hasUnread && (
           <Pressable onPress={handleMarkAllRead}>
             <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
@@ -249,13 +251,17 @@ export function NotificationsScreen() {
 
       {/* Content */}
       {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color={colors.primary} />
+        <View className="pt-2">
+          <SkeletonNotificationRow />
+          <SkeletonNotificationRow />
+          <SkeletonNotificationRow />
+          <SkeletonNotificationRow />
+          <SkeletonNotificationRow />
         </View>
       ) : error ? (
         <View className="flex-1 items-center justify-center px-8">
           <Text className="text-4xl mb-4">{'\u26A0\uFE0F'}</Text>
-          <Text className="text-base text-muted text-center mb-4">{error}</Text>
+          <Text className="text-base text-muted dark:text-muted-dark text-center mb-4">{error}</Text>
           <Pressable
             onPress={handleRefresh}
             className="bg-primary rounded-lg px-6 py-3"
@@ -280,15 +286,11 @@ export function NotificationsScreen() {
             />
           }
           ListEmptyComponent={
-            <View className="flex-1 items-center justify-center px-8">
-              <Text className="text-5xl mb-4">{'\uD83D\uDD14'}</Text>
-              <Text className="text-lg font-semibold text-secondary mb-1">
-                No notifications yet
-              </Text>
-              <Text className="text-sm text-muted text-center">
-                When something happens, you'll see it here.
-              </Text>
-            </View>
+            <EmptyState
+              icon={'\uD83D\uDD14'}
+              title="No notifications yet"
+              message="When something happens — a match, a tournament, or a friend request — you'll see it here."
+            />
           }
         />
       )}

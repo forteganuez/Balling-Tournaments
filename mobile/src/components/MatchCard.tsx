@@ -91,8 +91,8 @@ export function MatchCard({ match, currentUserId, players, onPress }: MatchCardP
   return (
     <Pressable
       onPress={onPress}
-      className={`bg-white rounded-xl p-4 mb-3 shadow-sm border ${
-        isUserMatch ? 'border-primary border-2' : 'border-border'
+      className={`bg-white dark:bg-card-dark rounded-xl p-4 mb-3 shadow-sm border ${
+        isUserMatch ? 'border-primary border-2' : 'border-border dark:border-border-dark'
       }`}
     >
       {isUserMatch && (
@@ -102,7 +102,7 @@ export function MatchCard({ match, currentUserId, players, onPress }: MatchCardP
       )}
 
       <View className="flex-row items-center justify-between mb-3">
-        <Text className="text-xs text-muted">
+        <Text className="text-xs text-muted dark:text-muted-dark">
           Round {match.round} - Match {match.position}
         </Text>
         <View className={`px-2 py-0.5 rounded-full ${cfg.bg}`}>
@@ -118,7 +118,7 @@ export function MatchCard({ match, currentUserId, players, onPress }: MatchCardP
         <PlayerAvatar playerId={match.player1Id} players={players} />
         <Text
           className={`ml-3 flex-1 text-sm ${
-            isPlayer1Winner ? 'font-bold text-green-600' : 'text-secondary'
+            isPlayer1Winner ? 'font-bold text-green-600' : 'text-secondary dark:text-secondary-dark'
           }`}
           numberOfLines={1}
         >
@@ -131,7 +131,7 @@ export function MatchCard({ match, currentUserId, players, onPress }: MatchCardP
 
       {/* VS divider */}
       <View className="items-center py-1">
-        <Text className="text-xs text-muted font-semibold">VS</Text>
+        <Text className="text-xs text-muted dark:text-muted-dark font-semibold">VS</Text>
       </View>
 
       {/* Player 2 */}
@@ -142,7 +142,7 @@ export function MatchCard({ match, currentUserId, players, onPress }: MatchCardP
         <PlayerAvatar playerId={match.player2Id} players={players} />
         <Text
           className={`ml-3 flex-1 text-sm ${
-            isPlayer2Winner ? 'font-bold text-green-600' : 'text-secondary'
+            isPlayer2Winner ? 'font-bold text-green-600' : 'text-secondary dark:text-secondary-dark'
           }`}
           numberOfLines={1}
         >
@@ -155,15 +155,15 @@ export function MatchCard({ match, currentUserId, players, onPress }: MatchCardP
 
       {/* Score */}
       {isCompleted && match.score != null && (
-        <View className="mt-2 pt-2 border-t border-gray-100 items-center">
-          <Text className="text-sm font-semibold text-secondary">{match.score}</Text>
+        <View className="mt-2 pt-2 border-t border-border dark:border-border-dark items-center">
+          <Text className="text-sm font-semibold text-secondary dark:text-secondary-dark">{match.score}</Text>
         </View>
       )}
 
       {/* Scheduled time */}
       {scheduledDisplay != null && !isCompleted && (
-        <View className="mt-2 pt-2 border-t border-gray-100">
-          <Text className="text-xs text-muted text-center">
+        <View className="mt-2 pt-2 border-t border-border dark:border-border-dark">
+          <Text className="text-xs text-muted dark:text-muted-dark text-center">
             {formatScheduledTime(scheduledDisplay)}
           </Text>
         </View>

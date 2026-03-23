@@ -17,20 +17,20 @@ export function SocialAuthButtons() {
     <View className="mt-6">
       <View className="flex-row items-center mb-6">
         <View className="flex-1 h-px bg-gray-300" />
-        <Text className="mx-4 text-muted text-sm">or continue with</Text>
+        <Text className="mx-4 text-muted dark:text-muted-dark text-sm">or continue with</Text>
         <View className="flex-1 h-px bg-gray-300" />
       </View>
 
       {error ? (
-        <View className="bg-red-50 p-3 rounded-lg mb-4">
-          <Text className="text-red-600 text-sm text-center">{error}</Text>
+        <View className="bg-red-50 dark:bg-red-500/15 p-3 rounded-lg mb-4">
+          <Text className="text-red-600 dark:text-red-300 text-sm text-center">{error}</Text>
         </View>
       ) : null}
 
       <Pressable
         onPress={handleGoogle}
         disabled={loading !== null}
-        className="flex-row items-center justify-center border border-gray-300 rounded-xl py-3.5 mb-3 bg-white"
+        className="flex-row items-center justify-center border border-border dark:border-border-dark rounded-xl py-3.5 mb-3 bg-white dark:bg-card-dark"
       >
         {loading === 'google' ? (
           <ActivityIndicator size="small" color="#4285F4" />
@@ -63,7 +63,7 @@ export function SocialAuthButtons() {
       <Pressable
         onPress={handleMicrosoft}
         disabled={loading !== null}
-        className="flex-row items-center justify-center border border-gray-300 rounded-xl py-3.5 mb-3 bg-white"
+        className="flex-row items-center justify-center border border-border dark:border-border-dark rounded-xl py-3.5 mb-3 bg-white dark:bg-card-dark"
       >
         {loading === 'microsoft' ? (
           <ActivityIndicator size="small" color="#00A4EF" />

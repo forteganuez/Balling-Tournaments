@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import { NativeWindStyleSheet } from 'nativewind';
 import { lightTheme, darkTheme } from '../constants/theme';
 import type { Theme } from '../constants/theme';
 
@@ -54,6 +55,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [mode, systemScheme]);
 
   const theme = useMemo(() => (isDark ? darkTheme : lightTheme), [isDark]);
+
+  useEffect(() => {
+    if (!loaded) {
+      return;
+    }
+
+    NativeWindStyleSheet.setColorScheme(mode);
+  }, [loaded, mode]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({ theme, isDark, mode, setMode }),

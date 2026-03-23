@@ -3,6 +3,7 @@ import { View, Text, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/OnboardingNavigator';
+import { OnboardingProgress } from '../../components/OnboardingProgress';
 
 const SPORTS = [
   { value: 'PADEL', label: 'Padel', icon: '🏓' },
@@ -24,9 +25,10 @@ export function OnboardingSportScreen({ navigation }: Props) {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-      <View className="flex-1 px-6 pt-12">
-        <Text className="text-2xl font-bold text-secondary text-center mb-8">
+    <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top']}>
+      <OnboardingProgress current={2} total={5} onBack={() => navigation.goBack()} />
+      <View className="flex-1 px-6 pt-8">
+        <Text className="text-2xl font-bold text-secondary dark:text-secondary-dark text-center mb-8">
           What do you play?
         </Text>
 
@@ -40,13 +42,13 @@ export function OnboardingSportScreen({ navigation }: Props) {
                 className={`flex-row items-center px-5 py-3 rounded-full border ${
                   isSelected
                     ? 'bg-primary border-primary'
-                    : 'bg-surface border-border'
+                    : 'bg-surface dark:bg-surface-dark border-border dark:border-border-dark'
                 }`}
               >
                 <Text className="text-lg mr-2">{sport.icon}</Text>
                 <Text
                   className={`text-base font-medium ${
-                    isSelected ? 'text-white' : 'text-secondary'
+                    isSelected ? 'text-white' : 'text-secondary dark:text-secondary-dark'
                   }`}
                 >
                   {sport.label}

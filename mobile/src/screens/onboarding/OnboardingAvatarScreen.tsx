@@ -6,11 +6,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../navigation/OnboardingNavigator';
 import { useAuthContext } from '../../context/AuthContext';
 import { uploadImage } from '../../lib/uploadImage';
+import { OnboardingProgress } from '../../components/OnboardingProgress';
 import type { Sport } from '../../lib/types';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'OnboardingAvatar'>;
 
-export function OnboardingAvatarScreen({ route }: Props) {
+export function OnboardingAvatarScreen({ navigation, route }: Props) {
   const { sports, skillLevel, city } = route.params;
   const { updateProfile, user } = useAuthContext();
 
@@ -66,9 +67,10 @@ export function OnboardingAvatarScreen({ route }: Props) {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-      <View className="flex-1 items-center px-6 pt-12">
-        <Text className="text-2xl font-bold text-secondary text-center mb-8">
+    <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top']}>
+      <OnboardingProgress current={5} total={5} onBack={() => navigation.goBack()} />
+      <View className="flex-1 items-center px-6 pt-8">
+        <Text className="text-2xl font-bold text-secondary dark:text-secondary-dark text-center mb-8">
           Add a profile photo
         </Text>
 
@@ -79,9 +81,9 @@ export function OnboardingAvatarScreen({ route }: Props) {
               className="w-32 h-32 rounded-full"
             />
           ) : (
-            <View className="w-32 h-32 rounded-full bg-surface border-2 border-dashed border-border items-center justify-center">
+            <View className="w-32 h-32 rounded-full bg-surface dark:bg-surface-dark border-2 border-dashed border-border dark:border-border-dark items-center justify-center">
               <Text className="text-4xl mb-1">📷</Text>
-              <Text className="text-xs text-muted">Tap to add</Text>
+              <Text className="text-xs text-muted dark:text-muted-dark">Tap to add</Text>
             </View>
           )}
         </Pressable>
@@ -100,7 +102,7 @@ export function OnboardingAvatarScreen({ route }: Props) {
             disabled={submitting}
             className="items-center mb-4"
           >
-            <Text className="text-muted font-medium text-sm">
+            <Text className="text-muted dark:text-muted-dark font-medium text-sm">
               Skip for now
             </Text>
           </Pressable>

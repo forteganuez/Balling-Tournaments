@@ -40,16 +40,16 @@ export function TournamentCard({ tournament, onPress }: TournamentCardProps) {
   return (
     <Pressable
       onPress={onPress}
-      className="bg-white rounded-xl p-4 mb-3 shadow-sm border border-border"
+      className="bg-white dark:bg-card-dark rounded-xl p-4 mb-3 shadow-sm border border-border dark:border-border-dark"
     >
       <View className="flex-row items-center justify-between mb-2">
         <View className="flex-row items-center flex-1">
           <SportIcon sport={tournament.sport} size={28} />
           <View className="ml-3 flex-1">
-            <Text className="text-base font-semibold text-secondary" numberOfLines={1}>
+            <Text className="text-base font-semibold text-secondary dark:text-secondary-dark" numberOfLines={1}>
               {tournament.name}
             </Text>
-            <Text className="text-sm text-muted">{tournament.location}</Text>
+            <Text className="text-sm text-muted dark:text-muted-dark">{tournament.location}</Text>
           </View>
         </View>
         <View className={`px-2 py-1 rounded-full ${statusColors[tournament.status]?.split(' ')[0] ?? 'bg-gray-100'}`}>
@@ -60,14 +60,14 @@ export function TournamentCard({ tournament, onPress }: TournamentCardProps) {
       </View>
 
       <View className="flex-row items-center justify-between mb-2">
-        <Text className="text-sm text-muted">{dateStr}</Text>
-        <View className="bg-surface px-2 py-0.5 rounded">
-          <Text className="text-xs text-muted">{formatLabels[tournament.format]}</Text>
+        <Text className="text-sm text-muted dark:text-muted-dark">{dateStr}</Text>
+        <View className="bg-surface dark:bg-surface-dark px-2 py-0.5 rounded">
+          <Text className="text-xs text-muted dark:text-muted-dark">{formatLabels[tournament.format]}</Text>
         </View>
       </View>
 
       <View className="flex-row items-center justify-between mb-1">
-        <Text className="text-sm text-secondary">
+        <Text className="text-sm text-secondary dark:text-secondary-dark">
           {filled}/{tournament.maxPlayers} spots
         </Text>
         <Text className="text-sm font-semibold text-primary">

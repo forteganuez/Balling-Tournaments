@@ -32,7 +32,7 @@ function TimeBox({ value, label }: { value: number; label: string }) {
           {String(value).padStart(2, '0')}
         </Text>
       </View>
-      <Text className="text-muted text-xs mt-1">{label}</Text>
+      <Text className="text-muted dark:text-muted-dark text-xs mt-1">{label}</Text>
     </View>
   );
 }
@@ -52,7 +52,7 @@ export function Countdown({ targetDate }: CountdownProps) {
 
   if (!timeLeft) {
     return (
-      <Text className="text-muted text-sm">Tournament has started</Text>
+      <Text className="text-muted dark:text-muted-dark text-sm">Tournament has started</Text>
     );
   }
 

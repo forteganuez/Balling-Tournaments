@@ -11,6 +11,7 @@ import * as api from '../lib/api';
 import type { UserStats, Registration } from '../lib/types';
 import type { ProfileStackParamList } from '../navigation/types';
 import { colors } from '../constants/theme';
+import { SkeletonProfileCard } from '../components/SkeletonLoader';
 
 type Nav = NativeStackNavigationProp<ProfileStackParamList, 'MyProfile'>;
 
@@ -105,7 +106,7 @@ export function ProfileScreen() {
   const formattedDateOfBirth = formatProfileDate(user.dateOfBirth);
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top']}>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 40 }}
@@ -136,15 +137,15 @@ export function ProfileScreen() {
             </Pressable>
           </View>
 
-          <Text className="text-xl font-bold text-secondary">{user.name}</Text>
+          <Text className="text-xl font-bold text-secondary dark:text-secondary-dark">{user.name}</Text>
           {user.city && (
-            <Text className="text-sm text-muted mt-0.5">📍 {user.city}</Text>
+            <Text className="text-sm text-muted dark:text-muted-dark mt-0.5">📍 {user.city}</Text>
           )}
           {formattedDateOfBirth && (
-            <Text className="text-sm text-muted mt-0.5">🎂 {formattedDateOfBirth}</Text>
+            <Text className="text-sm text-muted dark:text-muted-dark mt-0.5">🎂 {formattedDateOfBirth}</Text>
           )}
           {user.bio && (
-            <Text className="text-sm text-muted mt-1 px-8 text-center">{user.bio}</Text>
+            <Text className="text-sm text-muted dark:text-muted-dark mt-1 px-8 text-center">{user.bio}</Text>
           )}
         </View>
 
@@ -158,7 +159,7 @@ export function ProfileScreen() {
             </View>
           )}
           {user.sports?.map((sport) => (
-            <View key={sport} className="flex-row items-center px-3 py-1.5 rounded-full bg-surface border border-border">
+            <View key={sport} className="flex-row items-center px-3 py-1.5 rounded-full bg-surface dark:bg-surface-dark border border-border dark:border-border-dark">
               <Text className="text-sm">{SPORT_ICONS[sport] ?? '🏅'} {sport.charAt(0) + sport.slice(1).toLowerCase()}</Text>
             </View>
           ))}
@@ -167,49 +168,47 @@ export function ProfileScreen() {
         {/* Followers / Following */}
         <View className="flex-row justify-center gap-6 mb-5">
           <Pressable className="items-center">
-            <Text className="text-lg font-bold text-secondary">{followerCount}</Text>
-            <Text className="text-xs text-muted">Followers</Text>
+            <Text className="text-lg font-bold text-secondary dark:text-secondary-dark">{followerCount}</Text>
+            <Text className="text-xs text-muted dark:text-muted-dark">Followers</Text>
           </Pressable>
           <Pressable className="items-center">
-            <Text className="text-lg font-bold text-secondary">{followingCount}</Text>
-            <Text className="text-xs text-muted">Following</Text>
+            <Text className="text-lg font-bold text-secondary dark:text-secondary-dark">{followingCount}</Text>
+            <Text className="text-xs text-muted dark:text-muted-dark">Following</Text>
           </Pressable>
         </View>
 
         {/* Stats Row */}
         {loading ? (
-          <View className="py-4">
-            <ActivityIndicator color={colors.primary} />
-          </View>
+          <SkeletonProfileCard />
         ) : stats ? (
-          <View className="flex-row mx-4 mb-5 bg-surface rounded-xl p-4">
+          <View className="flex-row mx-4 mb-5 bg-surface dark:bg-surface-dark rounded-xl p-4">
             <View className="flex-1 items-center">
-              <Text className="text-lg font-bold text-secondary">{stats.matchesPlayed}</Text>
-              <Text className="text-xs text-muted">Matches</Text>
+              <Text className="text-lg font-bold text-secondary dark:text-secondary-dark">{stats.matchesPlayed}</Text>
+              <Text className="text-xs text-muted dark:text-muted-dark">Matches</Text>
             </View>
-            <View className="flex-1 items-center border-l border-border">
+            <View className="flex-1 items-center border-l border-border dark:border-border-dark">
               <Text className="text-lg font-bold text-green-600">{stats.wins}</Text>
-              <Text className="text-xs text-muted">Wins</Text>
+              <Text className="text-xs text-muted dark:text-muted-dark">Wins</Text>
             </View>
-            <View className="flex-1 items-center border-l border-border">
-              <Text className="text-lg font-bold text-red-500">{stats.losses}</Text>
-              <Text className="text-xs text-muted">Losses</Text>
+            <View className="flex-1 items-center border-l border-border dark:border-border-dark">
+              <Text className="text-lg font-bold text-red-500 dark:text-red-300">{stats.losses}</Text>
+              <Text className="text-xs text-muted dark:text-muted-dark">Losses</Text>
             </View>
-            <View className="flex-1 items-center border-l border-border">
+            <View className="flex-1 items-center border-l border-border dark:border-border-dark">
               <Text className="text-lg font-bold text-primary">{winRate}%</Text>
-              <Text className="text-xs text-muted">Win Rate</Text>
+              <Text className="text-xs text-muted dark:text-muted-dark">Win Rate</Text>
             </View>
           </View>
         ) : null}
 
         {/* Tournament History */}
         <View className="px-4 mb-5">
-          <Text className="text-base font-semibold text-secondary mb-3">
+          <Text className="text-base font-semibold text-secondary dark:text-secondary-dark mb-3">
             Tournament History
           </Text>
           {tournaments.length === 0 ? (
-            <View className="bg-surface rounded-xl p-4 items-center">
-              <Text className="text-muted text-sm">No tournaments yet</Text>
+            <View className="bg-surface dark:bg-surface-dark rounded-xl p-4 items-center">
+              <Text className="text-muted dark:text-muted-dark text-sm">No tournaments yet</Text>
             </View>
           ) : (
             tournaments.slice(0, 10).map((reg) => (
@@ -221,23 +220,23 @@ export function ProfileScreen() {
                     params: { id: reg.tournamentId },
                   })
                 }
-                className="flex-row items-center bg-surface rounded-xl p-3 mb-2"
+                className="flex-row items-center bg-surface dark:bg-surface-dark rounded-xl p-3 mb-2"
               >
                 <Text className="text-xl mr-3">
                   {reg.tournament ? SPORT_ICONS[reg.tournament.sport] ?? '🏅' : '🏅'}
                 </Text>
                 <View className="flex-1">
-                  <Text className="text-sm font-medium text-secondary">
+                  <Text className="text-sm font-medium text-secondary dark:text-secondary-dark">
                     {reg.tournament?.name ?? 'Tournament'}
                   </Text>
-                  <Text className="text-xs text-muted">
+                  <Text className="text-xs text-muted dark:text-muted-dark">
                     {reg.tournament?.date
                       ? new Date(reg.tournament.date).toLocaleDateString()
                       : ''}
                     {reg.tournament?.location ? ` · ${reg.tournament.location}` : ''}
                   </Text>
                 </View>
-                <Text className="text-muted text-xs">→</Text>
+                <Text className="text-muted dark:text-muted-dark text-xs">→</Text>
               </Pressable>
             ))
           )}
@@ -254,23 +253,23 @@ export function ProfileScreen() {
 
           <Pressable
             onPress={() => navigation.navigate('PaymentHistory')}
-            className="bg-surface rounded-xl py-3.5 items-center mb-3 border border-border"
+            className="bg-surface dark:bg-surface-dark rounded-xl py-3.5 items-center mb-3 border border-border dark:border-border-dark"
           >
-            <Text className="text-secondary font-semibold text-base">Payment History</Text>
+            <Text className="text-secondary dark:text-secondary-dark font-semibold text-base">Payment History</Text>
           </Pressable>
 
           <Pressable
             onPress={() => navigation.navigate('Settings')}
-            className="bg-surface rounded-xl py-3.5 items-center mb-3 border border-border"
+            className="bg-surface dark:bg-surface-dark rounded-xl py-3.5 items-center mb-3 border border-border dark:border-border-dark"
           >
-            <Text className="text-secondary font-semibold text-base">Settings</Text>
+            <Text className="text-secondary dark:text-secondary-dark font-semibold text-base">Settings</Text>
           </Pressable>
 
           <Pressable
             onPress={handleLogout}
             className="rounded-xl py-3.5 items-center border border-red-300"
           >
-            <Text className="text-red-500 font-semibold text-base">Log Out</Text>
+            <Text className="text-red-500 dark:text-red-300 font-semibold text-base">Log Out</Text>
           </Pressable>
         </View>
       </ScrollView>

@@ -24,6 +24,8 @@ import type {
 } from '../lib/types';
 import type { ProfileStackParamList } from '../navigation/types';
 import { colors } from '../constants/theme';
+import { SkeletonFriendRow } from '../components/SkeletonLoader';
+import { EmptyState } from '../components/EmptyState';
 
 type Tab = 'friends' | 'requests' | 'following' | 'followers';
 
@@ -83,7 +85,7 @@ function SportTags({ sports }: { sports: Sport[] }) {
   return (
     <View className="flex-row flex-wrap gap-1 mt-1">
       {sports.map((sport) => (
-        <View key={sport} className="flex-row items-center px-2 py-0.5 rounded-full bg-surface border border-border">
+        <View key={sport} className="flex-row items-center px-2 py-0.5 rounded-full bg-surface dark:bg-surface-dark border border-border dark:border-border-dark">
           <Text className="text-xs">
             {SPORT_ICONS[sport] ?? '🏅'} {sport.charAt(0) + sport.slice(1).toLowerCase()}
           </Text>
@@ -276,13 +278,13 @@ export function FriendsScreen() {
     return (
       <Pressable
         onPress={() => navigateToProfile(item.id)}
-        className="flex-row items-center bg-white px-4 py-3 border-b border-border"
+        className="flex-row items-center bg-white dark:bg-card-dark px-4 py-3 border-b border-border dark:border-border-dark"
       >
         <Avatar uri={item.avatarUrl} name={item.name} />
         <View className="flex-1 ml-3">
-          <Text className="text-base font-semibold text-secondary">{item.name}</Text>
+          <Text className="text-base font-semibold text-secondary dark:text-secondary-dark">{item.name}</Text>
           {item.city ? (
-            <Text className="text-xs text-muted mt-0.5">📍 {item.city}</Text>
+            <Text className="text-xs text-muted dark:text-muted-dark mt-0.5">📍 {item.city}</Text>
           ) : null}
           <View className="flex-row items-center gap-2 mt-1">
             {item.skillLevel != null && <SkillBadge level={item.skillLevel} />}
@@ -297,9 +299,9 @@ export function FriendsScreen() {
               {isFollowing ? (
                 <Pressable
                   onPress={() => handleUnfollow(item.id)}
-                  className="px-3 py-1.5 rounded-full border border-border"
+                  className="px-3 py-1.5 rounded-full border border-border dark:border-border-dark"
                 >
-                  <Text className="text-xs font-medium text-muted">Following</Text>
+                  <Text className="text-xs font-medium text-muted dark:text-muted-dark">Following</Text>
                 </Pressable>
               ) : (
                 <Pressable
@@ -314,8 +316,8 @@ export function FriendsScreen() {
                   <Text className="text-xs font-medium text-green-600">Friends</Text>
                 </View>
               ) : isPending ? (
-                <View className="px-3 py-1.5 rounded-full bg-surface border border-border">
-                  <Text className="text-xs font-medium text-muted">Pending</Text>
+                <View className="px-3 py-1.5 rounded-full bg-surface dark:bg-surface-dark border border-border dark:border-border-dark">
+                  <Text className="text-xs font-medium text-muted dark:text-muted-dark">Pending</Text>
                 </View>
               ) : (
                 <Pressable
@@ -337,19 +339,19 @@ export function FriendsScreen() {
   const renderFriend = ({ item }: { item: User }) => (
     <Pressable
       onPress={() => navigateToProfile(item.id)}
-      className="flex-row items-center bg-white px-4 py-3 border-b border-border"
+      className="flex-row items-center bg-white dark:bg-card-dark px-4 py-3 border-b border-border dark:border-border-dark"
     >
       <Avatar uri={item.avatarUrl} name={item.name} />
       <View className="flex-1 ml-3">
-        <Text className="text-base font-semibold text-secondary">{item.name}</Text>
+        <Text className="text-base font-semibold text-secondary dark:text-secondary-dark">{item.name}</Text>
         <View className="flex-row items-center gap-2 mt-0.5">
           {item.skillLevel != null && <SkillBadge level={item.skillLevel} />}
           {item.city ? (
-            <Text className="text-xs text-muted">📍 {item.city}</Text>
+            <Text className="text-xs text-muted dark:text-muted-dark">📍 {item.city}</Text>
           ) : null}
         </View>
       </View>
-      <Text className="text-muted text-sm">→</Text>
+      <Text className="text-muted dark:text-muted-dark text-sm">→</Text>
     </Pressable>
   );
 
@@ -363,13 +365,13 @@ export function FriendsScreen() {
     return (
       <Pressable
         onPress={() => navigateToProfile(requester.id)}
-        className="flex-row items-center bg-white px-4 py-3 border-b border-border"
+        className="flex-row items-center bg-white dark:bg-card-dark px-4 py-3 border-b border-border dark:border-border-dark"
       >
         <Avatar uri={requester.avatarUrl} name={requester.name} />
         <View className="flex-1 ml-3">
-          <Text className="text-base font-semibold text-secondary">{requester.name}</Text>
+          <Text className="text-base font-semibold text-secondary dark:text-secondary-dark">{requester.name}</Text>
           {requester.city ? (
-            <Text className="text-xs text-muted mt-0.5">📍 {requester.city}</Text>
+            <Text className="text-xs text-muted dark:text-muted-dark mt-0.5">📍 {requester.city}</Text>
           ) : null}
         </View>
         {isLoading ? (
@@ -386,7 +388,7 @@ export function FriendsScreen() {
               onPress={() => handleDeclineRequest(requester.id)}
               className="px-3 py-1.5 rounded-full border border-red-300"
             >
-              <Text className="text-xs font-medium text-red-500">Decline</Text>
+              <Text className="text-xs font-medium text-red-500 dark:text-red-300">Decline</Text>
             </Pressable>
           </View>
         )}
@@ -401,13 +403,13 @@ export function FriendsScreen() {
     return (
       <Pressable
         onPress={() => navigateToProfile(userInfo.id)}
-        className="flex-row items-center bg-white px-4 py-3 border-b border-border"
+        className="flex-row items-center bg-white dark:bg-card-dark px-4 py-3 border-b border-border dark:border-border-dark"
       >
         <Avatar uri={userInfo.avatarUrl} name={userInfo.name} />
         <View className="flex-1 ml-3">
-          <Text className="text-base font-semibold text-secondary">{userInfo.name}</Text>
+          <Text className="text-base font-semibold text-secondary dark:text-secondary-dark">{userInfo.name}</Text>
           {userInfo.city ? (
-            <Text className="text-xs text-muted mt-0.5">📍 {userInfo.city}</Text>
+            <Text className="text-xs text-muted dark:text-muted-dark mt-0.5">📍 {userInfo.city}</Text>
           ) : null}
           {userInfo.skillLevel != null && (
             <View className="mt-1">
@@ -415,7 +417,7 @@ export function FriendsScreen() {
             </View>
           )}
         </View>
-        <Text className="text-muted text-sm">→</Text>
+        <Text className="text-muted dark:text-muted-dark text-sm">→</Text>
       </Pressable>
     );
   };
@@ -423,12 +425,10 @@ export function FriendsScreen() {
   const renderFollowing = ({ item }: { item: Follow }) => renderFollowUser(item.following);
   const renderFollower = ({ item }: { item: Follow }) => renderFollowUser(item.follower);
 
-  // ── Empty state ──────────────────────────────────────────────────────
+  // ── Empty state helper ─────────────────────────────────────────────
 
-  const EmptyState = ({ message }: { message: string }) => (
-    <View className="flex-1 items-center justify-center py-16 px-8">
-      <Text className="text-muted text-center text-base">{message}</Text>
-    </View>
+  const TabEmptyState = ({ icon, title, message }: { icon: string; title: string; message: string }) => (
+    <EmptyState icon={icon} title={title} message={message} />
   );
 
   // ── Main render ──────────────────────────────────────────────────────
@@ -436,8 +436,11 @@ export function FriendsScreen() {
   const renderTabContent = () => {
     if (loading) {
       return (
-        <View className="flex-1 items-center justify-center py-16">
-          <ActivityIndicator size="large" color={colors.primary} />
+        <View>
+          <SkeletonFriendRow />
+          <SkeletonFriendRow />
+          <SkeletonFriendRow />
+          <SkeletonFriendRow />
         </View>
       );
     }
@@ -445,7 +448,7 @@ export function FriendsScreen() {
     if (error) {
       return (
         <View className="flex-1 items-center justify-center py-16 px-8">
-          <Text className="text-red-500 text-center text-base">{error}</Text>
+          <Text className="text-red-500 dark:text-red-300 text-center text-base">{error}</Text>
         </View>
       );
     }
@@ -457,7 +460,7 @@ export function FriendsScreen() {
             data={friends}
             keyExtractor={(item) => item.id}
             renderItem={renderFriend}
-            ListEmptyComponent={<EmptyState message="No friends yet. Search for players to connect with!" />}
+            ListEmptyComponent={<TabEmptyState icon="👥" title="No friends yet" message="Search for players above to connect and add them as friends." />}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
             }
@@ -469,7 +472,7 @@ export function FriendsScreen() {
             data={requests}
             keyExtractor={(item) => item.id}
             renderItem={renderRequest}
-            ListEmptyComponent={<EmptyState message="No pending friend requests." />}
+            ListEmptyComponent={<TabEmptyState icon="📬" title="No pending requests" message="When someone sends you a friend request, it will appear here." />}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
             }
@@ -481,7 +484,7 @@ export function FriendsScreen() {
             data={following}
             keyExtractor={(item) => item.id}
             renderItem={renderFollowing}
-            ListEmptyComponent={<EmptyState message="You are not following anyone yet." />}
+            ListEmptyComponent={<TabEmptyState icon="👀" title="Not following anyone" message="Follow players to keep up with their tournaments and matches." />}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
             }
@@ -493,7 +496,7 @@ export function FriendsScreen() {
             data={followers}
             keyExtractor={(item) => item.id}
             renderItem={renderFollower}
-            ListEmptyComponent={<EmptyState message="No followers yet." />}
+            ListEmptyComponent={<TabEmptyState icon="🌟" title="No followers yet" message="As you play and compete, other players will start following you." />}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
             }
@@ -503,16 +506,16 @@ export function FriendsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top']}>
       {/* Header */}
       <View className="px-4 pt-4 pb-2">
-        <Text className="text-2xl font-bold text-secondary mb-3">Friends</Text>
+        <Text className="text-2xl font-bold text-secondary dark:text-secondary-dark mb-3">Friends</Text>
 
         {/* Search bar */}
-        <View className="flex-row items-center bg-surface rounded-xl px-3 py-2 mb-3 border border-border">
+        <View className="flex-row items-center bg-surface dark:bg-surface-dark rounded-xl px-3 py-2 mb-3 border border-border dark:border-border-dark">
           <Text className="text-base mr-2">🔍</Text>
           <TextInput
-            className="flex-1 text-base text-secondary"
+            className="flex-1 text-base text-secondary dark:text-secondary-dark"
             placeholder="Search players..."
             placeholderTextColor={colors.muted}
             value={searchQuery}
@@ -523,7 +526,7 @@ export function FriendsScreen() {
           />
           {searchQuery.length > 0 && (
             <Pressable onPress={() => setSearchQuery('')}>
-              <Text className="text-muted text-base ml-2">✕</Text>
+              <Text className="text-muted dark:text-muted-dark text-base ml-2">✕</Text>
             </Pressable>
           )}
         </View>
@@ -536,12 +539,12 @@ export function FriendsScreen() {
                 key={tab.key}
                 onPress={() => setActiveTab(tab.key)}
                 className={`flex-1 py-2 rounded-lg items-center ${
-                  activeTab === tab.key ? 'bg-primary' : 'bg-surface'
+                  activeTab === tab.key ? 'bg-primary' : 'bg-surface dark:bg-surface-dark'
                 }`}
               >
                 <Text
                   className={`text-xs font-semibold ${
-                    activeTab === tab.key ? 'text-white' : 'text-muted'
+                    activeTab === tab.key ? 'text-white' : 'text-muted dark:text-muted-dark'
                   }`}
                 >
                   {tab.label}
@@ -562,7 +565,7 @@ export function FriendsScreen() {
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : searchResults.length === 0 ? (
-          <EmptyState message="No players found. Try a different name." />
+          <EmptyState icon="🔍" title="No players found" message="Try a different name." />
         ) : (
           <FlatList
             data={searchResults}

@@ -6,9 +6,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../hooks/useAuth';
 import { useTournaments } from '../hooks/useTournaments';
 import { useOpenMatches } from '../hooks/useOpenMatches';
+import { useTheme } from '../context/ThemeContext';
 import { TournamentCard } from '../components/TournamentCard';
 import { OpenMatchCard } from '../components/OpenMatchCard';
-import { LoadingSpinner } from '../components/LoadingSpinner';
+import { SkeletonTournamentCard, SkeletonMatchCard } from '../components/SkeletonLoader';
+import { EmptyState } from '../components/EmptyState';
 import * as api from '../lib/api';
 import type { HomeStackParamList } from '../navigation/types';
 
@@ -20,6 +22,7 @@ function formatMatchCount(count: number, singular: string, plural: string) {
 
 export function HomeScreen({ navigation }: HomeScreenProps) {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const tabNavigation = useNavigation<any>();
   const {
     tournaments,
@@ -68,11 +71,11 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
   const heroOpenMatchCount = feed.available.length;
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top']}>
       <ScrollView
         className="flex-1"
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={refreshAll} tintColor="#102a43" />
+          <RefreshControl refreshing={refreshing} onRefresh={refreshAll} tintColor={theme.primary} />
         }
       >
         <View className="px-4 pb-10 pt-4">
@@ -93,8 +96,8 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
                 <Text className="mt-1 text-sm text-[#d9e2ec]">open tournaments</Text>
               </View>
               <View className="flex-1 rounded-3xl bg-[#f0b429] px-4 py-4">
-                <Text className="text-2xl font-bold text-[#102a43]">{heroOpenMatchCount}</Text>
-                <Text className="mt-1 text-sm text-[#102a43]">matches to join</Text>
+                <Text className="text-2xl font-bold text-slate-900">{heroOpenMatchCount}</Text>
+                <Text className="mt-1 text-sm text-slate-900">matches to join</Text>
               </View>
             </View>
           </View>
@@ -102,31 +105,32 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           <View className="mt-8">
             <View className="mb-4 flex-row items-center justify-between">
               <View className="flex-1 pr-4">
-                <Text className="text-2xl font-bold text-[#102a43]">Tournaments</Text>
-                <Text className="mt-1 text-sm leading-5 text-[#6b7c93]">
+                <Text className="text-2xl font-bold text-slate-900 dark:text-slate-50">Tournaments</Text>
+                <Text className="mt-1 text-sm leading-5 text-slate-500 dark:text-slate-400">
                   Bigger events first, with quick access to the ones still taking registrations.
                 </Text>
               </View>
               <Pressable
                 onPress={() => tabNavigation.navigate('Tournaments', { screen: 'TournamentList' })}
-                className="rounded-full bg-white px-4 py-2"
+                className="rounded-full bg-white dark:bg-card-dark px-4 py-2"
               >
-                <Text className="text-sm font-semibold text-[#102a43]">See all</Text>
+                <Text className="text-sm font-semibold text-slate-900 dark:text-slate-100">See all</Text>
               </Pressable>
             </View>
 
             {tournamentsLoading && tournaments.length === 0 ? (
-              <View className="h-44 rounded-[28px] bg-[#f8fbff]">
-                <LoadingSpinner />
+              <View>
+                <SkeletonTournamentCard />
+                <SkeletonTournamentCard />
               </View>
             ) : tournamentsError ? (
-              <View className="rounded-[28px] bg-[#fff1f1] p-4">
-                <Text className="text-center text-sm text-[#b42318]">{tournamentsError}</Text>
+              <View className="rounded-[28px] bg-red-50 dark:bg-red-500/15 p-4">
+                <Text className="text-center text-sm text-red-700 dark:text-red-300">{tournamentsError}</Text>
               </View>
             ) : tournaments.length === 0 ? (
-              <View className="rounded-[28px] border border-[#e6edf3] bg-white px-5 py-6">
-                <Text className="text-base font-semibold text-[#102a43]">Nothing open right now</Text>
-                <Text className="mt-2 text-sm leading-5 text-[#6b7c93]">
+              <View className="rounded-[28px] border border-border dark:border-border-dark bg-white dark:bg-card-dark px-5 py-6">
+                <Text className="text-base font-semibold text-slate-900 dark:text-slate-50">Nothing open right now</Text>
+                <Text className="mt-2 text-sm leading-5 text-slate-500 dark:text-slate-400">
                   When new tournaments open up, they will land here first.
                 </Text>
               </View>
@@ -156,8 +160,8 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           <View className="mt-9">
             <View className="mb-4 flex-row items-center justify-between">
               <View className="flex-1 pr-4">
-                <Text className="text-2xl font-bold text-[#102a43]">Play Together</Text>
-                <Text className="mt-1 text-sm leading-5 text-[#6b7c93]">
+                <Text className="text-2xl font-bold text-slate-900 dark:text-slate-50">Play Together</Text>
+                <Text className="mt-1 text-sm leading-5 text-slate-500 dark:text-slate-400">
                   Quick match posts from players who want to get on court without waiting for a tournament.
                 </Text>
               </View>
@@ -177,14 +181,14 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
                 onPress={() => navigation.navigate('HostMatch')}
                 className="mt-4 self-start rounded-2xl bg-[#f0b429] px-5 py-3"
               >
-                <Text className="text-base font-semibold text-[#102a43]">Host a match</Text>
+                <Text className="text-base font-semibold text-slate-900">Host a match</Text>
               </Pressable>
             </View>
 
             {feed.hosting.length > 0 || feed.playing.length > 0 ? (
-              <View className="mb-5 rounded-[28px] border border-[#d9e2ec] bg-[#f8fbff] px-4 py-4">
-                <Text className="text-lg font-bold text-[#102a43]">Your board</Text>
-                <Text className="mt-1 text-sm text-[#6b7c93]">
+              <View className="mb-5 rounded-[28px] border border-border dark:border-border-dark bg-slate-50 dark:bg-slate-900/60 px-4 py-4">
+                <Text className="text-lg font-bold text-slate-900 dark:text-slate-50">Your board</Text>
+                <Text className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                   {formatMatchCount(feed.hosting.length, 'hosted post', 'hosted posts')} and{' '}
                   {formatMatchCount(feed.playing.length, 'joined match', 'joined matches')}.
                 </Text>
@@ -242,17 +246,18 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
             ) : null}
 
             {matchesLoading && feed.available.length === 0 && feed.hosting.length === 0 && feed.playing.length === 0 ? (
-              <View className="h-40 rounded-[28px] bg-[#f8fbff]">
-                <LoadingSpinner />
+              <View>
+                <SkeletonMatchCard />
+                <SkeletonMatchCard />
               </View>
             ) : matchesError ? (
-              <View className="rounded-[28px] bg-[#fff1f1] p-4">
-                <Text className="text-center text-sm text-[#b42318]">{matchesError}</Text>
+              <View className="rounded-[28px] bg-red-50 dark:bg-red-500/15 p-4">
+                <Text className="text-center text-sm text-red-700 dark:text-red-300">{matchesError}</Text>
               </View>
             ) : feed.available.length === 0 ? (
-              <View className="rounded-[28px] border border-[#e6edf3] bg-white px-5 py-6">
-                <Text className="text-base font-semibold text-[#102a43]">No open match posts yet</Text>
-                <Text className="mt-2 text-sm leading-5 text-[#6b7c93]">
+              <View className="rounded-[28px] border border-border dark:border-border-dark bg-white dark:bg-card-dark px-5 py-6">
+                <Text className="text-base font-semibold text-slate-900 dark:text-slate-50">No open match posts yet</Text>
+                <Text className="mt-2 text-sm leading-5 text-slate-500 dark:text-slate-400">
                   Start the board by hosting a match and letting someone nearby claim the spot.
                 </Text>
               </View>

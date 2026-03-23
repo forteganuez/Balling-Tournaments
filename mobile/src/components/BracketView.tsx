@@ -10,10 +10,10 @@ function MatchCard({ match }: { match: Match }) {
   return (
     <View
       key={match.id}
-      className="bg-surface rounded-lg p-3 mb-2 border border-border"
+      className="bg-surface dark:bg-surface-dark rounded-lg p-3 mb-2 border border-border dark:border-border-dark"
     >
       <View className="flex-row justify-between items-center">
-        <Text className="text-sm text-secondary">
+        <Text className="text-sm text-secondary dark:text-secondary-dark">
           Match {match.position + 1}
         </Text>
         {match.score ? (
@@ -23,7 +23,7 @@ function MatchCard({ match }: { match: Match }) {
         ) : match.winnerId ? (
           <Text className="text-sm font-semibold text-green-600">Done</Text>
         ) : (
-          <Text className="text-sm text-muted">Pending</Text>
+          <Text className="text-sm text-muted dark:text-muted-dark">Pending</Text>
         )}
       </View>
     </View>
@@ -33,7 +33,7 @@ function MatchCard({ match }: { match: Match }) {
 function RoundSection({ label, matches }: { label: string; matches: Match[] }) {
   return (
     <View className="mb-4">
-      <Text className="text-base font-semibold text-secondary mb-2">
+      <Text className="text-base font-semibold text-secondary dark:text-secondary-dark mb-2">
         {label}
       </Text>
       {matches
@@ -48,7 +48,7 @@ function RoundSection({ label, matches }: { label: string; matches: Match[] }) {
 export function BracketView({ matches }: BracketViewProps) {
   if (matches.length === 0) {
     return (
-      <Text className="text-muted text-center py-4">
+      <Text className="text-muted dark:text-muted-dark text-center py-4">
         No matches yet
       </Text>
     );

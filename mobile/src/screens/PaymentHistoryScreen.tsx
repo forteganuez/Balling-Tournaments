@@ -47,7 +47,7 @@ export function PaymentHistoryScreen() {
   if (error) {
     return (
       <View className="flex-1 items-center justify-center px-4">
-        <Text className="text-red-600 text-center mb-4">{error}</Text>
+        <Text className="text-red-600 dark:text-red-300 text-center mb-4">{error}</Text>
         <Pressable onPress={fetchPayments} className="bg-primary px-6 py-2 rounded-lg">
           <Text className="text-white font-medium">Retry</Text>
         </Pressable>
@@ -57,13 +57,13 @@ export function PaymentHistoryScreen() {
 
   if (payments.length === 0) {
     return (
-      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top']}>
         <View className="flex-1 items-center justify-center px-4">
           <Text className="text-4xl mb-4">💳</Text>
-          <Text className="text-lg font-semibold text-secondary mb-2">
+          <Text className="text-lg font-semibold text-secondary dark:text-secondary-dark mb-2">
             No payments yet
           </Text>
-          <Text className="text-muted text-center">
+          <Text className="text-muted dark:text-muted-dark text-center">
             Your tournament payment history will appear here.
           </Text>
         </View>
@@ -74,7 +74,7 @@ export function PaymentHistoryScreen() {
   const totalSpent = payments.reduce((sum, p) => sum + p.entryFee, 0);
 
   return (
-    <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-surface dark:bg-background-dark" edges={['top']}>
       <ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
@@ -82,16 +82,16 @@ export function PaymentHistoryScreen() {
       >
         <View className="px-4 pt-4 pb-8">
           {/* Summary card */}
-          <View className="bg-white rounded-xl p-4 mb-4 border border-border">
+          <View className="bg-white dark:bg-card-dark rounded-xl p-4 mb-4 border border-border dark:border-border-dark">
             <View className="flex-row justify-between items-center">
               <View>
-                <Text className="text-sm text-muted">Total Spent</Text>
-                <Text className="text-2xl font-bold text-secondary">
+                <Text className="text-sm text-muted dark:text-muted-dark">Total Spent</Text>
+                <Text className="text-2xl font-bold text-secondary dark:text-secondary-dark">
                   {totalSpent === 0 ? 'Free' : `€${(totalSpent / 100).toFixed(2)}`}
                 </Text>
               </View>
               <View>
-                <Text className="text-sm text-muted">Tournaments</Text>
+                <Text className="text-sm text-muted dark:text-muted-dark">Tournaments</Text>
                 <Text className="text-2xl font-bold text-primary text-right">
                   {payments.length}
                 </Text>
@@ -118,11 +118,11 @@ export function PaymentHistoryScreen() {
                     params: { id: payment.tournamentId },
                   })
                 }
-                className="bg-white rounded-xl p-4 mb-3 border border-border"
+                className="bg-white dark:bg-card-dark rounded-xl p-4 mb-3 border border-border dark:border-border-dark"
               >
                 <View className="flex-row items-center mb-2">
                   <SportIcon sport={payment.sport} size={24} />
-                  <Text className="text-base font-semibold text-secondary ml-2 flex-1" numberOfLines={1}>
+                  <Text className="text-base font-semibold text-secondary dark:text-secondary-dark ml-2 flex-1" numberOfLines={1}>
                     {payment.tournamentName}
                   </Text>
                   <Text className="text-base font-bold text-primary">
@@ -131,7 +131,7 @@ export function PaymentHistoryScreen() {
                 </View>
 
                 <View className="flex-row justify-between items-center">
-                  <Text className="text-sm text-muted">{dateStr}</Text>
+                  <Text className="text-sm text-muted dark:text-muted-dark">{dateStr}</Text>
                   <View
                     className={`px-2 py-0.5 rounded-full ${
                       isFree
@@ -156,7 +156,7 @@ export function PaymentHistoryScreen() {
                 </View>
 
                 {payment.location && (
-                  <Text className="text-xs text-muted mt-1">{payment.location}</Text>
+                  <Text className="text-xs text-muted dark:text-muted-dark mt-1">{payment.location}</Text>
                 )}
               </Pressable>
             );

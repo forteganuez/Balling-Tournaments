@@ -49,7 +49,7 @@ function PlayerCard({ player, selected, confirmed, onSelect, disabled }: PlayerC
       className={`flex-1 items-center rounded-xl p-4 border-2 ${
         selected
           ? 'border-primary bg-primary/5'
-          : 'border-border bg-surface'
+          : 'border-border dark:border-border-dark bg-surface dark:bg-surface-dark'
       } ${disabled ? 'opacity-60' : ''}`}
     >
       {player.avatarUrl ? (
@@ -65,7 +65,7 @@ function PlayerCard({ player, selected, confirmed, onSelect, disabled }: PlayerC
       )}
 
       <Text
-        className="text-sm font-semibold text-secondary text-center"
+        className="text-sm font-semibold text-secondary dark:text-secondary-dark text-center"
         numberOfLines={2}
       >
         {player.name}
@@ -211,7 +211,7 @@ export function SubmitResultScreen({ route }: SubmitResultScreenProps) {
     state.kind === 'confirmed' ? state.winnerId : null;
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top']}>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 32 }}
@@ -221,17 +221,17 @@ export function SubmitResultScreen({ route }: SubmitResultScreenProps) {
         <View className="flex-row items-center mb-6">
           <Pressable
             onPress={handleGoBack}
-            className="w-10 h-10 items-center justify-center rounded-full bg-surface mr-3"
+            className="w-10 h-10 items-center justify-center rounded-full bg-surface dark:bg-surface-dark mr-3"
           >
-            <Text className="text-secondary text-lg font-bold">←</Text>
+            <Text className="text-secondary dark:text-secondary-dark text-lg font-bold">←</Text>
           </Pressable>
-          <Text className="text-xl font-bold text-secondary flex-1">
+          <Text className="text-xl font-bold text-secondary dark:text-secondary-dark flex-1">
             {headerText}
           </Text>
         </View>
 
         {/* Who won? heading */}
-        <Text className="text-lg font-semibold text-secondary text-center mb-4">
+        <Text className="text-lg font-semibold text-secondary dark:text-secondary-dark text-center mb-4">
           Who won?
         </Text>
 
@@ -245,7 +245,7 @@ export function SubmitResultScreen({ route }: SubmitResultScreenProps) {
             disabled={isPostSubmission || state.kind === 'submitting'}
           />
           <View className="w-4 items-center justify-center">
-            <Text className="text-muted font-bold text-base">vs</Text>
+            <Text className="text-muted dark:text-muted-dark font-bold text-base">vs</Text>
           </View>
           <PlayerCard
             player={player2}
@@ -259,7 +259,7 @@ export function SubmitResultScreen({ route }: SubmitResultScreenProps) {
         {/* Score input */}
         {!isPostSubmission && (
           <View className="mb-6">
-            <Text className="text-sm font-medium text-secondary mb-2">
+            <Text className="text-sm font-medium text-secondary dark:text-secondary-dark mb-2">
               Score (optional)
             </Text>
             <TextInput
@@ -268,7 +268,7 @@ export function SubmitResultScreen({ route }: SubmitResultScreenProps) {
               placeholder="e.g. 6-4, 7-5"
               placeholderTextColor={colors.muted}
               editable={state.kind !== 'submitting'}
-              className="border border-border rounded-lg px-4 py-3 text-secondary text-base bg-surface"
+              className="border border-border dark:border-border-dark rounded-lg px-4 py-3 text-secondary dark:text-secondary-dark text-base bg-surface dark:bg-surface-dark"
             />
           </View>
         )}
@@ -298,8 +298,8 @@ export function SubmitResultScreen({ route }: SubmitResultScreenProps) {
         {/* Error state */}
         {state.kind === 'error' && (
           <View className="mb-4">
-            <View className="bg-red-50 rounded-lg p-4 mb-3">
-              <Text className="text-red-600 text-center">{state.message}</Text>
+            <View className="bg-red-50 dark:bg-red-500/15 rounded-lg p-4 mb-3">
+              <Text className="text-red-600 dark:text-red-300 text-center">{state.message}</Text>
             </View>
             <Pressable
               onPress={handleSubmit}
@@ -317,16 +317,16 @@ export function SubmitResultScreen({ route }: SubmitResultScreenProps) {
 
         {/* Waiting for opponent */}
         {state.kind === 'waiting' && (
-          <View className="bg-surface rounded-xl p-6 items-center">
+          <View className="bg-surface dark:bg-surface-dark rounded-xl p-6 items-center">
             <ActivityIndicator
               size="large"
               color={colors.primary}
               className="mb-3"
             />
-            <Text className="text-base font-semibold text-secondary text-center mb-1">
+            <Text className="text-base font-semibold text-secondary dark:text-secondary-dark text-center mb-1">
               Waiting for opponent to confirm
             </Text>
-            <Text className="text-sm text-muted text-center">
+            <Text className="text-sm text-muted dark:text-muted-dark text-center">
               We'll update automatically when they submit their result.
             </Text>
           </View>

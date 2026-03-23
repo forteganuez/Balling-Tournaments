@@ -21,8 +21,11 @@ import type {
   PaymentRecord,
 } from './types';
 import { getToken, clearToken } from './storage';
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001';
+import {
+  getApiBaseCandidates,
+  joinApiUrl,
+  rememberWorkingApiBaseUrl,
+} from './apiConfig';
 
 let onUnauthorized: (() => void) | null = null;
 
@@ -50,38 +53,59 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
+  const requestOptions: RequestInit = {
     ...options,
     headers: {
       ...headers,
       ...(options?.headers as Record<string, string>),
     },
-  });
+  };
 
-  if (!res.ok) {
-    if (res.status === 401) {
-      await clearToken();
-      onUnauthorized?.();
-    }
+  let networkError: unknown = null;
 
-    let message = res.statusText || `Request failed (${res.status})`;
+  for (const baseUrl of getApiBaseCandidates()) {
+    let res: Response;
+
     try {
-      const data = await res.json();
-      message = data.error || message;
-    } catch {
-      try {
-        const text = await res.text();
-        if (text.trim()) {
-          message = text.trim();
-        }
-      } catch {
-        // ignore body parse errors
-      }
+      res = await fetch(joinApiUrl(baseUrl, path), requestOptions);
+    } catch (error) {
+      networkError = error;
+      continue;
     }
-    throw new ApiError(message, res.status);
+
+    rememberWorkingApiBaseUrl(baseUrl);
+
+    if (!res.ok) {
+      if (res.status === 401) {
+        await clearToken();
+        onUnauthorized?.();
+      }
+
+      let message = res.statusText || `Request failed (${res.status})`;
+      try {
+        const data = await res.json();
+        message = data.error || message;
+      } catch {
+        try {
+          const text = await res.text();
+          if (text.trim()) {
+            message = text.trim();
+          }
+        } catch {
+          // ignore body parse errors
+        }
+      }
+      throw new ApiError(message, res.status);
+    }
+
+    return res.json() as Promise<T>;
   }
 
-  return res.json() as Promise<T>;
+  if (networkError instanceof Error) {
+    throw networkError;
+  }
+
+  throw new Error('Network request failed');
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────

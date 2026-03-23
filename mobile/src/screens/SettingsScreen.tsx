@@ -27,11 +27,11 @@ const PROVIDER_LABELS: Record<string, string> = {
 function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <View className="px-5 pt-6 pb-2">
-      <Text className="text-xs font-semibold uppercase tracking-wider text-muted">
+      <Text className="text-xs font-semibold uppercase tracking-wider text-muted dark:text-muted-dark">
         {title}
       </Text>
       {subtitle ? (
-        <Text className="text-sm text-muted mt-1">{subtitle}</Text>
+        <Text className="text-sm text-muted dark:text-muted-dark mt-1">{subtitle}</Text>
       ) : null}
     </View>
   );
@@ -41,7 +41,7 @@ function SettingsCard({ children, danger }: { children: React.ReactNode; danger?
   return (
     <View
       className={`mx-4 rounded-2xl overflow-hidden border ${
-        danger ? 'border-red-200 bg-red-50/40' : 'border-border bg-white'
+        danger ? 'border-red-200 bg-red-50/40' : 'border-border dark:border-border-dark bg-white dark:bg-card-dark'
       }`}
     >
       {children}
@@ -66,21 +66,21 @@ function SettingsRow({
     <Pressable
       onPress={onPress}
       className={`flex-row items-center justify-between px-4 py-4 ${
-        isLast ? '' : danger ? 'border-b border-red-100' : 'border-b border-border'
+        isLast ? '' : danger ? 'border-b border-red-100' : 'border-b border-border dark:border-border-dark'
       }`}
     >
       <View className="flex-1 pr-4">
         <Text
-          className={`text-base ${danger ? 'text-red-500 font-semibold' : 'text-secondary'}`}
+          className={`text-base ${danger ? 'text-red-500 dark:text-red-300 font-semibold' : 'text-secondary dark:text-secondary-dark'}`}
         >
           {label}
         </Text>
         {detail ? (
-          <Text className="text-sm text-muted mt-1">{detail}</Text>
+          <Text className="text-sm text-muted dark:text-muted-dark mt-1">{detail}</Text>
         ) : null}
       </View>
       <View className="flex-row items-center">
-        <Text className="text-muted text-sm">{'\u2192'}</Text>
+        <Text className="text-muted dark:text-muted-dark text-sm">{'\u2192'}</Text>
       </View>
     </Pressable>
   );
@@ -149,14 +149,14 @@ export function SettingsScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top']}>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 40 }}
       >
         <View className="px-4 pt-4 pb-1">
-          <Text className="text-3xl font-bold text-secondary">Settings</Text>
-          <Text className="text-sm text-muted mt-1">
+          <Text className="text-3xl font-bold text-secondary dark:text-secondary-dark">Settings</Text>
+          <Text className="text-sm text-muted dark:text-muted-dark mt-1">
             Keep your account, appearance, and support preferences in one place.
           </Text>
         </View>
@@ -224,8 +224,8 @@ export function SettingsScreen() {
         />
         <SettingsCard>
           <View className="px-4 py-4">
-            <Text className="text-base text-secondary mb-3">Theme</Text>
-            <View className="flex-row bg-surface rounded-xl p-1">
+            <Text className="text-base text-secondary dark:text-secondary-dark mb-3">Theme</Text>
+            <View className="flex-row bg-surface dark:bg-surface-dark rounded-xl p-1">
             {THEME_OPTIONS.map((option) => {
               const isActive = mode === option.value;
               return (
@@ -238,7 +238,7 @@ export function SettingsScreen() {
                 >
                   <Text
                     className={`text-sm font-medium ${
-                      isActive ? 'text-white' : 'text-muted'
+                      isActive ? 'text-white' : 'text-muted dark:text-muted-dark'
                     }`}
                   >
                     {option.label}
@@ -250,13 +250,8 @@ export function SettingsScreen() {
           </View>
           <SettingsRow
             label="Notification preferences"
-            detail="All enabled"
-            onPress={() =>
-              Alert.alert(
-                'Notification Preferences',
-                'Notification settings coming soon.',
-              )
-            }
+            detail="Manage your alerts"
+            onPress={() => navigation.navigate('NotificationPreferences')}
             isLast
           />
         </SettingsCard>

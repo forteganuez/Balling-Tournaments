@@ -385,7 +385,7 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
               >
                 <Text
                   className={`text-xs font-bold ${
-                    isActive || isCompleted ? 'text-white' : 'text-muted'
+                    isActive || isCompleted ? 'text-white' : 'text-muted dark:text-muted-dark'
                   }`}
                 >
                   {isCompleted ? '\u2713' : i + 1}
@@ -420,11 +420,11 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
               key={String(option)}
               onPress={() => onSelect(option)}
               className={`px-4 py-2.5 rounded-full border ${
-                isSelected ? 'bg-primary border-primary' : 'bg-white border-gray-300'
+                isSelected ? 'bg-primary border-primary' : 'bg-white dark:bg-card-dark border-border dark:border-border-dark'
               }`}
             >
               <Text
-                className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-secondary'}`}
+                className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-secondary dark:text-secondary-dark'}`}
               >
                 {renderLabel(option)}
               </Text>
@@ -439,8 +439,8 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
 
   const SectionLabel = ({ text, optional }: { text: string; optional?: boolean }) => (
     <View className="flex-row items-center mb-2 mt-4">
-      <Text className="text-sm font-semibold text-secondary">{text}</Text>
-      {optional && <Text className="text-xs text-muted ml-1">(optional)</Text>}
+      <Text className="text-sm font-semibold text-secondary dark:text-secondary-dark">{text}</Text>
+      {optional && <Text className="text-xs text-muted dark:text-muted-dark ml-1">(optional)</Text>}
     </View>
   );
 
@@ -448,8 +448,8 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
 
   const renderStep1 = () => (
     <View>
-      <Text className="text-xl font-bold text-secondary mb-1">Basic Info</Text>
-      <Text className="text-sm text-muted mb-4">Set up the fundamentals for your tournament</Text>
+      <Text className="text-xl font-bold text-secondary dark:text-secondary-dark mb-1">Basic Info</Text>
+      <Text className="text-sm text-muted dark:text-muted-dark mb-4">Set up the fundamentals for your tournament</Text>
 
       <SectionLabel text="Tournament Name" />
       <TextInput
@@ -457,7 +457,7 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
         onChangeText={(v) => updateField('name', v)}
         placeholder="e.g. Summer Padel Open 2026"
         placeholderTextColor="#9CA3AF"
-        className="bg-surface border border-gray-200 rounded-xl px-4 py-3.5 text-secondary text-base"
+        className="bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-xl px-4 py-3.5 text-secondary dark:text-secondary-dark text-base"
         maxLength={80}
       />
 
@@ -475,11 +475,11 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
                 }
               }}
               className={`px-4 py-2.5 rounded-full border ${
-                isSelected ? 'bg-primary border-primary' : 'bg-white border-gray-300'
+                isSelected ? 'bg-primary border-primary' : 'bg-white dark:bg-card-dark border-border dark:border-border-dark'
               }`}
             >
               <Text
-                className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-secondary'}`}
+                className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-secondary dark:text-secondary-dark'}`}
               >
                 {emoji} {label}
               </Text>
@@ -497,8 +497,8 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
       />
 
       {form.sport === 'TENNIS' && (
-        <View className="flex-row items-center justify-between mt-5 bg-surface rounded-xl px-4 py-3">
-          <Text className="text-sm font-medium text-secondary">Allow Doubles</Text>
+        <View className="flex-row items-center justify-between mt-5 bg-surface dark:bg-surface-dark rounded-xl px-4 py-3">
+          <Text className="text-sm font-medium text-secondary dark:text-secondary-dark">Allow Doubles</Text>
           <Switch
             value={form.allowDoubles}
             onValueChange={(v) => updateField('allowDoubles', v)}
@@ -514,18 +514,18 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
 
   const renderStep2 = () => (
     <View>
-      <Text className="text-xl font-bold text-secondary mb-1">Date & Location</Text>
-      <Text className="text-sm text-muted mb-4">When and where will the tournament take place?</Text>
+      <Text className="text-xl font-bold text-secondary dark:text-secondary-dark mb-1">Date & Location</Text>
+      <Text className="text-sm text-muted dark:text-muted-dark mb-4">When and where will the tournament take place?</Text>
 
       <SectionLabel text="Date" />
       <Pressable
         onPress={() => setDatePickerVisible(true)}
-        className="rounded-2xl border border-gray-200 bg-surface px-4 py-4"
+        className="rounded-2xl border border-border dark:border-border-dark bg-surface dark:bg-surface-dark px-4 py-4"
       >
-        <Text className="text-xs font-semibold uppercase tracking-[1px] text-muted">
+        <Text className="text-xs font-semibold uppercase tracking-[1px] text-muted dark:text-muted-dark">
           Tournament day
         </Text>
-        <Text className="mt-1 text-base font-semibold text-secondary">
+        <Text className="mt-1 text-base font-semibold text-secondary dark:text-secondary-dark">
           {form.date ? formatLongDate(form.date) : 'Choose a tournament date'}
         </Text>
       </Pressable>
@@ -536,7 +536,7 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
         onChangeText={(v) => updateField('location', v)}
         placeholder="e.g. Madrid, Spain"
         placeholderTextColor="#9CA3AF"
-        className="bg-surface border border-gray-200 rounded-xl px-4 py-3.5 text-secondary text-base"
+        className="bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-xl px-4 py-3.5 text-secondary dark:text-secondary-dark text-base"
       />
 
       <SectionLabel text="Venue" optional />
@@ -545,7 +545,7 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
         onChangeText={(v) => updateField('venue', v)}
         placeholder="e.g. Club de Padel Madrid"
         placeholderTextColor="#9CA3AF"
-        className="bg-surface border border-gray-200 rounded-xl px-4 py-3.5 text-secondary text-base"
+        className="bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-xl px-4 py-3.5 text-secondary dark:text-secondary-dark text-base"
       />
     </View>
   );
@@ -554,8 +554,8 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
 
   const renderStep3 = () => (
     <View>
-      <Text className="text-xl font-bold text-secondary mb-1">Players & Fees</Text>
-      <Text className="text-sm text-muted mb-4">Configure capacity, pricing, and skill requirements</Text>
+      <Text className="text-xl font-bold text-secondary dark:text-secondary-dark mb-1">Players & Fees</Text>
+      <Text className="text-sm text-muted dark:text-muted-dark mb-4">Configure capacity, pricing, and skill requirements</Text>
 
       <SectionLabel text="Max Players" />
       <PillSelector
@@ -566,20 +566,20 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
       />
 
       <SectionLabel text="Entry Fee" />
-      <View className="flex-row items-center bg-surface border border-gray-200 rounded-xl px-4">
-        <Text className="text-base text-muted mr-2">{'\u20AC'}</Text>
+      <View className="flex-row items-center bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-xl px-4">
+        <Text className="text-base text-muted dark:text-muted-dark mr-2">{'\u20AC'}</Text>
         <TextInput
           value={form.entryFeeDisplay}
           onChangeText={(v) => updateField('entryFeeDisplay', v)}
           placeholder="0.00"
           placeholderTextColor="#9CA3AF"
           keyboardType="decimal-pad"
-          className="flex-1 py-3.5 text-secondary text-base"
+          className="flex-1 py-3.5 text-secondary dark:text-secondary-dark text-base"
         />
       </View>
 
       <SectionLabel text="Skill Level Range" optional />
-      <Text className="text-xs text-muted mb-2">Minimum</Text>
+      <Text className="text-xs text-muted dark:text-muted-dark mb-2">Minimum</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View className="flex-row gap-2">
           {SKILL_LEVELS.map((level) => {
@@ -589,11 +589,11 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
                 key={`min-${level}`}
                 onPress={() => updateField('skillMin', isSelected ? null : level)}
                 className={`w-9 h-9 rounded-full items-center justify-center border ${
-                  isSelected ? 'bg-primary border-primary' : 'bg-white border-gray-300'
+                  isSelected ? 'bg-primary border-primary' : 'bg-white dark:bg-card-dark border-border dark:border-border-dark'
                 }`}
               >
                 <Text
-                  className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-secondary'}`}
+                  className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-secondary dark:text-secondary-dark'}`}
                 >
                   {level}
                 </Text>
@@ -603,7 +603,7 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
         </View>
       </ScrollView>
 
-      <Text className="text-xs text-muted mb-2 mt-3">Maximum</Text>
+      <Text className="text-xs text-muted dark:text-muted-dark mb-2 mt-3">Maximum</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View className="flex-row gap-2">
           {SKILL_LEVELS.map((level) => {
@@ -613,11 +613,11 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
                 key={`max-${level}`}
                 onPress={() => updateField('skillMax', isSelected ? null : level)}
                 className={`w-9 h-9 rounded-full items-center justify-center border ${
-                  isSelected ? 'bg-primary border-primary' : 'bg-white border-gray-300'
+                  isSelected ? 'bg-primary border-primary' : 'bg-white dark:bg-card-dark border-border dark:border-border-dark'
                 }`}
               >
                 <Text
-                  className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-secondary'}`}
+                  className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-secondary dark:text-secondary-dark'}`}
                 >
                   {level}
                 </Text>
@@ -633,13 +633,13 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
 
   const renderStep4 = () => (
     <View>
-      <Text className="text-xl font-bold text-secondary mb-1">Details</Text>
-      <Text className="text-sm text-muted mb-4">Add extra information and media</Text>
+      <Text className="text-xl font-bold text-secondary dark:text-secondary-dark mb-1">Details</Text>
+      <Text className="text-sm text-muted dark:text-muted-dark mb-4">Add extra information and media</Text>
 
       <SectionLabel text="Cover Image" optional />
       <Pressable
         onPress={pickImage}
-        className="bg-surface border border-dashed border-gray-300 rounded-xl h-40 items-center justify-center overflow-hidden"
+        className="bg-surface dark:bg-surface-dark border border-dashed border-border dark:border-border-dark rounded-xl h-40 items-center justify-center overflow-hidden"
       >
         {form.coverImageUri ? (
           <Image
@@ -650,7 +650,7 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
         ) : (
           <View className="items-center">
             <Text className="text-3xl mb-1">{'\u{1F4F7}'}</Text>
-            <Text className="text-sm text-muted">Tap to select a cover image</Text>
+            <Text className="text-sm text-muted dark:text-muted-dark">Tap to select a cover image</Text>
           </View>
         )}
       </Pressable>
@@ -669,7 +669,7 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
         multiline
         numberOfLines={4}
         textAlignVertical="top"
-        className="bg-surface border border-gray-200 rounded-xl px-4 py-3 text-secondary text-base min-h-[100px]"
+        className="bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-xl px-4 py-3 text-secondary dark:text-secondary-dark text-base min-h-[100px]"
       />
 
       <SectionLabel text="Rules" optional />
@@ -681,13 +681,13 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
         multiline
         numberOfLines={3}
         textAlignVertical="top"
-        className="bg-surface border border-gray-200 rounded-xl px-4 py-3 text-secondary text-base min-h-[80px]"
+        className="bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-xl px-4 py-3 text-secondary dark:text-secondary-dark text-base min-h-[80px]"
       />
 
-      <View className="flex-row items-center justify-between mt-5 bg-surface rounded-xl px-4 py-3">
+      <View className="flex-row items-center justify-between mt-5 bg-surface dark:bg-surface-dark rounded-xl px-4 py-3">
         <View className="flex-1 mr-3">
-          <Text className="text-sm font-medium text-secondary">Enable Chat</Text>
-          <Text className="text-xs text-muted">Allow participants to chat with each other</Text>
+          <Text className="text-sm font-medium text-secondary dark:text-secondary-dark">Enable Chat</Text>
+          <Text className="text-xs text-muted dark:text-muted-dark">Allow participants to chat with each other</Text>
         </View>
         <Switch
           value={form.chatEnabled}
@@ -707,8 +707,8 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
 
     return (
       <View>
-      <Text className="text-xl font-bold text-secondary mb-1">Review</Text>
-      <Text className="text-sm text-muted mb-4">
+      <Text className="text-xl font-bold text-secondary dark:text-secondary-dark mb-1">Review</Text>
+      <Text className="text-sm text-muted dark:text-muted-dark mb-4">
         Confirm your tournament details before {isEditing ? 'saving' : 'creating'}
       </Text>
 
@@ -720,7 +720,7 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
           />
         )}
 
-        <View className="bg-surface rounded-xl p-4">
+        <View className="bg-surface dark:bg-surface-dark rounded-xl p-4">
           <ReviewRow label="Name" value={form.name} />
           <ReviewRow
             label="Sport"
@@ -745,15 +745,15 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
 
         {form.description.trim() !== '' && (
           <View className="mt-4">
-            <Text className="text-sm font-semibold text-secondary mb-1">Description</Text>
-            <Text className="text-sm text-muted">{form.description}</Text>
+            <Text className="text-sm font-semibold text-secondary dark:text-secondary-dark mb-1">Description</Text>
+            <Text className="text-sm text-muted dark:text-muted-dark">{form.description}</Text>
           </View>
         )}
 
         {form.rules.trim() !== '' && (
           <View className="mt-3">
-            <Text className="text-sm font-semibold text-secondary mb-1">Rules</Text>
-            <Text className="text-sm text-muted">{form.rules}</Text>
+            <Text className="text-sm font-semibold text-secondary dark:text-secondary-dark mb-1">Rules</Text>
+            <Text className="text-sm text-muted dark:text-muted-dark">{form.rules}</Text>
           </View>
         )}
       </View>
@@ -763,9 +763,9 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
   // ── Review row helper ────────────────────────────────────────────
 
   const ReviewRow = ({ label, value }: { label: string; value: string }) => (
-    <View className="flex-row justify-between py-2 border-b border-gray-100">
-      <Text className="text-sm text-muted">{label}</Text>
-      <Text className="text-sm font-medium text-secondary">{value}</Text>
+    <View className="flex-row justify-between py-2 border-b border-border dark:border-border-dark">
+      <Text className="text-sm text-muted dark:text-muted-dark">{label}</Text>
+      <Text className="text-sm font-medium text-secondary dark:text-secondary-dark">{value}</Text>
     </View>
   );
 
@@ -797,21 +797,21 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
 
   if (initializing) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-white">
+      <SafeAreaView className="flex-1 items-center justify-center bg-white dark:bg-background-dark">
         <ActivityIndicator size="large" color="#6C63FF" />
-        <Text className="mt-4 text-sm text-muted">Loading tournament details...</Text>
+        <Text className="mt-4 text-sm text-muted dark:text-muted-dark">Loading tournament details...</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-white dark:bg-background-dark" edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
         {/* Header */}
-        <View className="flex-row items-center justify-between px-4 py-2 border-b border-gray-100">
+        <View className="flex-row items-center justify-between px-4 py-2 border-b border-border dark:border-border-dark">
           <Pressable
             onPress={() => navigation.goBack()}
             disabled={isBusy}
@@ -819,7 +819,7 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
           >
             <Text className="text-primary font-medium text-base">Cancel</Text>
           </Pressable>
-          <Text className="text-base font-semibold text-secondary">
+          <Text className="text-base font-semibold text-secondary dark:text-secondary-dark">
             {screenTitle}
           </Text>
           <View className="w-16" />
@@ -838,8 +838,8 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
 
           {/* Error message */}
           {error && (
-            <View className="bg-red-50 rounded-xl p-3 mt-4">
-              <Text className="text-red-600 text-sm text-center">{error}</Text>
+            <View className="bg-red-50 dark:bg-red-500/15 rounded-xl p-3 mt-4">
+              <Text className="text-red-600 dark:text-red-300 text-sm text-center">{error}</Text>
             </View>
           )}
 
@@ -848,13 +848,13 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
               onPress={confirmDelete}
               disabled={isBusy}
               className={`mt-5 rounded-2xl border px-4 py-4 ${
-                deleting ? 'border-red-200 bg-red-50/60' : 'border-red-200 bg-red-50'
+                deleting ? 'border-red-200 bg-red-50/60' : 'border-red-200 bg-red-50 dark:bg-red-500/15'
               }`}
             >
-              <Text className="text-sm font-semibold text-red-600">
+              <Text className="text-sm font-semibold text-red-600 dark:text-red-300">
                 {deleting ? 'Deleting tournament...' : 'Delete tournament'}
               </Text>
-              <Text className="mt-1 text-sm leading-5 text-red-500">
+              <Text className="mt-1 text-sm leading-5 text-red-500 dark:text-red-300">
                 Remove this tournament and all related registrations, matches, and chat.
               </Text>
             </Pressable>
@@ -865,11 +865,11 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
         </ScrollView>
 
         {/* Bottom navigation buttons */}
-        <View className="px-4 pb-2 pt-3 border-t border-gray-100 bg-white">
+        <View className="px-4 pb-2 pt-3 border-t border-border dark:border-border-dark bg-white dark:bg-card-dark">
           {uploadingImage && (
             <View className="flex-row items-center justify-center mb-2">
               <ActivityIndicator size="small" color="#6C63FF" />
-              <Text className="text-sm text-muted ml-2">Uploading image...</Text>
+              <Text className="text-sm text-muted dark:text-muted-dark ml-2">Uploading image...</Text>
             </View>
           )}
 
@@ -878,9 +878,9 @@ export function CreateTournamentScreen({ navigation, route }: Props) {
               <Pressable
                 onPress={goBack}
                 disabled={isBusy}
-                className="flex-1 border border-gray-300 rounded-xl py-3.5 items-center"
+                className="flex-1 border border-border dark:border-border-dark rounded-xl py-3.5 items-center"
               >
-                <Text className="text-secondary font-semibold text-base">Back</Text>
+                <Text className="text-secondary dark:text-secondary-dark font-semibold text-base">Back</Text>
               </Pressable>
             )}
 
