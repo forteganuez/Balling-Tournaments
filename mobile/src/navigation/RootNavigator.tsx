@@ -22,16 +22,35 @@ function AuthNavigator() {
 }
 
 export const linking: LinkingOptions<RootStackParamList> = {
-  prefixes: ['balling://'],
+  prefixes: ['balling://', 'https://balling.app'],
   config: {
     screens: {
       App: {
         screens: {
           Tournaments: {
             screens: {
+              TournamentList: 'tournaments',
               TournamentDetail: 'tournament/:id',
+              SpectatorBracket: 'tournament/:id/bracket',
             },
           },
+          Profile: {
+            screens: {
+              PlayerProfile: 'player/:id',
+              PaymentHistory: 'payments',
+            },
+          },
+          Home: {
+            screens: {
+              HomeMain: '',
+            },
+          },
+        },
+      },
+      Auth: {
+        screens: {
+          Login: 'login',
+          Register: 'register',
         },
       },
     },

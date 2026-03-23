@@ -253,6 +253,13 @@ export function ProfileScreen() {
           </Pressable>
 
           <Pressable
+            onPress={() => navigation.navigate('PaymentHistory')}
+            className="bg-surface rounded-xl py-3.5 items-center mb-3 border border-border"
+          >
+            <Text className="text-secondary font-semibold text-base">Payment History</Text>
+          </Pressable>
+
+          <Pressable
             onPress={() => navigation.navigate('Settings')}
             className="bg-surface rounded-xl py-3.5 items-center mb-3 border border-border"
           >

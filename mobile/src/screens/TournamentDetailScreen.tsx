@@ -39,7 +39,7 @@ export function TournamentDetailScreen({ navigation, route }: Props) {
     }, [fetchTournament]),
   );
 
-  // TODO: Replace with proper deep link handling post-launch
+  // Refresh tournament data when app returns from Stripe checkout or background
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'active') {
@@ -49,6 +49,17 @@ export function TournamentDetailScreen({ navigation, route }: Props) {
 
     return () => subscription.remove();
   }, [fetchTournament]);
+
+  // Handle deep link return from payment (balling://tournament/:id)
+  useEffect(() => {
+    const handleUrl = ({ url }: { url: string }) => {
+      if (url.includes(`tournament/${id}`)) {
+        fetchTournament();
+      }
+    };
+    const sub = Linking.addEventListener('url', handleUrl);
+    return () => sub.remove();
+  }, [id, fetchTournament]);
 
   async function handleJoin() {
     if (!tournament) return;

@@ -172,6 +172,7 @@ model Match {
   team1Id      String?
   team2Id      String?
   scheduledTime DateTime?
+  bracket      String?       // 'WINNERS', 'LOSERS', 'GRAND_FINAL' (null for SE/RR)
   tournament   Tournament    @relation(fields: [tournamentId], references: [id])
   results      MatchResult[]
 }
@@ -253,6 +254,20 @@ model DoublesTeam {
   tournament   Tournament @relation(fields: [tournamentId], references: [id])
   player1      User       @relation("Player1", fields: [player1Id], references: [id])
   player2      User       @relation("Player2", fields: [player2Id], references: [id])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String   // e.g. 'ROLE_CHANGE', 'TOURNAMENT_DELETE', 'TOURNAMENT_CANCEL'
+  targetType String   // e.g. 'USER', 'TOURNAMENT', 'MATCH'
+  targetId   String
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
 }
 
 model OpenMatch {

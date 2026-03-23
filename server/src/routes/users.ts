@@ -2,7 +2,8 @@ import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
 import { authenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/roleCheck.js';
-import { updateUserRoleSchema } from '../lib/validation.js';
+import { updateUserRoleSchema, profileUpdateSchema } from '../lib/validation.js';
+import { logAudit } from '../lib/audit.js';
 
 export const usersRouter = Router();
 
@@ -46,7 +47,8 @@ usersRouter.get(
   requireRole('ADMIN'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+      const raw = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+      const q = raw.slice(0, 100);
 
       const users = await prisma.user.findMany({
         where: q
@@ -98,6 +100,11 @@ usersRouter.put(
         return;
       }
 
+      const previousUser = await prisma.user.findUnique({
+        where: { id: req.params.id },
+        select: { role: true },
+      });
+
       const updatedUser = await prisma.user.update({
         where: { id: req.params.id },
         data: { role: data.role },
@@ -108,11 +115,63 @@ usersRouter.put(
         },
       });
 
+      await logAudit({
+        userId: req.user!.id,
+        action: 'ROLE_CHANGE',
+        targetType: 'USER',
+        targetId: req.params.id,
+        details: { previousRole: previousUser?.role, newRole: data.role },
+      });
+
       res.json(updatedUser);
     } catch (err) {
       next(err);
     }
   },
+);
+
+// GET /me/payments — get current user's payment history
+usersRouter.get(
+  '/me/payments',
+  authenticate,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const registrations = await prisma.registration.findMany({
+        where: { userId: req.user!.id },
+        include: {
+          tournament: {
+            select: {
+              id: true,
+              name: true,
+              sport: true,
+              entryFee: true,
+              date: true,
+              location: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      const payments = registrations.map((reg) => ({
+        id: reg.id,
+        tournamentId: reg.tournamentId,
+        tournamentName: reg.tournament.name,
+        sport: reg.tournament.sport,
+        entryFee: reg.tournament.entryFee,
+        tournamentDate: reg.tournament.date,
+        location: reg.tournament.location,
+        paidAt: reg.paidAt,
+        stripeSessionId: reg.stripeSessionId,
+        stripePaymentId: reg.stripePaymentId,
+        registeredAt: reg.createdAt,
+      }));
+
+      res.json(payments);
+    } catch (err) {
+      next(err);
+    }
+  }
 );
 
 // GET /:id — get public profile
@@ -158,34 +217,22 @@ usersRouter.put(
   authenticate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const {
-        name,
-        bio,
-        skillLevel,
-        city,
-        avatarUrl,
-        sports,
-        phone,
-        level,
-        preferredSport,
-        onboardingDone,
-        expoPushToken,
-      } = req.body;
+      const data = profileUpdateSchema.parse(req.body);
 
       const updatedUser = await prisma.user.update({
         where: { id: req.user!.id },
         data: {
-          ...(name !== undefined && { name }),
-          ...(bio !== undefined && { bio }),
-          ...(skillLevel !== undefined && { skillLevel }),
-          ...(city !== undefined && { city }),
-          ...(avatarUrl !== undefined && { avatarUrl }),
-          ...(sports !== undefined && { sports }),
-          ...(phone !== undefined && { phone }),
-          ...(level !== undefined && { level }),
-          ...(preferredSport !== undefined && { preferredSport }),
-          ...(onboardingDone !== undefined && { onboardingDone }),
-          ...(expoPushToken !== undefined && { expoPushToken }),
+          ...(data.name !== undefined && { name: data.name }),
+          ...(data.bio !== undefined && { bio: data.bio }),
+          ...(data.skillLevel !== undefined && { skillLevel: data.skillLevel }),
+          ...(data.city !== undefined && { city: data.city }),
+          ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl }),
+          ...(data.sports !== undefined && { sports: data.sports }),
+          ...(data.phone !== undefined && { phone: data.phone }),
+          ...(data.level !== undefined && { level: data.level }),
+          ...(data.preferredSport !== undefined && { preferredSport: data.preferredSport }),
+          ...(data.onboardingDone !== undefined && { onboardingDone: data.onboardingDone }),
+          ...(data.expoPushToken !== undefined && { expoPushToken: data.expoPushToken }),
         },
       });
 
@@ -248,3 +295,4 @@ usersRouter.get(
     }
   }
 );
+

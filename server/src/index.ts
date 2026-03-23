@@ -1,7 +1,9 @@
 import 'dotenv/config';
+import * as Sentry from '@sentry/node';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import { webhookRouter } from './routes/webhooks.js';
 import { authRouter } from './routes/auth.js';
 import { tournamentRouter, myTournamentsHandler } from './routes/tournaments.js';
@@ -14,16 +16,29 @@ import { followsRouter } from './routes/follows.js';
 import { notificationsRouter } from './routes/notifications.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authenticate } from './middleware/auth.js';
+import { generalLimiter, authLimiter, writeLimiter } from './middleware/rateLimiter.js';
+
+// ── Sentry (only in production with a DSN) ──
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || 'development',
+    tracesSampleRate: 0.2,
+  });
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// ── Security headers ──
+app.use(helmet());
 
 // Stripe webhook route MUST be mounted before express.json()
 // because Stripe needs the raw request body to verify signatures
 app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }), webhookRouter);
 
 // Standard middleware
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 app.use(
   cors({
@@ -31,6 +46,18 @@ app.use(
     credentials: true,
   })
 );
+
+// ── Rate limiting ──
+app.use('/api/', generalLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/google', authLimiter);
+app.use('/api/auth/apple', authLimiter);
+app.use('/api/auth/microsoft', authLimiter);
+
+// Write limiter on mutation-heavy routes
+app.use('/api/friends', writeLimiter);
+app.use('/api/follows', writeLimiter);
 
 // Routes
 app.use('/api/auth', authRouter);
@@ -51,8 +78,10 @@ app.use('/api', (_req, res) => {
 // Global error handler (must be last)
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
 
 export default app;

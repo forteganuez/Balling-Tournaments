@@ -48,6 +48,7 @@ export type ProfileStackParamList = {
   PlayerProfile: { id: string };
   Settings: undefined;
   AdminUsers: undefined;
+  PaymentHistory: undefined;
 };
 
 declare global {

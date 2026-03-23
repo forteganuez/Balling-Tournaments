@@ -38,14 +38,18 @@ export const matchResultSchema = z.object({
 });
 
 export const profileUpdateSchema = z.object({
-  name: z.string().min(2).optional(),
-  phone: z.string().nullable().optional(),
+  name: z.string().min(2).max(100).optional(),
+  phone: z.string().max(30).nullable().optional(),
   avatarUrl: z.string().url().nullable().optional(),
   bio: z.string().max(500).nullable().optional(),
-  city: z.string().nullable().optional(),
+  city: z.string().max(100).nullable().optional(),
   dateOfBirth: z.string().nullable().optional(),
   level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PRO']).nullable().optional(),
   preferredSport: z.enum(['PADEL', 'TENNIS', 'SQUASH']).nullable().optional(),
+  skillLevel: z.number().int().min(1).max(10).nullable().optional(),
+  sports: z.array(z.enum(['PADEL', 'TENNIS', 'SQUASH'])).optional(),
+  onboardingDone: z.boolean().optional(),
+  expoPushToken: z.string().max(200).nullable().optional(),
 });
 
 export const socialAuthSchema = z.object({
@@ -62,4 +66,17 @@ export const createOpenMatchSchema = z.object({
 
 export const updateUserRoleSchema = z.object({
   role: z.enum(['PLAYER', 'ORGANIZER', 'ADMIN']),
+});
+
+export const chatMessageSchema = z.object({
+  message: z.string().min(1, 'Message is required').max(1000, 'Message too long'),
+});
+
+export const announcementSchema = z.object({
+  message: z.string().min(1, 'Message is required').max(2000, 'Announcement too long'),
+});
+
+export const playerSubmitResultSchema = z.object({
+  winnerId: z.string().min(1, 'winnerId is required'),
+  score: z.string().max(50).optional(),
 });

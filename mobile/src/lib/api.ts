@@ -18,6 +18,7 @@ import type {
   TournamentChatMessage,
   OpenMatch,
   OpenMatchesFeed,
+  PaymentRecord,
 } from './types';
 import { getToken, clearToken } from './storage';
 
@@ -456,4 +457,10 @@ export async function registerDoubles(
     method: 'POST',
     body: JSON.stringify({ partnerId }),
   });
+}
+
+// ── Payments ────────────────────────────────────────────────────────
+
+export async function getPaymentHistory(): Promise<PaymentRecord[]> {
+  return apiFetch<PaymentRecord[]>('/api/users/me/payments');
 }

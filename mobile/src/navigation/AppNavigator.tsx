@@ -7,11 +7,15 @@ import { MatchScheduleScreen } from '../screens/MatchScheduleScreen';
 import { TournamentsScreen } from '../screens/TournamentsScreen';
 import { TournamentDetailScreen } from '../screens/TournamentDetailScreen';
 import { CreateTournamentScreen } from '../screens/CreateTournamentScreen';
+import { SpectatorBracketScreen } from '../screens/SpectatorBracketScreen';
+import { TournamentChatScreen } from '../screens/TournamentChatScreen';
+import { SubmitResultScreen } from '../screens/SubmitResultScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { EditProfileScreen } from '../screens/EditProfileScreen';
 import { PlayerProfileScreen } from '../screens/PlayerProfileScreen';
 import { AdminUsersScreen } from '../screens/AdminUsersScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { PaymentHistoryScreen } from '../screens/PaymentHistoryScreen';
 import type {
   AppTabParamList,
   HomeStackParamList,
@@ -66,6 +70,21 @@ function TournamentsNavigator() {
         component={CreateTournamentScreen}
         options={{ headerShown: false }}
       />
+      <TournamentsStack.Screen
+        name="SpectatorBracket"
+        component={SpectatorBracketScreen}
+        options={{ title: 'Live Bracket' }}
+      />
+      <TournamentsStack.Screen
+        name="TournamentChat"
+        component={TournamentChatScreen}
+        options={{ title: 'Chat' }}
+      />
+      <TournamentsStack.Screen
+        name="SubmitResult"
+        component={SubmitResultScreen}
+        options={{ title: 'Submit Result' }}
+      />
     </TournamentsStack.Navigator>
   );
 }
@@ -97,6 +116,11 @@ function ProfileNavigator() {
         name="AdminUsers"
         component={AdminUsersScreen}
         options={{ title: 'Manage Roles' }}
+      />
+      <ProfileStack.Screen
+        name="PaymentHistory"
+        component={PaymentHistoryScreen}
+        options={{ title: 'Payment History' }}
       />
     </ProfileStack.Navigator>
   );

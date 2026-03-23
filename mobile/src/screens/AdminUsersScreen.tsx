@@ -47,7 +47,7 @@ export function AdminUsersScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
 
-  const loadUsers = useCallback(async (search = query) => {
+  const loadUsers = useCallback(async (search: string) => {
     try {
       const data = await api.adminSearchUsers(search);
       setUsers(data);
@@ -55,7 +55,7 @@ export function AdminUsersScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [query]);
+  }, []);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -65,10 +65,10 @@ export function AdminUsersScreen() {
     return () => clearTimeout(timeout);
   }, [query, loadUsers]);
 
-  function handleRefresh() {
+  const handleRefresh = useCallback(() => {
     setRefreshing(true);
     void loadUsers(query);
-  }
+  }, [loadUsers, query]);
 
   function confirmRoleChange(target: AdminManagedUser, role: UserRole) {
     if (target.role === role) {

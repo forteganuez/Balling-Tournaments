@@ -1,12 +1,13 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
-import { createTournamentSchema, updateTournamentSchema } from '../lib/validation.js';
+import { createTournamentSchema, updateTournamentSchema, chatMessageSchema, announcementSchema } from '../lib/validation.js';
 import { authenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/roleCheck.js';
 import { generateBrackets } from '../services/bracket-generator.js';
 import { createCheckoutSession } from '../services/stripe.js';
 import { Prisma } from '@prisma/client';
 import { createNotification } from '../lib/notifications.js';
+import { logAudit } from '../lib/audit.js';
 
 export const tournamentRouter = Router();
 
@@ -190,13 +191,13 @@ tournamentRouter.delete('/:id', authenticate, async (req: Request, res: Response
       return;
     }
 
-    const matches = await prisma.match.findMany({
-      where: { tournamentId: req.params.id },
-      select: { id: true },
-    });
-    const matchIds = matches.map((match) => match.id);
-
     await prisma.$transaction(async (tx) => {
+      const matches = await tx.match.findMany({
+        where: { tournamentId: req.params.id },
+        select: { id: true },
+      });
+      const matchIds = matches.map((match) => match.id);
+
       if (matchIds.length > 0) {
         await tx.matchResult.deleteMany({
           where: { matchId: { in: matchIds } },
@@ -221,6 +222,14 @@ tournamentRouter.delete('/:id', authenticate, async (req: Request, res: Response
       await tx.tournament.delete({
         where: { id: req.params.id },
       });
+    });
+
+    await logAudit({
+      userId: req.user!.id,
+      action: 'TOURNAMENT_DELETE',
+      targetType: 'TOURNAMENT',
+      targetId: req.params.id,
+      details: { organizerId: tournament.organizerId },
     });
 
     res.json({ message: 'Tournament deleted successfully' });
@@ -259,6 +268,14 @@ tournamentRouter.post(
 
       await generateBrackets(req.params.id, tournament.format);
 
+      await logAudit({
+        userId: req.user!.id,
+        action: 'REGISTRATION_CLOSED',
+        targetType: 'TOURNAMENT',
+        targetId: req.params.id,
+        details: { format: tournament.format },
+      });
+
       const updatedTournament = await prisma.tournament.findUnique({
         where: { id: req.params.id },
         include: {
@@ -295,6 +312,14 @@ tournamentRouter.post('/:id/cancel', authenticate, async (req: Request, res: Res
     const updated = await prisma.tournament.update({
       where: { id: req.params.id },
       data: { status: 'CANCELLED' },
+    });
+
+    await logAudit({
+      userId: req.user!.id,
+      action: 'TOURNAMENT_CANCEL',
+      targetType: 'TOURNAMENT',
+      targetId: req.params.id,
+      details: { previousStatus: tournament.status },
     });
 
     res.json(updated);
@@ -386,11 +411,7 @@ tournamentRouter.post('/:id/announce', authenticate, async (req: Request, res: R
       return;
     }
 
-    const { message } = req.body;
-    if (!message || typeof message !== 'string') {
-      res.status(400).json({ error: 'Message is required' });
-      return;
-    }
+    const { message } = announcementSchema.parse(req.body);
 
     const announcement = await prisma.tournamentAnnouncement.create({
       data: {
@@ -472,11 +493,7 @@ tournamentRouter.post('/:id/chat', authenticate, async (req: Request, res: Respo
       return;
     }
 
-    const { message } = req.body;
-    if (!message || typeof message !== 'string') {
-      res.status(400).json({ error: 'Message is required' });
-      return;
-    }
+    const { message } = chatMessageSchema.parse(req.body);
 
     const chatMessage = await prisma.tournamentChat.create({
       data: {

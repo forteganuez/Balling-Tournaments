@@ -362,7 +362,7 @@ function RoundRobinStandings({
 }
 
 /* ------------------------------------------------------------------ */
-/*  DOUBLE ELIMINATION (placeholder layout)                            */
+/*  DOUBLE ELIMINATION with Winners, Losers, and Grand Final           */
 /* ------------------------------------------------------------------ */
 
 function DoubleEliminationBracket({
@@ -370,14 +370,139 @@ function DoubleEliminationBracket({
   currentUserId,
   players,
 }: Omit<VisualBracketProps, 'format'>) {
-  // Double elimination uses the same visual style as single elimination
-  // but could be extended later to separate winners/losers brackets.
+  const winnersMatches = matches.filter((m) => m.bracket === 'WINNERS');
+  const losersMatches = matches.filter((m) => m.bracket === 'LOSERS');
+  const grandFinal = matches.filter((m) => m.bracket === 'GRAND_FINAL');
+
+  // Fallback: if no bracket field, render as single elimination
+  if (winnersMatches.length === 0 && losersMatches.length === 0) {
+    return (
+      <SingleEliminationBracket
+        matches={matches}
+        currentUserId={currentUserId}
+        players={players}
+      />
+    );
+  }
+
   return (
-    <SingleEliminationBracket
-      matches={matches}
-      currentUserId={currentUserId}
-      players={players}
-    />
+    <View>
+      {/* Winners Bracket */}
+      {winnersMatches.length > 0 && (
+        <View className="mb-6">
+          <View className="flex-row items-center mb-3">
+            <View className="bg-green-100 px-3 py-1 rounded-full">
+              <Text className="text-xs font-semibold text-green-700">
+                Winners Bracket
+              </Text>
+            </View>
+          </View>
+          <SingleEliminationBracket
+            matches={winnersMatches}
+            currentUserId={currentUserId}
+            players={players}
+          />
+        </View>
+      )}
+
+      {/* Losers Bracket */}
+      {losersMatches.length > 0 && (
+        <View className="mb-6">
+          <View className="flex-row items-center mb-3">
+            <View className="bg-red-100 px-3 py-1 rounded-full">
+              <Text className="text-xs font-semibold text-red-700">
+                Losers Bracket
+              </Text>
+            </View>
+          </View>
+          <SingleEliminationBracket
+            matches={losersMatches}
+            currentUserId={currentUserId}
+            players={players}
+          />
+        </View>
+      )}
+
+      {/* Grand Final */}
+      {grandFinal.length > 0 && (
+        <View className="mb-4">
+          <View className="flex-row items-center mb-3">
+            <View className="bg-purple-100 px-3 py-1 rounded-full">
+              <Text className="text-xs font-semibold text-purple-700">
+                Grand Final
+              </Text>
+            </View>
+          </View>
+          {grandFinal.map((match) => {
+            const isUserMatch =
+              currentUserId != null &&
+              (match.player1Id === currentUserId ||
+                match.player2Id === currentUserId);
+            const isCompleted = match.winnerId != null;
+
+            return (
+              <View key={match.id} className="items-center">
+                <View
+                  className={`rounded-lg p-4 bg-white border-2 ${
+                    isUserMatch ? 'border-primary' : 'border-purple-300'
+                  }`}
+                  style={{ width: 200 }}
+                >
+                  {match.player1Id == null && match.player2Id == null ? (
+                    <View className="items-center py-3">
+                      <Text className="text-xs text-muted">Awaiting finalists</Text>
+                    </View>
+                  ) : (
+                    <>
+                      <View
+                        className={`flex-row items-center pb-2 ${
+                          isCompleted && match.winnerId === match.player1Id
+                            ? 'border-l-2 border-green-500 pl-2'
+                            : 'pl-2'
+                        }`}
+                        style={{
+                          opacity:
+                            isCompleted && match.winnerId !== match.player1Id
+                              ? 0.5
+                              : 1,
+                        }}
+                      >
+                        <PlayerBadge playerId={match.player1Id} players={players} />
+                      </View>
+                      <View className="border-t border-gray-100 my-1" />
+                      <Text className="text-center text-xs text-muted py-0.5">VS</Text>
+                      <View className="border-t border-gray-100 my-1" />
+                      <View
+                        className={`flex-row items-center pt-2 ${
+                          isCompleted && match.winnerId === match.player2Id
+                            ? 'border-l-2 border-green-500 pl-2'
+                            : 'pl-2'
+                        }`}
+                        style={{
+                          opacity:
+                            isCompleted && match.winnerId !== match.player2Id
+                              ? 0.5
+                              : 1,
+                        }}
+                      >
+                        <PlayerBadge playerId={match.player2Id} players={players} />
+                      </View>
+                      {isCompleted && match.score != null && (
+                        <View className="mt-2 pt-1 border-t border-gray-100 items-center">
+                          <Text className="text-xs font-semibold text-secondary">
+                            {match.score}
+                          </Text>
+                        </View>
+                      )}
+                    </>
+                  )}
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
+    </View>
   );
 }
 

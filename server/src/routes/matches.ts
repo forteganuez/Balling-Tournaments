@@ -1,11 +1,77 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
-import { matchResultSchema } from '../lib/validation.js';
+import { matchResultSchema, playerSubmitResultSchema } from '../lib/validation.js';
 import { authenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/roleCheck.js';
 import { createNotification } from '../lib/notifications.js';
+import { advanceDoubleElimination } from '../services/bracket-generator.js';
 
 export const matchRouter = Router();
+
+/**
+ * After a match result is confirmed, check if the tournament should auto-complete.
+ * For Round Robin: all matches done → COMPLETED.
+ * For Double Elimination: Grand Final done → COMPLETED.
+ * For Single Elimination: final round done → COMPLETED.
+ */
+async function checkTournamentCompletion(tournamentId: string) {
+  const tournament = await prisma.tournament.findUnique({
+    where: { id: tournamentId },
+  });
+  if (!tournament || tournament.status !== 'IN_PROGRESS') return;
+
+  const allMatches = await prisma.match.findMany({
+    where: { tournamentId },
+  });
+
+  const allDone = allMatches.every((m) => m.winnerId !== null);
+
+  if (allDone && allMatches.length > 0) {
+    await prisma.tournament.update({
+      where: { id: tournamentId },
+      data: { status: 'COMPLETED' },
+    });
+  }
+}
+
+/**
+ * Advance winner based on tournament format.
+ */
+async function advanceWinner(
+  match: { id: string; tournamentId: string; round: number; position: number; bracket: string | null },
+  winnerId: string,
+  loserId: string | null,
+  format: string,
+) {
+  if (format === 'SINGLE_ELIMINATION') {
+    const nextRound = match.round + 1;
+    const nextPosition = Math.floor(match.position / 2);
+
+    const nextMatch = await prisma.match.findFirst({
+      where: {
+        tournamentId: match.tournamentId,
+        round: nextRound,
+        position: nextPosition,
+        bracket: null, // SE matches have no bracket field
+      },
+    });
+
+    if (nextMatch) {
+      const isPlayer1 = match.position % 2 === 0;
+      await prisma.match.update({
+        where: { id: nextMatch.id },
+        data: isPlayer1
+          ? { player1Id: winnerId }
+          : { player2Id: winnerId },
+      });
+    }
+  } else if (format === 'DOUBLE_ELIMINATION') {
+    await advanceDoubleElimination(match, winnerId, loserId);
+  }
+  // ROUND_ROBIN: no advancement needed
+
+  await checkTournamentCompletion(match.tournamentId);
+}
 
 // PUT /:id/result — record match result and auto-advance winner
 matchRouter.put(
@@ -48,33 +114,16 @@ matchRouter.put(
         },
       });
 
-      // Auto-advance winner for single elimination
-      if (match.tournament.format === 'SINGLE_ELIMINATION') {
-        const nextRound = match.round + 1;
-        const nextPosition = Math.floor(match.position / 2);
+      // Determine loser
+      const loserId = data.winnerId === match.player1Id ? match.player2Id : match.player1Id;
 
-        const nextMatch = await prisma.match.findFirst({
-          where: {
-            tournamentId: match.tournamentId,
-            round: nextRound,
-            position: nextPosition,
-          },
-        });
-
-        if (nextMatch) {
-          // Determine if winner goes to player1 or player2 slot
-          // Even position in current round -> player1 in next match
-          // Odd position in current round -> player2 in next match
-          const isPlayer1 = match.position % 2 === 0;
-
-          await prisma.match.update({
-            where: { id: nextMatch.id },
-            data: isPlayer1
-              ? { player1Id: data.winnerId }
-              : { player2Id: data.winnerId },
-          });
-        }
-      }
+      // Auto-advance based on format
+      await advanceWinner(
+        { id: match.id, tournamentId: match.tournamentId, round: match.round, position: match.position, bracket: match.bracket },
+        data.winnerId,
+        loserId,
+        match.tournament.format,
+      );
 
       res.json(updatedMatch);
     } catch (err) {
@@ -102,11 +151,7 @@ matchRouter.post('/:id/submit-result', authenticate, async (req: Request, res: R
       return;
     }
 
-    const { winnerId, score } = req.body;
-    if (!winnerId || typeof winnerId !== 'string') {
-      res.status(400).json({ error: 'winnerId is required' });
-      return;
-    }
+    const { winnerId, score } = playerSubmitResultSchema.parse(req.body);
 
     if (winnerId !== match.player1Id && winnerId !== match.player2Id) {
       res.status(400).json({ error: 'Winner must be one of the match players' });
@@ -191,6 +236,14 @@ matchRouter.post('/:id/submit-result', authenticate, async (req: Request, res: R
             );
           }
         }
+
+        // Auto-advance based on format
+        await advanceWinner(
+          { id: match.id, tournamentId: match.tournamentId, round: match.round, position: match.position, bracket: match.bracket },
+          agreedWinnerId,
+          loserId,
+          match.tournament.format,
+        );
       } else {
         // Dispute — notify tournament organizer
         await createNotification(

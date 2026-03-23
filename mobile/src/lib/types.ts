@@ -121,6 +121,7 @@ export interface Match {
   team1Id?: string | null;
   team2Id?: string | null;
   scheduledTime?: string | null;
+  bracket?: string | null; // 'WINNERS', 'LOSERS', 'GRAND_FINAL'
   results?: MatchResult[];
 }
 
@@ -233,4 +234,18 @@ export interface TournamentChatMessage {
   message: string;
   createdAt: string;
   user?: { id: string; name: string; avatarUrl?: string | null };
+}
+
+export interface PaymentRecord {
+  id: string;
+  tournamentId: string;
+  tournamentName: string;
+  sport: Sport;
+  entryFee: number;
+  tournamentDate: string;
+  location: string;
+  paidAt: string | null;
+  stripeSessionId: string | null;
+  stripePaymentId: string | null;
+  registeredAt: string;
 }
