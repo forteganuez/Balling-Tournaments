@@ -13,11 +13,21 @@ export type AuthStackParamList = {
   Register: undefined;
 };
 
+export type RankingStackParamList = {
+  RankingMain: undefined;
+  PlayerProfile: { id: string };
+};
+
+export type SocialStackParamList = {
+  SocialMain: undefined;
+  PlayerProfile: { id: string };
+};
+
 export type AppTabParamList = {
   Home: NavigatorScreenParams<HomeStackParamList>;
   Tournaments: NavigatorScreenParams<TournamentsStackParamList>;
-  Friends: undefined;
-  Notifications: undefined;
+  Ranking: NavigatorScreenParams<RankingStackParamList>;
+  Social: NavigatorScreenParams<SocialStackParamList>;
   Profile: NavigatorScreenParams<ProfileStackParamList>;
 };
 
@@ -50,6 +60,7 @@ export type ProfileStackParamList = {
   AdminUsers: undefined;
   PaymentHistory: undefined;
   NotificationPreferences: undefined;
+  Shop: undefined;
 };
 
 declare global {

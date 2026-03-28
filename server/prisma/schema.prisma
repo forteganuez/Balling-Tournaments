@@ -51,6 +51,47 @@ enum FriendshipStatus {
   PENDING
   ACCEPTED
   DECLINED
+  BLOCKED
+}
+
+enum MatchType {
+  CASUAL
+  COMPETITIVE
+}
+
+enum MatchFormat {
+  SINGLES
+  DOUBLES
+}
+
+enum CompetitiveMatchStatus {
+  CREATED
+  AWAITING_OPPONENT
+  ACTIVE
+  COMPLETED
+  DISPUTED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CREDIT
+  INDIVIDUAL
+  BALLER_SUBSCRIPTION
+  NONE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+  EXPIRED
+}
+
+enum ReportReason {
+  SPAM
+  OFFENSIVE_BEHAVIOR
+  FAKE_ACCOUNT
+  MATCH_MANIPULATION
 }
 
 enum OpenMatchStatus {
@@ -75,7 +116,9 @@ enum NotificationType {
 
 model User {
   id              String         @id @default(cuid())
-  name            String
+  username        String?        @unique  // unique, public-facing, lowercase stored
+  displayName     String?        // optional display name shown in UI
+  name            String         // kept for backward compat / full name
   email           String         @unique
   phone           String?
   passwordHash    String?
@@ -83,8 +126,9 @@ model User {
   authProvider    AuthProvider   @default(LOCAL)
   providerId      String?
   avatarUrl       String?
-  bio             String?
+  bio             String?        // max 160 chars
   city            String?
+  location        String?        // city/region for discovery
   dateOfBirth     DateTime?
   level           PlayLevel?
   preferredSport  Sport?
@@ -95,6 +139,19 @@ model User {
   matchesPlayed   Int            @default(0)
   onboardingDone  Boolean        @default(false)
   expoPushToken   String?
+  isBaller        Boolean        @default(false)
+  lookingForMatch Boolean        @default(false)
+  lookingForMatchSport Sport?    // which sport they're looking for
+  lastActiveAt    DateTime       @default(now())
+  usernameChangedAt DateTime?    // enforce 90-day change limit
+  suspendedUntil  DateTime?      // temporary suspension
+  bannedAt        DateTime?      // permanent ban
+
+  // Privacy settings (all default ON)
+  profileVisible     Boolean     @default(true)
+  showRating         Boolean     @default(true)
+  showMatchHistory   Boolean     @default(true)
+
   createdAt       DateTime       @default(now())
 
   registrations        Registration[]
@@ -112,7 +169,21 @@ model User {
   createdOpenMatches   OpenMatch[]             @relation("OpenMatchCreator")
   joinedOpenMatches    OpenMatch[]             @relation("OpenMatchOpponent")
 
+  // New relations
+  sportRatings         UserSportRating[]
+  blocksGiven          Block[]                 @relation("Blocker")
+  blocksReceived       Block[]                 @relation("Blocked")
+  reportsMade          Report[]                @relation("Reporter")
+  reportsReceived      Report[]                @relation("Reported")
+  creditPacks          CreditPack[]
+  ballerSubscription   BallerSubscription?
+  competitiveMatchesAsA CompetitiveMatch[]     @relation("PlayerA")
+  competitiveMatchesAsB CompetitiveMatch[]     @relation("PlayerB")
+  transactions         Transaction[]
+
   @@unique([authProvider, providerId])
+  @@index([username])
+  @@index([lastActiveAt])
 }
 
 model Tournament {
@@ -299,4 +370,163 @@ model OpenMatch {
   @@index([status, scheduledFor])
   @@index([creatorId, status])
   @@index([opponentId, status])
+}
+
+// ── Per-sport ELO rating ──
+model UserSportRating {
+  id              String   @id @default(cuid())
+  userId          String
+  sport           Sport
+  rating          Float    @default(3.0)  // 0.000 - 10.000
+  matchesPlayed   Int      @default(0)
+  wins            Int      @default(0)
+  losses          Int      @default(0)
+  winStreak       Int      @default(0)
+  bestRating      Float    @default(3.0)
+  lastMatchDate   DateTime?
+  lastDecayDate   DateTime?  // for inactivity decay tracking
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, sport])
+  @@index([sport, rating(sort: Desc)])
+  @@index([userId])
+}
+
+// ── Rating history entries ──
+model RatingHistory {
+  id              String   @id @default(cuid())
+  userId          String
+  sport           Sport
+  opponentId      String
+  opponentRating  Float
+  result          String   // "WIN" or "LOSS"
+  delta           Float
+  newRating       Float
+  matchId         String   // CompetitiveMatch id
+  createdAt       DateTime @default(now())
+
+  @@index([userId, sport, createdAt(sort: Desc)])
+}
+
+// ── Competitive match (casual or ranked) ──
+model CompetitiveMatch {
+  id               String                  @id @default(cuid())
+  type             MatchType
+  sport            Sport
+  format           MatchFormat             @default(SINGLES)
+  status           CompetitiveMatchStatus  @default(CREATED)
+
+  // Player A
+  playerAId        String
+  playerARatingBefore Float?
+  playerARatingAfter  Float?
+  playerAPaymentMethod PaymentMethod       @default(NONE)
+  playerACreditId  String?
+  playerATransactionId String?
+  playerAConfirmed Boolean                 @default(false)
+
+  // Player B
+  playerBId        String?
+  playerBRatingBefore Float?
+  playerBRatingAfter  Float?
+  playerBPaymentMethod PaymentMethod       @default(NONE)
+  playerBCreditId  String?
+  playerBTransactionId String?
+  playerBConfirmed Boolean                 @default(false)
+
+  // Result
+  winnerId         String?
+  disputed         Boolean                 @default(false)
+  score            String?
+
+  // Timing
+  resultDeadline   DateTime?  // 24h after match becomes active
+  createdAt        DateTime                @default(now())
+  completedAt      DateTime?
+
+  playerA          User                    @relation("PlayerA", fields: [playerAId], references: [id])
+  playerB          User?                   @relation("PlayerB", fields: [playerBId], references: [id])
+
+  @@index([playerAId, status])
+  @@index([playerBId, status])
+  @@index([sport, status])
+  @@index([status, createdAt])
+}
+
+// ── Block system ──
+model Block {
+  id          String   @id @default(cuid())
+  blockerId   String
+  blockedId   String
+  reason      String?
+  createdAt   DateTime @default(now())
+  blocker     User     @relation("Blocker", fields: [blockerId], references: [id])
+  blocked     User     @relation("Blocked", fields: [blockedId], references: [id])
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
+}
+
+// ── Report system ──
+model Report {
+  id          String       @id @default(cuid())
+  reporterId  String
+  reportedId  String
+  reason      ReportReason
+  description String?
+  resolved    Boolean      @default(false)
+  resolvedAt  DateTime?
+  resolvedBy  String?      // admin user id
+  createdAt   DateTime     @default(now())
+  reporter    User         @relation("Reporter", fields: [reporterId], references: [id])
+  reported    User         @relation("Reported", fields: [reportedId], references: [id])
+
+  @@index([reportedId, resolved])
+  @@index([resolved, createdAt])
+}
+
+// ── Credit packs ──
+model CreditPack {
+  id               String   @id @default(cuid())
+  userId           String
+  packSize         Int      // 10, 25, or 50
+  creditsRemaining Int
+  pricePaid        Int      // in cents
+  stripeTransactionId String
+  purchasedAt      DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+// ── Baller subscription ──
+model BallerSubscription {
+  id                   String             @id @default(cuid())
+  userId               String             @unique
+  status               SubscriptionStatus @default(ACTIVE)
+  stripeSubscriptionId String
+  stripeCustomerId     String
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  user                 User               @relation(fields: [userId], references: [id])
+}
+
+// ── Transaction audit trail ──
+model Transaction {
+  id              String   @id @default(cuid())
+  userId          String
+  type            String   // MATCH_PAYMENT, CREDIT_PURCHASE, CREDIT_CONSUMPTION, SUBSCRIPTION_CHARGE, REFUND
+  amount          Int      // in cents, positive = charge, negative = refund
+  description     String
+  matchId         String?  // CompetitiveMatch id if applicable
+  creditPackId    String?
+  stripePaymentId String?
+  idempotencyKey  String?  @unique
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([matchId])
 }

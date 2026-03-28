@@ -1,10 +1,29 @@
 import { z } from 'zod';
 
+const RESERVED_USERNAMES = [
+  'admin', 'balling', 'ballingapp', 'support', 'help', 'null', 'undefined',
+  'system', 'moderator', 'mod', 'root', 'api', 'www', 'mail', 'ftp',
+];
+
+export const usernameSchema = z
+  .string()
+  .min(3, 'Username must be at least 3 characters')
+  .max(20, 'Username must be at most 20 characters')
+  .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores')
+  .refine(
+    (val) => !RESERVED_USERNAMES.includes(val.toLowerCase()),
+    'This username is reserved'
+  );
+
+export { RESERVED_USERNAMES };
+
 export const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   phone: z.string().optional(),
+  username: usernameSchema.optional(),
+  selfAssessment: z.enum(['never_played', 'played_few_times', 'play_regularly', 'play_competitions', 'semi_professional']).optional(),
 });
 
 export const loginSchema = z.object({
@@ -39,10 +58,13 @@ export const matchResultSchema = z.object({
 
 export const profileUpdateSchema = z.object({
   name: z.string().min(2).max(100).optional(),
+  username: usernameSchema.optional(),
+  displayName: z.string().max(100).nullable().optional(),
   phone: z.string().max(30).nullable().optional(),
   avatarUrl: z.string().url().nullable().optional(),
-  bio: z.string().max(500).nullable().optional(),
+  bio: z.string().max(160).nullable().optional(),
   city: z.string().max(100).nullable().optional(),
+  location: z.string().max(100).nullable().optional(),
   dateOfBirth: z.string().nullable().optional(),
   level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PRO']).nullable().optional(),
   preferredSport: z.enum(['PADEL', 'TENNIS', 'SQUASH']).nullable().optional(),
@@ -50,6 +72,11 @@ export const profileUpdateSchema = z.object({
   sports: z.array(z.enum(['PADEL', 'TENNIS', 'SQUASH'])).optional(),
   onboardingDone: z.boolean().optional(),
   expoPushToken: z.string().max(200).nullable().optional(),
+  lookingForMatch: z.boolean().optional(),
+  lookingForMatchSport: z.enum(['PADEL', 'TENNIS', 'SQUASH']).nullable().optional(),
+  profileVisible: z.boolean().optional(),
+  showRating: z.boolean().optional(),
+  showMatchHistory: z.boolean().optional(),
 });
 
 export const socialAuthSchema = z.object({
@@ -91,4 +118,33 @@ export const tournamentQuerySchema = z.object({
 
 export const doublesRegistrationSchema = z.object({
   partnerId: z.string().cuid('Invalid partner ID'),
+});
+
+// Competitive match
+export const createCompetitiveMatchSchema = z.object({
+  type: z.enum(['CASUAL', 'COMPETITIVE']),
+  sport: z.enum(['PADEL', 'TENNIS', 'SQUASH']),
+  format: z.enum(['SINGLES', 'DOUBLES']).optional(),
+  opponentId: z.string().optional(),
+});
+
+export const submitMatchResultSchema = z.object({
+  winnerId: z.string(),
+  score: z.string().max(50).optional(),
+});
+
+// Credit packs
+export const purchaseCreditPackSchema = z.object({
+  packSize: z.enum(['10', '25', '50']).transform(Number),
+});
+
+// Reports
+export const createReportSchema = z.object({
+  reason: z.enum(['SPAM', 'OFFENSIVE_BEHAVIOR', 'FAKE_ACCOUNT', 'MATCH_MANIPULATION']),
+  description: z.string().max(500).optional(),
+});
+
+// Block
+export const blockUserSchema = z.object({
+  reason: z.string().max(200).optional(),
 });

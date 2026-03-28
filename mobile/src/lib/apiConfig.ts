@@ -4,7 +4,6 @@ const DEFAULT_API_PORT = '3001';
 const DEFAULT_API_URL = `http://localhost:${DEFAULT_API_PORT}`;
 
 let workingApiBaseUrl: string | null = null;
-let workingGoogleAuthBaseUrl: string | null = null;
 
 function normalizeBaseUrl(value?: string | null): string | null {
   if (!value) {
@@ -115,15 +114,3 @@ export function rememberWorkingApiBaseUrl(baseUrl: string): void {
   workingApiBaseUrl = normalizeBaseUrl(baseUrl);
 }
 
-export function getGoogleAuthBaseCandidates(): string[] {
-  const configuredUrl = normalizeBaseUrl(process.env.EXPO_PUBLIC_GOOGLE_AUTH_URL);
-  return uniqueUrls([
-    workingGoogleAuthBaseUrl,
-    configuredUrl,
-    ...getApiBaseCandidates(),
-  ]);
-}
-
-export function rememberWorkingGoogleAuthBaseUrl(baseUrl: string): void {
-  workingGoogleAuthBaseUrl = normalizeBaseUrl(baseUrl);
-}

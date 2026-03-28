@@ -18,14 +18,19 @@ import type {
   TournamentChatMessage,
   OpenMatch,
   OpenMatchesFeed,
+  UserSportRating,
+  LeaderboardEntry,
+  RatingHistoryEntry,
+  CompetitiveMatch,
+  MonetizationBalance,
   PaymentRecord,
 } from './types';
-import { getToken, clearToken } from './storage';
 import {
   getApiBaseCandidates,
   joinApiUrl,
   rememberWorkingApiBaseUrl,
 } from './apiConfig';
+import { supabase } from './supabase';
 
 let onUnauthorized: (() => void) | null = null;
 
@@ -60,7 +65,8 @@ async function fetchWithTimeout(
 }
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const token = await getToken();
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token ?? null;
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -95,7 +101,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
 
     if (!res.ok) {
       if (res.status === 401) {
-        await clearToken();
+        await supabase.auth.signOut();
         onUnauthorized?.();
       }
 
@@ -128,34 +134,6 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
 
 // ── Auth ──────────────────────────────────────────────────────────────
 
-export async function login(
-  email: string,
-  password: string
-): Promise<{ user: User; token: string }> {
-  return apiFetch<{ user: User; token: string }>('/api/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ email, password }),
-  });
-}
-
-export async function register(
-  name: string,
-  email: string,
-  password: string,
-  phone?: string
-): Promise<{ user: User; token: string }> {
-  return apiFetch<{ user: User; token: string }>('/api/auth/register', {
-    method: 'POST',
-    body: JSON.stringify({ name, email, password, phone }),
-  });
-}
-
-export async function logout(): Promise<{ message: string }> {
-  return apiFetch<{ message: string }>('/api/auth/logout', {
-    method: 'POST',
-  });
-}
-
 export async function getMe(): Promise<{ user: User }> {
   return apiFetch<{ user: User }>('/api/auth/me');
 }
@@ -166,16 +144,6 @@ export async function updateProfile(
   return apiFetch<{ user: User }>('/api/auth/profile', {
     method: 'PUT',
     body: JSON.stringify(data),
-  });
-}
-
-export async function socialAuth(
-  provider: 'google' | 'apple' | 'microsoft',
-  payload: Record<string, string>
-): Promise<{ user: User; token: string }> {
-  return apiFetch<{ user: User; token: string }>(`/api/auth/${provider}`, {
-    method: 'POST',
-    body: JSON.stringify(payload),
   });
 }
 
@@ -505,4 +473,174 @@ export async function registerDoubles(
 
 export async function getPaymentHistory(): Promise<PaymentRecord[]> {
   return apiFetch<PaymentRecord[]>('/api/users/me/payments');
+}
+
+// ── Ranking ──────────────────────────────────────────────────────────
+
+export async function getMyRatings(): Promise<UserSportRating[]> {
+  return apiFetch<UserSportRating[]>('/api/ranking/my-ratings');
+}
+
+export async function getLeaderboard(
+  sport: string,
+  filter = 'global',
+  limit = 20,
+): Promise<{
+  leaderboard: LeaderboardEntry[];
+  total: number;
+  myPosition: { rank: number; rating: number } | null;
+}> {
+  return apiFetch(`/api/ranking/leaderboard/${sport}?filter=${filter}&limit=${limit}`);
+}
+
+export async function getRatingHistory(
+  sport: string,
+  limit = 10,
+): Promise<RatingHistoryEntry[]> {
+  return apiFetch<RatingHistoryEntry[]>(
+    `/api/ranking/history/${sport}?limit=${limit}`,
+  );
+}
+
+// ── Social ───────────────────────────────────────────────────────────
+
+export async function getLookingForMatch(): Promise<UserPublic[]> {
+  return apiFetch<UserPublic[]>('/api/social/looking-for-match');
+}
+
+export async function blockUser(
+  userId: string,
+  reason?: string,
+): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(`/api/social/block/${userId}`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export async function unblockUser(
+  userId: string,
+): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(`/api/social/block/${userId}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function reportUser(
+  userId: string,
+  reason: string,
+  description?: string,
+): Promise<{ message: string; id: string }> {
+  return apiFetch<{ message: string; id: string }>(
+    `/api/social/report/${userId}`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ reason, description }),
+    },
+  );
+}
+
+export async function getHeadToHead(
+  userId: string,
+): Promise<{
+  total: { wins: number; losses: number; matches: number };
+  bySport: Record<string, { wins: number; losses: number; matches: number }>;
+}> {
+  return apiFetch(`/api/social/head-to-head/${userId}`);
+}
+
+export async function checkUsername(
+  username: string,
+): Promise<{ available: boolean; reason?: string }> {
+  return apiFetch(`/api/auth/check-username/${username}`);
+}
+
+// ── Monetization ─────────────────────────────────────────────────────
+
+export async function getMonetizationBalance(): Promise<MonetizationBalance> {
+  return apiFetch<MonetizationBalance>('/api/monetization/balance');
+}
+
+export async function getPricing(): Promise<{
+  matchPrice: number;
+  creditPacks: Array<{
+    size: number;
+    price: number;
+    perMatch: number;
+    discount: string;
+  }>;
+  ballerSubscription: { price: number; period: string; includes: string[] };
+}> {
+  return apiFetch('/api/monetization/pricing');
+}
+
+export async function buyCredits(
+  packSize: number,
+): Promise<{ checkoutUrl: string; sessionId: string }> {
+  return apiFetch('/api/monetization/buy-credits', {
+    method: 'POST',
+    body: JSON.stringify({ packSize: String(packSize) }),
+  });
+}
+
+export async function subscribeBaller(): Promise<{
+  checkoutUrl: string;
+  sessionId: string;
+}> {
+  return apiFetch('/api/monetization/subscribe', { method: 'POST' });
+}
+
+export async function cancelBallerSubscription(): Promise<{
+  message: string;
+  periodEnd: string;
+}> {
+  return apiFetch('/api/monetization/cancel-subscription', {
+    method: 'POST',
+  });
+}
+
+// ── Competitive Matches ──────────────────────────────────────────────
+
+export async function createCompetitiveMatch(data: {
+  type: 'CASUAL' | 'COMPETITIVE';
+  sport: Sport;
+  format?: 'SINGLES' | 'DOUBLES';
+  opponentId?: string;
+}): Promise<CompetitiveMatch> {
+  return apiFetch<CompetitiveMatch>('/api/competitive-matches', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function acceptCompetitiveMatch(
+  matchId: string,
+): Promise<CompetitiveMatch> {
+  return apiFetch<CompetitiveMatch>(
+    `/api/competitive-matches/${matchId}/accept`,
+    { method: 'POST' },
+  );
+}
+
+export async function submitCompetitiveResult(
+  matchId: string,
+  winnerId: string,
+  score?: string,
+): Promise<CompetitiveMatch> {
+  return apiFetch<CompetitiveMatch>(
+    `/api/competitive-matches/${matchId}/submit-result`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ winnerId, score }),
+    },
+  );
+}
+
+export async function getMyCompetitiveMatches(
+  status?: string,
+  page = 1,
+): Promise<{ matches: CompetitiveMatch[]; total: number }> {
+  const params = new URLSearchParams({ page: String(page) });
+  if (status) params.set('status', status);
+  return apiFetch(`/api/competitive-matches/my?${params}`);
 }

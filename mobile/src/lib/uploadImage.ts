@@ -1,6 +1,6 @@
 import * as ImageManipulator from 'expo-image-manipulator';
 import { getApiBaseCandidates, joinApiUrl, rememberWorkingApiBaseUrl } from './apiConfig';
-import { getToken } from './storage';
+import { supabase } from './supabase';
 
 export async function uploadImage(
   uri: string,
@@ -13,7 +13,8 @@ export async function uploadImage(
     { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
   );
 
-  const token = await getToken();
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
   if (!token) {
     throw new Error('You must be logged in to upload images.');
   }

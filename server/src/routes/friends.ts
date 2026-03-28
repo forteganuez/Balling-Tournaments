@@ -5,6 +5,8 @@ import { createNotification } from '../lib/notifications.js';
 
 export const friendsRouter = Router();
 
+const MAX_FRIENDS = 500;
+
 // POST /request/:userId — send friend request
 friendsRouter.post(
   '/request/:userId',
@@ -16,6 +18,32 @@ friendsRouter.post(
 
       if (receiverId === requesterId) {
         res.status(400).json({ error: 'Cannot send friend request to yourself' });
+        return;
+      }
+
+      // Check if either user has blocked the other
+      const block = await prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: requesterId, blockedId: receiverId },
+            { blockerId: receiverId, blockedId: requesterId },
+          ],
+        },
+      });
+      if (block) {
+        res.status(403).json({ error: 'Cannot send friend request to this user' });
+        return;
+      }
+
+      // Check friend limit for requester
+      const requesterFriendCount = await prisma.friendship.count({
+        where: {
+          OR: [{ requesterId }, { receiverId: requesterId }],
+          status: 'ACCEPTED',
+        },
+      });
+      if (requesterFriendCount >= MAX_FRIENDS) {
+        res.status(400).json({ error: `You have reached the maximum of ${MAX_FRIENDS} friends` });
         return;
       }
 
@@ -44,14 +72,14 @@ friendsRouter.post(
 
       const requester = await prisma.user.findUnique({
         where: { id: requesterId },
-        select: { name: true },
+        select: { username: true, name: true },
       });
 
       await createNotification(
         receiverId,
         'FRIEND_REQUEST',
         'New Friend Request',
-        `${requester?.name ?? 'Someone'} sent you a friend request`,
+        `${requester?.username ?? requester?.name ?? 'Someone'} wants to be your friend`,
         { requesterId }
       );
 

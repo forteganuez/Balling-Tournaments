@@ -7,7 +7,6 @@ export function SocialAuthButtons() {
   const {
     handleGoogle,
     handleApple,
-    handleMicrosoft,
     loading,
     error,
     appleAvailable,
@@ -59,21 +58,6 @@ export function SocialAuthButtons() {
           )}
         </View>
       ) : null}
-
-      <Pressable
-        onPress={handleMicrosoft}
-        disabled={loading !== null}
-        className="flex-row items-center justify-center border border-border dark:border-border-dark rounded-xl py-3.5 mb-3 bg-white dark:bg-card-dark"
-      >
-        {loading === 'microsoft' ? (
-          <ActivityIndicator size="small" color="#00A4EF" />
-        ) : (
-          <>
-            <Text className="text-lg mr-3">M</Text>
-            <Text className="text-base font-semibold text-gray-700">Continue with Microsoft</Text>
-          </>
-        )}
-      </Pressable>
     </View>
   );
 }

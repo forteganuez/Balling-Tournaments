@@ -9,15 +9,20 @@ export const usersRouter = Router();
 
 const publicUserSearchSelect = {
   id: true,
+  username: true,
+  displayName: true,
   name: true,
-  email: true,
   avatarUrl: true,
   city: true,
   skillLevel: true,
   sports: true,
+  lookingForMatch: true,
+  lookingForMatchSport: true,
+  isBaller: true,
+  profileVisible: true,
 } as const;
 
-// GET /search?q= — search users by name
+// GET /search?q= — search users by username or name
 usersRouter.get(
   '/search',
   authenticate,
@@ -25,9 +30,34 @@ usersRouter.get(
     try {
       const q = (req.query.q as string) || '';
 
+      // Check blocked users to exclude them
+      const blocks = await prisma.block.findMany({
+        where: {
+          OR: [
+            { blockerId: req.user!.id },
+            { blockedId: req.user!.id },
+          ],
+        },
+        select: { blockerId: true, blockedId: true },
+      });
+      const blockedIds = new Set(
+        blocks.map(b => b.blockerId === req.user!.id ? b.blockedId : b.blockerId)
+      );
+
       const users = await prisma.user.findMany({
         where: {
-          name: { contains: q, mode: 'insensitive' },
+          AND: [
+            { profileVisible: true },
+            { bannedAt: null },
+            {
+              OR: [
+                { username: { contains: q.toLowerCase(), mode: 'insensitive' } },
+                { name: { contains: q, mode: 'insensitive' } },
+                { displayName: { contains: q, mode: 'insensitive' } },
+              ],
+            },
+            ...(blockedIds.size > 0 ? [{ id: { notIn: Array.from(blockedIds) } }] : []),
+          ],
         },
         select: publicUserSearchSelect,
         take: 20,
@@ -174,6 +204,48 @@ usersRouter.get(
   }
 );
 
+// GET /by-username/:username — get profile by username
+usersRouter.get(
+  '/by-username/:username',
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { username: req.params.username.toLowerCase() },
+        select: {
+          id: true, username: true, displayName: true, name: true,
+          avatarUrl: true, bio: true, city: true, location: true,
+          skillLevel: true, sports: true, wins: true, losses: true,
+          matchesPlayed: true, level: true, preferredSport: true,
+          isBaller: true, lookingForMatch: true, lookingForMatchSport: true,
+          profileVisible: true, showRating: true, showMatchHistory: true,
+          createdAt: true,
+        },
+      });
+
+      if (!user || !user.profileVisible) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+
+      // Fetch sport ratings if the user allows it
+      let sportRatings = null;
+      if (user.showRating) {
+        sportRatings = await prisma.userSportRating.findMany({
+          where: { userId: user.id },
+          select: {
+            sport: true, rating: true, matchesPlayed: true,
+            wins: true, losses: true, winStreak: true, bestRating: true,
+          },
+        });
+      }
+
+      res.json({ ...user, sportRatings });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
 // GET /:id — get public profile
 usersRouter.get(
   '/:id',
@@ -182,29 +254,33 @@ usersRouter.get(
       const user = await prisma.user.findUnique({
         where: { id: req.params.id },
         select: {
-          id: true,
-          name: true,
-          email: true,
-          avatarUrl: true,
-          bio: true,
-          city: true,
-          skillLevel: true,
-          sports: true,
-          wins: true,
-          losses: true,
-          matchesPlayed: true,
-          level: true,
-          preferredSport: true,
+          id: true, username: true, displayName: true, name: true,
+          avatarUrl: true, bio: true, city: true, location: true,
+          skillLevel: true, sports: true, wins: true, losses: true,
+          matchesPlayed: true, level: true, preferredSport: true,
+          isBaller: true, lookingForMatch: true, lookingForMatchSport: true,
+          profileVisible: true, showRating: true, showMatchHistory: true,
           createdAt: true,
         },
       });
 
-      if (!user) {
+      if (!user || !user.profileVisible) {
         res.status(404).json({ error: 'User not found' });
         return;
       }
 
-      res.json(user);
+      let sportRatings = null;
+      if (user.showRating) {
+        sportRatings = await prisma.userSportRating.findMany({
+          where: { userId: user.id },
+          select: {
+            sport: true, rating: true, matchesPlayed: true,
+            wins: true, losses: true, winStreak: true, bestRating: true,
+          },
+        });
+      }
+
+      res.json({ ...user, sportRatings });
     } catch (err) {
       next(err);
     }

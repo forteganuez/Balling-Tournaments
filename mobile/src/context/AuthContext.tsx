@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { User, ProfileUpdate } from '../lib/types';
 import * as api from '../lib/api';
-import { setToken, clearToken, getToken } from '../lib/storage';
+import { supabase } from '../lib/supabase';
 import { setOnUnauthorized } from '../lib/api';
 
 interface AuthContextValue {
@@ -10,7 +10,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, phone?: string) => Promise<void>;
   logout: () => Promise<void>;
-  socialLogin: (provider: 'google' | 'apple' | 'microsoft', payload: Record<string, string>) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   updateProfile: (data: ProfileUpdate) => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -21,8 +21,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchProfile = useCallback(async () => {
+    try {
+      const { user: me } = await api.getMe();
+      setUser(me);
+    } catch {
+      setUser(null);
+    }
+  }, []);
+
   const handleLogout = useCallback(async () => {
-    await clearToken();
+    await supabase.auth.signOut();
     setUser(null);
   }, []);
 
@@ -32,51 +41,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  // Listen for Supabase auth state changes
   useEffect(() => {
-    async function loadUser() {
-      const token = await getToken();
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const { user: me } = await api.getMe();
-        setUser(me);
-      } catch {
-        await clearToken();
-      } finally {
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        fetchProfile().finally(() => setLoading(false));
+      } else {
         setLoading(false);
       }
-    }
+    });
 
-    loadUser();
-  }, []);
+    // Subscribe to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          await fetchProfile();
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          // Session refreshed, profile stays the same
+        }
+      },
+    );
+
+    return () => subscription.unsubscribe();
+  }, [fetchProfile]);
 
   const login = useCallback(async (email: string, password: string) => {
-    const { user: loggedIn, token } = await api.login(email, password);
-    await setToken(token);
-    setUser(loggedIn);
-  }, []);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw new Error(error.message);
+    // Sync profile from our server (creates user in Prisma if needed)
+    await fetchProfile();
+  }, [fetchProfile]);
 
   const register = useCallback(async (
     name: string,
     email: string,
     password: string,
-    phone?: string
+    phone?: string,
   ) => {
-    const { user: registered, token } = await api.register(name, email, password, phone);
-    await setToken(token);
-    setUser(registered);
-  }, []);
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name, phone } },
+    });
+    if (error) throw new Error(error.message);
+    // Sync profile to our server
+    await fetchProfile();
+  }, [fetchProfile]);
 
-  const socialLogin = useCallback(async (
-    provider: 'google' | 'apple' | 'microsoft',
-    payload: Record<string, string>
-  ) => {
-    const { user: loggedIn, token } = await api.socialAuth(provider, payload);
-    await setToken(token);
-    setUser(loggedIn);
+  const signInWithGoogle = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: 'balling://auth/callback',
+        skipBrowserRedirect: true,
+      },
+    });
+    if (error) throw new Error(error.message);
   }, []);
 
   const updateProfile = useCallback(async (data: ProfileUpdate) => {
@@ -85,18 +108,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const refreshUser = useCallback(async () => {
-    try {
-      const { user: me } = await api.getMe();
-      setUser(me);
-    } catch {
-      // ignore
-    }
-  }, []);
+    await fetchProfile();
+  }, [fetchProfile]);
 
   return (
     <AuthContext.Provider value={{
       user, loading, login, register, logout: handleLogout,
-      socialLogin, updateProfile, refreshUser,
+      signInWithGoogle, updateProfile, refreshUser,
     }}>
       {children}
     </AuthContext.Provider>

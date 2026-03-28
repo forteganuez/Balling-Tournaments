@@ -17,8 +17,11 @@ export type AuthProvider = 'LOCAL' | 'GOOGLE' | 'APPLE' | 'MICROSOFT';
 
 export type PlayLevel = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'PRO';
 
-export type FriendshipStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED';
+export type FriendshipStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'BLOCKED';
 export type OpenMatchStatus = 'OPEN' | 'BOOKED' | 'CANCELLED';
+export type MatchType = 'CASUAL' | 'COMPETITIVE';
+export type CompetitiveMatchStatus = 'CREATED' | 'AWAITING_OPPONENT' | 'ACTIVE' | 'COMPLETED' | 'DISPUTED' | 'CANCELLED';
+export type PaymentMethod = 'CREDIT' | 'INDIVIDUAL' | 'BALLER_SUBSCRIPTION' | 'NONE';
 
 export type NotificationType =
   | 'MATCH_READY'
@@ -35,6 +38,8 @@ export type NotificationType =
 
 export interface User {
   id: string;
+  username?: string | null;
+  displayName?: string | null;
   name: string;
   email: string;
   role: UserRole;
@@ -42,6 +47,7 @@ export interface User {
   avatarUrl?: string | null;
   bio?: string | null;
   city?: string | null;
+  location?: string | null;
   dateOfBirth?: string | null;
   level?: PlayLevel | null;
   preferredSport?: Sport | null;
@@ -53,15 +59,25 @@ export interface User {
   authProvider?: AuthProvider;
   onboardingDone?: boolean;
   expoPushToken?: string | null;
+  isBaller?: boolean;
+  lookingForMatch?: boolean;
+  lookingForMatchSport?: Sport | null;
+  lastActiveAt?: string;
+  profileVisible?: boolean;
+  showRating?: boolean;
+  showMatchHistory?: boolean;
   createdAt?: string;
 }
 
 export interface ProfileUpdate {
   name?: string;
+  username?: string;
+  displayName?: string | null;
   phone?: string | null;
   avatarUrl?: string | null;
   bio?: string | null;
   city?: string | null;
+  location?: string | null;
   dateOfBirth?: string | null;
   level?: PlayLevel | null;
   preferredSport?: Sport | null;
@@ -69,6 +85,92 @@ export interface ProfileUpdate {
   sports?: Sport[];
   onboardingDone?: boolean;
   expoPushToken?: string | null;
+  lookingForMatch?: boolean;
+  lookingForMatchSport?: Sport | null;
+  profileVisible?: boolean;
+  showRating?: boolean;
+  showMatchHistory?: boolean;
+}
+
+export interface UserSportRating {
+  sport: Sport;
+  rating: number;
+  matchesPlayed: number;
+  wins: number;
+  losses: number;
+  winStreak: number;
+  bestRating: number;
+  lastMatchDate?: string | null;
+  weeklyChange?: number;
+  isPublic?: boolean;
+}
+
+export interface RatingHistoryEntry {
+  date: string;
+  opponent: UserPublic | null;
+  opponentRating: number;
+  result: 'WIN' | 'LOSS';
+  delta: number;
+  newRating: number;
+  matchId: string;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  userId: string;
+  username?: string | null;
+  displayName?: string | null;
+  name: string;
+  avatarUrl?: string | null;
+  isBaller: boolean;
+  city?: string | null;
+  rating: number;
+  matchesPlayed: number;
+  wins: number;
+  losses: number;
+  winStreak: number;
+}
+
+export interface CompetitiveMatch {
+  id: string;
+  type: MatchType;
+  sport: Sport;
+  format: 'SINGLES' | 'DOUBLES';
+  status: CompetitiveMatchStatus;
+  playerA: UserPublic & { isBaller?: boolean };
+  playerB?: (UserPublic & { isBaller?: boolean }) | null;
+  playerARatingBefore?: number | null;
+  playerARatingAfter?: number | null;
+  playerBRatingBefore?: number | null;
+  playerBRatingAfter?: number | null;
+  winnerId?: string | null;
+  disputed: boolean;
+  score?: string | null;
+  resultDeadline?: string | null;
+  createdAt: string;
+  completedAt?: string | null;
+}
+
+export interface CreditBalance {
+  total: number;
+  packs: Array<{
+    id: string;
+    packSize: number;
+    remaining: number;
+    purchasedAt: string;
+  }>;
+}
+
+export interface MonetizationBalance {
+  credits: CreditBalance;
+  subscription: {
+    status: string;
+    currentPeriodEnd: string;
+    cancelAtPeriodEnd: boolean;
+  } | null;
+  isBaller: boolean;
+  competitiveMatchesThisMonth: number;
+  nudge: { type: string; message: string } | null;
 }
 
 export interface Tournament {
@@ -198,11 +300,17 @@ export interface Notification {
 
 export interface UserPublic {
   id: string;
+  username?: string | null;
+  displayName?: string | null;
   name: string;
   avatarUrl?: string | null;
   city?: string | null;
   skillLevel?: number | null;
   sports?: Sport[];
+  isBaller?: boolean;
+  lookingForMatch?: boolean;
+  lookingForMatchSport?: Sport | null;
+  profileVisible?: boolean;
 }
 
 export interface AdminManagedUser extends UserPublic {

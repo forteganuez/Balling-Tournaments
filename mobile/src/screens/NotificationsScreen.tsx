@@ -157,7 +157,7 @@ export function NotificationsScreen() {
           params: { id: data.tournamentId },
         });
       } else if (data?.requesterId || data?.receiverId) {
-        navigation.navigate('Friends');
+        navigation.navigate('Social', { screen: 'SocialMain' });
       }
     },
     [navigation],

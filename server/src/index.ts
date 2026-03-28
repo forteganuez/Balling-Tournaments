@@ -9,11 +9,15 @@ import { authRouter } from './routes/auth.js';
 import { tournamentRouter, myTournamentsHandler } from './routes/tournaments.js';
 import { matchRouter } from './routes/matches.js';
 import { openMatchesRouter } from './routes/openMatches.js';
+import { competitiveMatchRouter } from './routes/competitiveMatches.js';
 import { usersRouter } from './routes/users.js';
 import { uploadsRouter } from './routes/uploads.js';
 import { friendsRouter } from './routes/friends.js';
 import { followsRouter } from './routes/follows.js';
 import { notificationsRouter } from './routes/notifications.js';
+import { socialRouter } from './routes/social.js';
+import { rankingRouter } from './routes/ranking.js';
+import { monetizationRouter } from './routes/monetization.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { logger } from './lib/logger.js';
 import { authenticate } from './middleware/auth.js';
@@ -50,11 +54,7 @@ app.use(
 
 // ── Rate limiting ──
 app.use('/api/', generalLimiter);
-app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/register', authLimiter);
-app.use('/api/auth/google', authLimiter);
-app.use('/api/auth/apple', authLimiter);
-app.use('/api/auth/microsoft', authLimiter);
+app.use('/api/auth', authLimiter);
 
 // Write limiter on mutation-heavy routes
 app.use('/api/friends', writeLimiter);
@@ -62,18 +62,25 @@ app.use('/api/follows', writeLimiter);
 app.use('/api/tournaments', writeLimiter);
 app.use('/api/matches', writeLimiter);
 app.use('/api/open-matches', writeLimiter);
+app.use('/api/competitive-matches', writeLimiter);
 app.use('/api/notifications', writeLimiter);
+app.use('/api/social', writeLimiter);
+app.use('/api/monetization', writeLimiter);
 
 // Routes
 app.use('/api/auth', authRouter);
 app.use('/api/tournaments', tournamentRouter);
 app.use('/api/matches', matchRouter);
 app.use('/api/open-matches', openMatchesRouter);
+app.use('/api/competitive-matches', competitiveMatchRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/uploads', uploadsRouter);
 app.use('/api/friends', friendsRouter);
 app.use('/api/follows', followsRouter);
 app.use('/api/notifications', notificationsRouter);
+app.use('/api/social', socialRouter);
+app.use('/api/ranking', rankingRouter);
+app.use('/api/monetization', monetizationRouter);
 app.get('/api/my-tournaments', authenticate, myTournamentsHandler);
 
 app.use('/api', (_req, res) => {
