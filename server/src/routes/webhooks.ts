@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
 import { stripe } from '../services/stripe.js';
 import Stripe from 'stripe';
+import { logger } from '../lib/logger.js';
 
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 
@@ -23,7 +24,7 @@ webhookRouter.post('/', async (req: Request, res: Response, next: NextFunction) 
     try {
       event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
     } catch (err: any) {
-      console.error('Webhook signature verification failed:', err.message);
+      logger.error('Webhook signature verification failed', { error: err.message });
       res.status(400).json({ error: `Webhook Error: ${err.message}` });
       return;
     }
@@ -35,7 +36,7 @@ webhookRouter.post('/', async (req: Request, res: Response, next: NextFunction) 
       const tournamentId = session.metadata?.tournamentId;
 
       if (!userId || !tournamentId) {
-        console.error('Webhook missing metadata:', { userId, tournamentId });
+        logger.error('Webhook missing metadata', { userId, tournamentId });
         res.status(400).json({ error: 'Missing metadata in checkout session' });
         return;
       }
@@ -47,15 +48,13 @@ webhookRouter.post('/', async (req: Request, res: Response, next: NextFunction) 
       });
 
       if (!tournament) {
-        console.error('Tournament not found for webhook:', tournamentId);
+        logger.error('Tournament not found for webhook', { tournamentId });
         res.status(400).json({ error: 'Tournament not found' });
         return;
       }
 
       if (tournament._count.registrations >= tournament.maxPlayers) {
-        console.warn(
-          `Tournament ${tournamentId} is full. Payment from user ${userId} needs refund.`
-        );
+        logger.warn('Tournament full — payment needs refund', { tournamentId, userId });
         // In production, you would initiate a refund here
         res.json({ received: true });
         return;

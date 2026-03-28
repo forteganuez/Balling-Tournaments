@@ -156,8 +156,8 @@ export function useSocialAuth() {
       } else {
         setError('Sign in timed out. Please try again.');
       }
-    } catch (err: any) {
-      setError(err.message || 'Google sign in failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Google sign in failed');
     } finally {
       setLoading(null);
     }
@@ -209,9 +209,10 @@ export function useSocialAuth() {
         ...(name ? { name } : {}),
         ...(email ? { email } : {}),
       });
-    } catch (err: any) {
-      if (err.code !== 'ERR_REQUEST_CANCELED') {
-        setError(err.message || 'Apple sign in failed');
+    } catch (err: unknown) {
+      const isCancel = typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === 'ERR_REQUEST_CANCELED';
+      if (!isCancel) {
+        setError(err instanceof Error ? err.message : 'Apple sign in failed');
       }
     } finally {
       setLoading(null);
@@ -239,8 +240,8 @@ export function useSocialAuth() {
           await socialLogin('microsoft', { accessToken });
         }
       }
-    } catch (err: any) {
-      setError(err.message || 'Microsoft sign in failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Microsoft sign in failed');
     } finally {
       setLoading(null);
     }

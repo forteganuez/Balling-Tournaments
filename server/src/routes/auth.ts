@@ -1,12 +1,40 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import jwksClient from 'jwks-rsa';
 import { OAuth2Client } from 'google-auth-library';
 import prisma from '../lib/prisma.js';
 import { registerSchema, loginSchema, profileUpdateSchema, socialAuthSchema } from '../lib/validation.js';
 import { authenticate } from '../middleware/auth.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+// Apple JWKS client for verifying Apple identity tokens
+const appleJwks = jwksClient({
+  jwksUri: 'https://appleid.apple.com/auth/keys',
+  cache: true,
+  cacheMaxAge: 86400000, // 24 hours
+});
+
+async function verifyAppleToken(idToken: string): Promise<{ sub: string; email?: string }> {
+  const decoded = jwt.decode(idToken, { complete: true });
+  if (!decoded || typeof decoded === 'string' || !decoded.header.kid) {
+    throw new Error('Invalid Apple token format');
+  }
+
+  const key = await appleJwks.getSigningKey(decoded.header.kid);
+  const signingKey = key.getPublicKey();
+
+  const payload = jwt.verify(idToken, signingKey, {
+    algorithms: ['RS256'],
+    issuer: 'https://appleid.apple.com',
+  }) as { sub: string; email?: string };
+
+  return payload;
+}
+
+const JWT_SECRET = process.env.JWT_SECRET!;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
@@ -50,7 +78,7 @@ authRouter.post('/register', async (req: Request, res: Response, next: NextFunct
       return;
     }
 
-    const passwordHash = await bcrypt.hash(data.password, 10);
+    const passwordHash = await bcrypt.hash(data.password, 12);
 
     const user = await prisma.user.create({
       data: {
@@ -301,21 +329,18 @@ authRouter.post('/google', async (req: Request, res: Response, next: NextFunctio
 // POST /apple — sign in with Apple identity token
 authRouter.post('/apple', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { idToken, name, email: appleEmail } = req.body;
+    const { idToken, name } = req.body;
 
-    if (!idToken) {
+    if (!idToken || typeof idToken !== 'string') {
       res.status(400).json({ error: 'idToken is required' });
       return;
     }
 
-    // Decode Apple identity token (JWT) to get sub and email
-    const decoded = jwt.decode(idToken) as { sub?: string; email?: string } | null;
-    if (!decoded || !decoded.sub) {
-      res.status(401).json({ error: 'Invalid Apple token' });
-      return;
-    }
+    // Verify Apple identity token signature against Apple's public keys
+    const verified = await verifyAppleToken(idToken);
 
-    const email = decoded.email || appleEmail;
+    // Only trust the email from the verified JWT — never from the request body
+    const email = verified.email;
     if (!email) {
       res.status(400).json({ error: 'Email is required for Apple sign in' });
       return;
@@ -324,7 +349,7 @@ authRouter.post('/apple', async (req: Request, res: Response, next: NextFunction
     let user = await prisma.user.findFirst({
       where: {
         OR: [
-          { authProvider: 'APPLE', providerId: decoded.sub },
+          { authProvider: 'APPLE', providerId: verified.sub },
           { email },
         ],
       },
@@ -334,16 +359,16 @@ authRouter.post('/apple', async (req: Request, res: Response, next: NextFunction
       if (user.authProvider === 'LOCAL') {
         user = await prisma.user.update({
           where: { id: user.id },
-          data: { authProvider: 'APPLE', providerId: decoded.sub },
+          data: { authProvider: 'APPLE', providerId: verified.sub },
         });
       }
     } else {
       user = await prisma.user.create({
         data: {
-          name: name || email.split('@')[0],
+          name: typeof name === 'string' && name.length > 0 ? name : email.split('@')[0],
           email,
           authProvider: 'APPLE',
-          providerId: decoded.sub,
+          providerId: verified.sub,
         },
       });
     }

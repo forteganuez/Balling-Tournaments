@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import * as Sentry from '@sentry/node';
+import { logger } from '../lib/logger.js';
 
 export function errorHandler(
   err: Error,
@@ -9,7 +10,7 @@ export function errorHandler(
   _next: NextFunction
 ): void {
   if (process.env.NODE_ENV !== 'production') {
-    console.error(err.message || err);
+    logger.error(err.message || 'Unknown error');
   }
 
   if (err instanceof ZodError || err.name === 'ZodError') {

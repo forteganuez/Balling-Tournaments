@@ -142,6 +142,10 @@ model Tournament {
   doublesTeams    DoublesTeam[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+
+  @@index([date])
+  @@index([sport, status])
+  @@index([organizerId])
 }
 
 model Registration {
@@ -156,6 +160,7 @@ model Registration {
   tournament      Tournament @relation(fields: [tournamentId], references: [id])
 
   @@unique([userId, tournamentId])
+  @@index([tournamentId])
 }
 
 model Match {
@@ -175,6 +180,8 @@ model Match {
   bracket      String?       // 'WINNERS', 'LOSERS', 'GRAND_FINAL' (null for SE/RR)
   tournament   Tournament    @relation(fields: [tournamentId], references: [id])
   results      MatchResult[]
+
+  @@index([tournamentId, round, position])
 }
 
 model Friendship {
@@ -210,6 +217,8 @@ model Notification {
   read      Boolean          @default(false)
   createdAt DateTime         @default(now())
   user      User             @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
 }
 
 model MatchResult {
@@ -243,6 +252,8 @@ model TournamentChat {
   createdAt    DateTime   @default(now())
   tournament   Tournament @relation(fields: [tournamentId], references: [id])
   user         User       @relation(fields: [userId], references: [id])
+
+  @@index([tournamentId, createdAt])
 }
 
 model DoublesTeam {

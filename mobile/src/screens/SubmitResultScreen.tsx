@@ -102,12 +102,15 @@ export function SubmitResultScreen({ route }: SubmitResultScreenProps) {
   const [state, setState] = useState<SubmissionState>({ kind: 'idle' });
 
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollErrorCount = useRef(0);
+  const MAX_POLL_ERRORS = 10;
 
   const stopPolling = useCallback(() => {
     if (pollIntervalRef.current !== null) {
       clearInterval(pollIntervalRef.current);
       pollIntervalRef.current = null;
     }
+    pollErrorCount.current = 0;
   }, []);
 
   const evaluateResults = useCallback(
@@ -138,11 +141,16 @@ export function SubmitResultScreen({ route }: SubmitResultScreenProps) {
   const pollResults = useCallback(async () => {
     try {
       const results = await getMatchResults(matchId);
+      pollErrorCount.current = 0;
       evaluateResults(results);
     } catch {
-      // Silently retry on next poll interval
+      pollErrorCount.current += 1;
+      if (pollErrorCount.current >= MAX_POLL_ERRORS) {
+        stopPolling();
+        setState({ kind: 'error', message: 'Lost connection. Please retry.' });
+      }
     }
-  }, [matchId, evaluateResults]);
+  }, [matchId, evaluateResults, stopPolling]);
 
   const startPolling = useCallback(() => {
     stopPolling();

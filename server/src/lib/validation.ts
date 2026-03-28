@@ -33,8 +33,8 @@ export const createTournamentSchema = z.object({
 export const updateTournamentSchema = createTournamentSchema.partial();
 
 export const matchResultSchema = z.object({
-  score: z.string().min(1, 'Score is required'),
-  winnerId: z.string(),
+  score: z.string().min(1, 'Score is required').max(50, 'Score too long'),
+  winnerId: z.string().cuid('Invalid winner ID'),
 });
 
 export const profileUpdateSchema = z.object({
@@ -77,6 +77,18 @@ export const announcementSchema = z.object({
 });
 
 export const playerSubmitResultSchema = z.object({
-  winnerId: z.string().min(1, 'winnerId is required'),
+  winnerId: z.string().cuid('Invalid winner ID'),
   score: z.string().max(50).optional(),
+});
+
+export const tournamentQuerySchema = z.object({
+  sport: z.enum(['PADEL', 'TENNIS', 'SQUASH']).optional(),
+  status: z.enum(['REGISTRATION_OPEN', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
+  search: z.string().max(100).optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).optional(),
+});
+
+export const doublesRegistrationSchema = z.object({
+  partnerId: z.string().cuid('Invalid partner ID'),
 });

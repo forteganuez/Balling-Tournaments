@@ -42,8 +42,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const setMode = useCallback((newMode: ThemeMode) => {
     setModeState(newMode);
-    SecureStore.setItemAsync(STORAGE_KEY, newMode).catch(() => {
-      // ignore write errors
+    SecureStore.setItemAsync(STORAGE_KEY, newMode).catch((err) => {
+      if (__DEV__) console.warn('Failed to persist theme preference:', err);
     });
   }, []);
 

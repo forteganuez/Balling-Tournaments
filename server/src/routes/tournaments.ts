@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
-import { createTournamentSchema, updateTournamentSchema, chatMessageSchema, announcementSchema } from '../lib/validation.js';
+import { createTournamentSchema, updateTournamentSchema, chatMessageSchema, announcementSchema, tournamentQuerySchema, doublesRegistrationSchema } from '../lib/validation.js';
 import { authenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/roleCheck.js';
 import { generateBrackets } from '../services/bracket-generator.js';
@@ -58,25 +58,29 @@ export async function myTournamentsHandler(req: Request, res: Response, next: Ne
 // GET / — list tournaments
 tournamentRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { sport, status, search } = req.query;
+    const query = tournamentQuerySchema.parse(req.query);
 
     const where: Prisma.TournamentWhereInput = {};
 
-    if (sport && typeof sport === 'string') {
-      where.sport = sport as any;
+    if (query.sport) {
+      where.sport = query.sport;
     }
 
-    if (status && typeof status === 'string') {
-      where.status = status as any;
+    if (query.status) {
+      where.status = query.status;
     }
 
-    if (search && typeof search === 'string') {
+    if (query.search) {
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { location: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
+        { name: { contains: query.search, mode: 'insensitive' } },
+        { location: { contains: query.search, mode: 'insensitive' } },
+        { description: { contains: query.search, mode: 'insensitive' } },
       ];
     }
+
+    const page = query.page || 1;
+    const limit = query.limit || 25;
+    const skip = (page - 1) * limit;
 
     const tournaments = await prisma.tournament.findMany({
       where,
@@ -85,6 +89,8 @@ tournamentRouter.get('/', async (req: Request, res: Response, next: NextFunction
         _count: { select: { registrations: true } },
       },
       orderBy: { date: 'asc' },
+      take: limit,
+      skip,
     });
 
     res.json(tournaments);
@@ -456,6 +462,7 @@ tournamentRouter.get('/:id/announcements', async (req: Request, res: Response, n
         organizer: { select: { id: true, name: true, avatarUrl: true } },
       },
       orderBy: { createdAt: 'desc' },
+      take: 50,
     });
 
     res.json(announcements);
@@ -602,9 +609,28 @@ tournamentRouter.post('/:id/doubles', authenticate, async (req: Request, res: Re
       return;
     }
 
-    const { partnerId } = req.body;
-    if (!partnerId || typeof partnerId !== 'string') {
-      res.status(400).json({ error: 'partnerId is required' });
+    const { partnerId } = doublesRegistrationSchema.parse(req.body);
+
+    if (partnerId === req.user!.id) {
+      res.status(400).json({ error: 'You cannot be your own doubles partner' });
+      return;
+    }
+
+    // Check for existing doubles team with same players
+    const existingTeam = await prisma.doublesTeam.findFirst({
+      where: {
+        tournamentId: req.params.id,
+        OR: [
+          { player1Id: req.user!.id },
+          { player2Id: req.user!.id },
+          { player1Id: partnerId },
+          { player2Id: partnerId },
+        ],
+      },
+    });
+
+    if (existingTeam) {
+      res.status(409).json({ error: 'One or both players are already on a doubles team in this tournament' });
       return;
     }
 

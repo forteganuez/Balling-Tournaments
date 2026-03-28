@@ -42,6 +42,23 @@ class ApiError extends Error {
   }
 }
 
+const DEFAULT_TIMEOUT_MS = 15_000;
+
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const token = await getToken();
 
@@ -67,8 +84,9 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     let res: Response;
 
     try {
-      res = await fetch(joinApiUrl(baseUrl, path), requestOptions);
+      res = await fetchWithTimeout(joinApiUrl(baseUrl, path), requestOptions);
     } catch (error) {
+      if (__DEV__) console.warn(`API fetch failed for ${baseUrl}${path}:`, error);
       networkError = error;
       continue;
     }

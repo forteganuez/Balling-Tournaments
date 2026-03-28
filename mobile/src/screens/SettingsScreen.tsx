@@ -113,7 +113,7 @@ export function SettingsScreen() {
   }
 
   function handleContactSupport() {
-    Linking.openURL('mailto:support@balling.app');
+    Linking.openURL('mailto:support@patatbroodje.com');
   }
 
   function handlePrivacyPolicy() {
@@ -262,7 +262,7 @@ export function SettingsScreen() {
         />
         <SettingsCard>
           <SettingsRow label="Help & FAQ" detail="Quick answers for common questions" onPress={handleHelp} />
-          <SettingsRow label="Contact support" detail="support@balling.app" onPress={handleContactSupport} />
+          <SettingsRow label="Contact support" detail="support@patatbroodje.com" onPress={handleContactSupport} />
           <SettingsRow label="Privacy policy" onPress={handlePrivacyPolicy} />
           <SettingsRow label="Terms of service" onPress={handleTerms} isLast />
         </SettingsCard>

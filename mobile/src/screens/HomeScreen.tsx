@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { Alert, FlatList, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../hooks/useAuth';
@@ -12,7 +12,7 @@ import { OpenMatchCard } from '../components/OpenMatchCard';
 import { SkeletonTournamentCard, SkeletonMatchCard } from '../components/SkeletonLoader';
 import { EmptyState } from '../components/EmptyState';
 import * as api from '../lib/api';
-import type { HomeStackParamList } from '../navigation/types';
+import type { HomeStackParamList, AppTabParamList } from '../navigation/types';
 
 type HomeScreenProps = NativeStackScreenProps<HomeStackParamList, 'HomeMain'>;
 
@@ -23,7 +23,7 @@ function formatMatchCount(count: number, singular: string, plural: string) {
 export function HomeScreen({ navigation }: HomeScreenProps) {
   const { user } = useAuth();
   const { theme } = useTheme();
-  const tabNavigation = useNavigation<any>();
+  const tabNavigation = useNavigation<NavigationProp<AppTabParamList>>();
   const {
     tournaments,
     loading: tournamentsLoading,

@@ -9,7 +9,8 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, type NavigationProp } from '@react-navigation/native';
+import type { AppTabParamList } from '../navigation/types';
 import { useAuthContext } from '../context/AuthContext';
 import { colors } from '../constants/theme';
 import { SkeletonNotificationRow } from '../components/SkeletonLoader';
@@ -71,7 +72,7 @@ function formatRelativeTime(dateString: string): string {
 
 export function NotificationsScreen() {
   const { user } = useAuthContext();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<AppTabParamList>>();
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -151,14 +152,12 @@ export function NotificationsScreen() {
       // Navigate based on data
       const data = notification.data;
       if (data?.tournamentId) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (navigation.navigate as (...args: unknown[]) => void)(
-          'Tournaments',
-          { screen: 'TournamentDetail', params: { id: data.tournamentId } },
-        );
+        navigation.navigate('Tournaments', {
+          screen: 'TournamentDetail',
+          params: { id: data.tournamentId },
+        });
       } else if (data?.requesterId || data?.receiverId) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (navigation.navigate as (...args: unknown[]) => void)('Friends');
+        navigation.navigate('Friends');
       }
     },
     [navigation],

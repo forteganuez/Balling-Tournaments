@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
 import { authenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/roleCheck.js';
-import { updateUserRoleSchema, profileUpdateSchema } from '../lib/validation.js';
+import { updateUserRoleSchema } from '../lib/validation.js';
 import { logAudit } from '../lib/audit.js';
 
 export const usersRouter = Router();
@@ -211,38 +211,6 @@ usersRouter.get(
   }
 );
 
-// PUT /profile — update own profile
-usersRouter.put(
-  '/profile',
-  authenticate,
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const data = profileUpdateSchema.parse(req.body);
-
-      const updatedUser = await prisma.user.update({
-        where: { id: req.user!.id },
-        data: {
-          ...(data.name !== undefined && { name: data.name }),
-          ...(data.bio !== undefined && { bio: data.bio }),
-          ...(data.skillLevel !== undefined && { skillLevel: data.skillLevel }),
-          ...(data.city !== undefined && { city: data.city }),
-          ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl }),
-          ...(data.sports !== undefined && { sports: data.sports }),
-          ...(data.phone !== undefined && { phone: data.phone }),
-          ...(data.level !== undefined && { level: data.level }),
-          ...(data.preferredSport !== undefined && { preferredSport: data.preferredSport }),
-          ...(data.onboardingDone !== undefined && { onboardingDone: data.onboardingDone }),
-          ...(data.expoPushToken !== undefined && { expoPushToken: data.expoPushToken }),
-        },
-      });
-
-      res.json(updatedUser);
-    } catch (err) {
-      next(err);
-    }
-  }
-);
-
 // GET /:id/stats — get user stats
 usersRouter.get(
   '/:id/stats',
@@ -283,10 +251,15 @@ usersRouter.get(
   '/:id/tournaments',
   async (req: Request, res: Response, next: NextFunction) => {
     try {
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 25));
+
       const registrations = await prisma.registration.findMany({
         where: { userId: req.params.id },
         include: { tournament: true },
         orderBy: { tournament: { date: 'desc' } },
+        take: limit,
+        skip: (page - 1) * limit,
       });
 
       res.json(registrations);

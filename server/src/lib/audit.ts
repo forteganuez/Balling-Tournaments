@@ -1,4 +1,5 @@
 import prisma from './prisma.js';
+import { logger } from './logger.js';
 import type { Prisma } from '@prisma/client';
 
 interface AuditLogInput {
@@ -9,23 +10,31 @@ interface AuditLogInput {
   details?: Prisma.InputJsonValue;
 }
 
+const AUDIT_DATA = (input: AuditLogInput) => ({
+  userId: input.userId,
+  action: input.action,
+  targetType: input.targetType,
+  targetId: input.targetId,
+  details: input.details ?? undefined,
+});
+
 /**
  * Log an admin or sensitive action for audit trail.
- * Fire-and-forget — never throws.
+ * Retries once on failure. Never throws.
  */
 export async function logAudit(input: AuditLogInput): Promise<void> {
+  const meta = { action: input.action, targetType: input.targetType, targetId: input.targetId };
+
   try {
-    await prisma.auditLog.create({
-      data: {
-        userId: input.userId,
-        action: input.action,
-        targetType: input.targetType,
-        targetId: input.targetId,
-        details: input.details ?? undefined,
-      },
-    });
+    await prisma.auditLog.create({ data: AUDIT_DATA(input) });
   } catch (err) {
-    // Best-effort logging — don't break the request if this fails
-    console.error('Audit log failed:', err);
+    logger.warn('Audit log failed, retrying', { ...meta, err: String(err) });
+
+    try {
+      await new Promise((r) => setTimeout(r, 500));
+      await prisma.auditLog.create({ data: AUDIT_DATA(input) });
+    } catch (retryErr) {
+      logger.error('Audit log retry failed', { ...meta, err: String(retryErr) });
+    }
   }
 }

@@ -14,7 +14,10 @@ declare global {
   }
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET!;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 
 function extractToken(req: Request): string | undefined {
   const cookieToken = req.cookies.token;

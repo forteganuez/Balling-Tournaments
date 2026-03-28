@@ -15,6 +15,7 @@ import { friendsRouter } from './routes/friends.js';
 import { followsRouter } from './routes/follows.js';
 import { notificationsRouter } from './routes/notifications.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { logger } from './lib/logger.js';
 import { authenticate } from './middleware/auth.js';
 import { generalLimiter, authLimiter, writeLimiter } from './middleware/rateLimiter.js';
 
@@ -58,6 +59,10 @@ app.use('/api/auth/microsoft', authLimiter);
 // Write limiter on mutation-heavy routes
 app.use('/api/friends', writeLimiter);
 app.use('/api/follows', writeLimiter);
+app.use('/api/tournaments', writeLimiter);
+app.use('/api/matches', writeLimiter);
+app.use('/api/open-matches', writeLimiter);
+app.use('/api/notifications', writeLimiter);
 
 // Routes
 app.use('/api/auth', authRouter);
@@ -80,7 +85,7 @@ app.use(errorHandler);
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    logger.info(`Server running on port ${PORT}`);
   });
 }
 

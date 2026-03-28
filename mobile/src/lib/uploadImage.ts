@@ -30,6 +30,9 @@ export async function uploadImage(
   let networkError: unknown = null;
 
   for (const baseUrl of getApiBaseCandidates()) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30_000);
+
     try {
       response = await fetch(joinApiUrl(baseUrl, '/api/uploads/image'), {
         method: 'POST',
@@ -37,10 +40,13 @@ export async function uploadImage(
           Authorization: `Bearer ${token}`,
         },
         body: formData,
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
       rememberWorkingApiBaseUrl(baseUrl);
       break;
     } catch (error) {
+      clearTimeout(timeoutId);
       networkError = error;
     }
   }
@@ -56,8 +62,8 @@ export async function uploadImage(
   let payload: { error?: string; publicUrl?: string } = {};
   try {
     payload = await response.json();
-  } catch {
-    // Ignore parse failures and fall back to a generic message.
+  } catch (parseErr) {
+    if (__DEV__) console.warn('Upload response parse failed:', parseErr);
   }
 
   if (!response.ok || !payload.publicUrl) {
