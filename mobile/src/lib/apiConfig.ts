@@ -16,10 +16,16 @@ function normalizeBaseUrl(value?: string | null): string | null {
   }
 
   if (/^https?:\/\//i.test(trimmed)) {
+    // In production, reject non-HTTPS URLs
+    if (!__DEV__ && /^http:\/\//i.test(trimmed)) {
+      console.warn('Rejecting insecure HTTP URL in production build');
+      return null;
+    }
     return trimmed;
   }
 
-  return `http://${trimmed}`;
+  // Bare hostname: use HTTPS in production, HTTP in dev
+  return __DEV__ ? `http://${trimmed}` : `https://${trimmed}`;
 }
 
 function getHostname(value: string | null): string | null {

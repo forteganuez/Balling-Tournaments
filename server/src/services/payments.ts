@@ -1,5 +1,6 @@
 import prisma from '../lib/prisma.js';
 import { stripe } from './stripe.js';
+import { logger } from '../lib/logger.js';
 import type { CompetitiveMatch } from '@prisma/client';
 import crypto from 'crypto';
 
@@ -46,8 +47,10 @@ export async function verifyCompetitiveAccess(userId: string): Promise<AccessRes
         where: { id: userId },
         data: { isBaller: false },
       });
-    } catch {
-      // If Stripe call fails, fall through to credits
+    } catch (err: any) {
+      logger.warn('Stripe subscription check failed, falling through to credits', {
+        userId, subscriptionId: subscription.stripeSubscriptionId, error: err.message,
+      });
     }
   }
 
@@ -86,26 +89,36 @@ export async function verifyCompetitiveAccess(userId: string): Promise<AccessRes
 }
 
 export async function deductCredit(userId: string, creditPackId: string) {
-  const idempotencyKey = `credit-deduct-${creditPackId}-${Date.now()}-${crypto.randomUUID()}`;
-
-  const [pack, transaction] = await prisma.$transaction([
-    prisma.creditPack.update({
-      where: { id: creditPackId },
+  return await prisma.$transaction(async (tx) => {
+    // Atomically decrement only if credits remain — prevents race condition
+    const updated = await tx.creditPack.updateMany({
+      where: { id: creditPackId, userId, creditsRemaining: { gt: 0 } },
       data: { creditsRemaining: { decrement: 1 } },
-    }),
-    prisma.transaction.create({
+    });
+
+    if (updated.count === 0) {
+      throw new Error('Insufficient credits');
+    }
+
+    const pack = await tx.creditPack.findUniqueOrThrow({
+      where: { id: creditPackId },
+    });
+
+    const idempotencyKey = `credit-deduct-${creditPackId}-${pack.creditsRemaining}`;
+
+    const transaction = await tx.transaction.create({
       data: {
         userId,
         type: 'CREDIT_CONSUMPTION',
-        amount: 0, // No monetary charge, credit already purchased
+        amount: 0,
         description: 'Competitive match credit used',
         creditPackId,
         idempotencyKey,
       },
-    }),
-  ]);
+    });
 
-  return { pack, transactionId: transaction.id };
+    return { pack, transactionId: transaction.id };
+  });
 }
 
 export async function createMatchPaymentSession(
@@ -212,18 +225,27 @@ export async function createBallerSubscriptionCheckout(userId: string, userEmail
 }
 
 export async function refundMatchPayments(match: CompetitiveMatch) {
-  const refunds: Promise<unknown>[] = [];
+  // Collect Stripe payment intents that need refunding (looked up before transaction)
+  const stripeRefundIntents: string[] = [];
 
-  // Refund player A
-  if (match.playerAPaymentMethod === 'CREDIT' && match.playerACreditId) {
-    refunds.push(
-      prisma.creditPack.update({
+  if (match.playerAPaymentMethod === 'INDIVIDUAL' && match.playerATransactionId) {
+    const tx = await prisma.transaction.findUnique({ where: { id: match.playerATransactionId } });
+    if (tx?.stripePaymentId) stripeRefundIntents.push(tx.stripePaymentId);
+  }
+  if (match.playerBId && match.playerBPaymentMethod === 'INDIVIDUAL' && match.playerBTransactionId) {
+    const tx = await prisma.transaction.findUnique({ where: { id: match.playerBTransactionId } });
+    if (tx?.stripePaymentId) stripeRefundIntents.push(tx.stripePaymentId);
+  }
+
+  // All DB writes in a single atomic transaction
+  await prisma.$transaction(async (tx) => {
+    // Refund player A
+    if (match.playerAPaymentMethod === 'CREDIT' && match.playerACreditId) {
+      await tx.creditPack.update({
         where: { id: match.playerACreditId },
         data: { creditsRemaining: { increment: 1 } },
-      })
-    );
-    refunds.push(
-      prisma.transaction.create({
+      });
+      await tx.transaction.create({
         data: {
           userId: match.playerAId,
           type: 'REFUND',
@@ -232,20 +254,9 @@ export async function refundMatchPayments(match: CompetitiveMatch) {
           matchId: match.id,
           creditPackId: match.playerACreditId,
         },
-      })
-    );
-  } else if (match.playerAPaymentMethod === 'INDIVIDUAL' && match.playerATransactionId) {
-    // Stripe refund for individual payment
-    const tx = await prisma.transaction.findUnique({ where: { id: match.playerATransactionId } });
-    if (tx?.stripePaymentId) {
-      try {
-        await stripe.refunds.create({ payment_intent: tx.stripePaymentId });
-      } catch {
-        // Log but don't fail the match flow
-      }
-    }
-    refunds.push(
-      prisma.transaction.create({
+      });
+    } else if (match.playerAPaymentMethod === 'INDIVIDUAL' && match.playerATransactionId) {
+      await tx.transaction.create({
         data: {
           userId: match.playerAId,
           type: 'REFUND',
@@ -253,21 +264,17 @@ export async function refundMatchPayments(match: CompetitiveMatch) {
           description: 'Match payment refunded',
           matchId: match.id,
         },
-      })
-    );
-  }
+      });
+    }
 
-  // Refund player B
-  if (match.playerBId) {
-    if (match.playerBPaymentMethod === 'CREDIT' && match.playerBCreditId) {
-      refunds.push(
-        prisma.creditPack.update({
+    // Refund player B
+    if (match.playerBId) {
+      if (match.playerBPaymentMethod === 'CREDIT' && match.playerBCreditId) {
+        await tx.creditPack.update({
           where: { id: match.playerBCreditId },
           data: { creditsRemaining: { increment: 1 } },
-        })
-      );
-      refunds.push(
-        prisma.transaction.create({
+        });
+        await tx.transaction.create({
           data: {
             userId: match.playerBId,
             type: 'REFUND',
@@ -276,19 +283,9 @@ export async function refundMatchPayments(match: CompetitiveMatch) {
             matchId: match.id,
             creditPackId: match.playerBCreditId,
           },
-        })
-      );
-    } else if (match.playerBPaymentMethod === 'INDIVIDUAL' && match.playerBTransactionId) {
-      const tx = await prisma.transaction.findUnique({ where: { id: match.playerBTransactionId } });
-      if (tx?.stripePaymentId) {
-        try {
-          await stripe.refunds.create({ payment_intent: tx.stripePaymentId });
-        } catch {
-          // Log but don't fail
-        }
-      }
-      refunds.push(
-        prisma.transaction.create({
+        });
+      } else if (match.playerBPaymentMethod === 'INDIVIDUAL' && match.playerBTransactionId) {
+        await tx.transaction.create({
           data: {
             userId: match.playerBId,
             type: 'REFUND',
@@ -296,12 +293,22 @@ export async function refundMatchPayments(match: CompetitiveMatch) {
             description: 'Match payment refunded',
             matchId: match.id,
           },
-        })
-      );
+        });
+      }
+    }
+  });
+
+  // Stripe refunds outside the DB transaction — failures are logged, not fatal
+  for (const paymentIntent of stripeRefundIntents) {
+    try {
+      await stripe.refunds.create({ payment_intent: paymentIntent });
+    } catch (err: any) {
+      // Logged for manual reconciliation; DB refund record already exists
+      logger.error('Stripe refund failed — manual reconciliation needed', {
+        paymentIntent, matchId: match.id, error: err.message,
+      });
     }
   }
-
-  await Promise.all(refunds);
 }
 
 export { MATCH_PRICE_CENTS, CREDIT_PACK_PRICES, BALLER_MONTHLY_PRICE_CENTS };

@@ -14,10 +14,22 @@ export function errorHandler(
   }
 
   if (err instanceof ZodError || err.name === 'ZodError') {
-    res.status(400).json({
-      error: 'Validation error',
-      details: (err as ZodError).errors,
-    });
+    const zodErr = err as ZodError;
+    if (process.env.NODE_ENV === 'production') {
+      // Only expose field paths and generic messages, not internal schema details
+      res.status(400).json({
+        error: 'Validation error',
+        details: zodErr.errors.map(e => ({
+          path: e.path,
+          message: e.message,
+        })),
+      });
+    } else {
+      res.status(400).json({
+        error: 'Validation error',
+        details: zodErr.errors,
+      });
+    }
     return;
   }
 

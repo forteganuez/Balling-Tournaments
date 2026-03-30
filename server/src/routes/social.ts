@@ -160,18 +160,28 @@ socialRouter.post(
         },
       });
 
-      // Check if user has 3+ confirmed (resolved) reports — auto-suspend
-      const confirmedReports = await prisma.report.count({
+      // Check if user has 3+ resolved reports from distinct reporters — auto-suspend
+      const distinctReporters = await prisma.report.findMany({
         where: { reportedId, resolved: true },
+        select: { reporterId: true },
+        distinct: ['reporterId'],
       });
 
-      if (confirmedReports >= 3) {
-        const suspendUntil = new Date();
-        suspendUntil.setDate(suspendUntil.getDate() + 7);
-        await prisma.user.update({
+      if (distinctReporters.length >= 3) {
+        // Only suspend if not already suspended with a later date
+        const target = await prisma.user.findUnique({
           where: { id: reportedId },
-          data: { suspendedUntil: suspendUntil },
+          select: { suspendedUntil: true },
         });
+        const newSuspendDate = new Date();
+        newSuspendDate.setDate(newSuspendDate.getDate() + 7);
+
+        if (!target?.suspendedUntil || target.suspendedUntil < newSuspendDate) {
+          await prisma.user.update({
+            where: { id: reportedId },
+            data: { suspendedUntil: newSuspendDate },
+          });
+        }
       }
 
       res.status(201).json({ message: 'Report submitted', id: report.id });

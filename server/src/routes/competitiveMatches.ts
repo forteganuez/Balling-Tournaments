@@ -36,6 +36,29 @@ competitiveMatchRouter.post(
         return;
       }
 
+      // Validate opponent exists and is eligible
+      if (data.opponentId) {
+        if (data.opponentId === userId) {
+          res.status(400).json({ error: 'Cannot create a match against yourself' });
+          return;
+        }
+
+        const opponent = await prisma.user.findUnique({
+          where: { id: data.opponentId },
+          select: { id: true, bannedAt: true, suspendedUntil: true },
+        });
+
+        if (!opponent) {
+          res.status(404).json({ error: 'Opponent not found' });
+          return;
+        }
+
+        if (opponent.bannedAt || (opponent.suspendedUntil && opponent.suspendedUntil > new Date())) {
+          res.status(400).json({ error: 'Opponent is currently unavailable' });
+          return;
+        }
+      }
+
       let paymentMethod: 'CREDIT' | 'INDIVIDUAL' | 'BALLER_SUBSCRIPTION' | 'NONE' = 'NONE';
       let creditId: string | null = null;
       let transactionId: string | null = null;
@@ -435,7 +458,7 @@ competitiveMatchRouter.get(
   },
 );
 
-// GET /:id — get single match details
+// GET /:id — get single match details (participants only)
 competitiveMatchRouter.get(
   '/:id',
   authenticate,
@@ -451,6 +474,12 @@ competitiveMatchRouter.get(
 
       if (!match) {
         res.status(404).json({ error: 'Match not found' });
+        return;
+      }
+
+      const userId = req.user!.id;
+      if (match.playerAId !== userId && match.playerBId !== userId) {
+        res.status(403).json({ error: 'You are not a participant in this match' });
         return;
       }
 

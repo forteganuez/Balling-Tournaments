@@ -105,10 +105,10 @@ tournamentRouter.get('/:id', async (req: Request, res: Response, next: NextFunct
     const tournament = await prisma.tournament.findUnique({
       where: { id: req.params.id },
       include: {
-        organizer: { select: { id: true, name: true, email: true } },
+        organizer: { select: { id: true, name: true } },
         registrations: {
           include: {
-            user: { select: { id: true, name: true, email: true } },
+            user: { select: { id: true, name: true } },
           },
         },
         matches: {
@@ -250,7 +250,10 @@ tournamentRouter.post(
   authenticate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const tournament = await prisma.tournament.findUnique({ where: { id: req.params.id } });
+      const tournament = await prisma.tournament.findUnique({
+        where: { id: req.params.id },
+        include: { _count: { select: { registrations: true } } },
+      });
 
       if (!tournament) {
         res.status(404).json({ error: 'Tournament not found' });
@@ -264,6 +267,11 @@ tournamentRouter.post(
 
       if (tournament.status !== 'REGISTRATION_OPEN') {
         res.status(400).json({ error: 'Registration is not open for this tournament' });
+        return;
+      }
+
+      if (tournament._count.registrations < 2) {
+        res.status(400).json({ error: 'At least 2 players must be registered before starting the tournament' });
         return;
       }
 
@@ -287,9 +295,9 @@ tournamentRouter.post(
         include: {
           matches: { orderBy: [{ round: 'asc' }, { position: 'asc' }] },
           registrations: {
-            include: { user: { select: { id: true, name: true, email: true } } },
+            include: { user: { select: { id: true, name: true } } },
           },
-          organizer: { select: { id: true, name: true, email: true } },
+          organizer: { select: { id: true, name: true } },
         },
       });
 

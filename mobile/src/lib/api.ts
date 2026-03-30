@@ -32,6 +32,16 @@ import {
 } from './apiConfig';
 import { supabase } from './supabase';
 
+// Validate IDs before interpolating into URL paths to prevent path traversal
+// from deep links like balling://tournament/../../admin
+const SAFE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+function safeId(id: string): string {
+  if (!id || id.length > 128 || !SAFE_ID_PATTERN.test(id)) {
+    throw new Error('Invalid ID');
+  }
+  return id;
+}
+
 let onUnauthorized: (() => void) | null = null;
 
 export function setOnUnauthorized(callback: () => void): void {
@@ -65,6 +75,10 @@ async function fetchWithTimeout(
 }
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  // Reject paths with traversal sequences to prevent deep link abuse
+  if (path.includes('..')) {
+    throw new ApiError('Invalid request path', 400);
+  }
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token ?? null;
 
@@ -167,7 +181,7 @@ export async function getTournaments(
 }
 
 export async function getTournament(id: string): Promise<Tournament> {
-  return apiFetch<Tournament>(`/api/tournaments/${id}`);
+  return apiFetch<Tournament>(`/api/tournaments/${safeId(id)}`);
 }
 
 export async function joinTournament(
@@ -276,15 +290,15 @@ export async function searchUsers(q: string): Promise<UserPublic[]> {
 }
 
 export async function getUserProfile(id: string): Promise<User> {
-  return apiFetch<User>(`/api/users/${id}`);
+  return apiFetch<User>(`/api/users/${safeId(id)}`);
 }
 
 export async function getUserStats(id: string): Promise<UserStats> {
-  return apiFetch<UserStats>(`/api/users/${id}/stats`);
+  return apiFetch<UserStats>(`/api/users/${safeId(id)}/stats`);
 }
 
 export async function getUserTournaments(id: string): Promise<Registration[]> {
-  return apiFetch<Registration[]>(`/api/users/${id}/tournaments`);
+  return apiFetch<Registration[]>(`/api/users/${safeId(id)}/tournaments`);
 }
 
 export async function adminSearchUsers(q = ''): Promise<AdminManagedUser[]> {

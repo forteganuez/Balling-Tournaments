@@ -1,10 +1,14 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
 import { stripe } from '../services/stripe.js';
+import { CREDIT_PACK_PRICES } from '../services/payments.js';
 import Stripe from 'stripe';
 import { logger } from '../lib/logger.js';
 
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
+if (!STRIPE_WEBHOOK_SECRET) {
+  throw new Error('STRIPE_WEBHOOK_SECRET environment variable is required');
+}
 
 export const webhookRouter = Router();
 
@@ -25,7 +29,7 @@ webhookRouter.post('/', async (req: Request, res: Response, next: NextFunction) 
       event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
     } catch (err: any) {
       logger.error('Webhook signature verification failed', { error: err.message });
-      res.status(400).json({ error: `Webhook Error: ${err.message}` });
+      res.status(400).json({ error: 'Invalid webhook signature' });
       return;
     }
 
@@ -34,9 +38,41 @@ webhookRouter.post('/', async (req: Request, res: Response, next: NextFunction) 
       const userId = session.metadata?.userId;
       const paymentType = session.metadata?.type;
 
+      // Verify the userId from metadata actually exists in our database
+      if (userId) {
+        const userExists = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true },
+        });
+        if (!userExists) {
+          logger.error('Webhook userId not found in database', { userId, paymentType });
+          res.status(400).json({ error: 'Invalid user' });
+          return;
+        }
+      }
+
       if (paymentType === 'CREDIT_PACK' && userId) {
         // Credit pack purchase
         const packSize = parseInt(session.metadata?.packSize || '0');
+        const expectedPrice = CREDIT_PACK_PRICES[packSize];
+
+        if (!expectedPrice) {
+          logger.error('Invalid pack size in webhook metadata', { packSize, userId });
+          res.status(400).json({ error: 'Invalid pack size' });
+          return;
+        }
+
+        if ((session.amount_total || 0) !== expectedPrice) {
+          logger.error('Payment amount mismatch', {
+            packSize,
+            expectedPrice,
+            receivedAmount: session.amount_total,
+            userId,
+          });
+          res.status(400).json({ error: 'Payment amount verification failed' });
+          return;
+        }
+
         const paymentIntent = typeof session.payment_intent === 'string'
           ? session.payment_intent
           : session.payment_intent?.id || '';
@@ -47,7 +83,7 @@ webhookRouter.post('/', async (req: Request, res: Response, next: NextFunction) 
               userId,
               packSize,
               creditsRemaining: packSize,
-              pricePaid: session.amount_total || 0,
+              pricePaid: expectedPrice,
               stripeTransactionId: paymentIntent,
             },
           }),
@@ -55,7 +91,7 @@ webhookRouter.post('/', async (req: Request, res: Response, next: NextFunction) 
             data: {
               userId,
               type: 'CREDIT_PURCHASE',
-              amount: session.amount_total || 0,
+              amount: expectedPrice,
               description: `${packSize} match credit pack purchased`,
               stripePaymentId: paymentIntent,
               idempotencyKey: `credit-purchase-${session.id}`,
@@ -123,7 +159,20 @@ webhookRouter.post('/', async (req: Request, res: Response, next: NextFunction) 
         }
 
         if (tournament._count.registrations >= tournament.maxPlayers) {
-          logger.warn('Tournament full — payment needs refund', { tournamentId, userId });
+          // Auto-refund: user paid but tournament filled before webhook arrived
+          const pi = typeof session.payment_intent === 'string'
+            ? session.payment_intent
+            : session.payment_intent?.id;
+          if (pi) {
+            try {
+              await stripe.refunds.create({ payment_intent: pi });
+              logger.info('Auto-refund issued for full tournament', { tournamentId, userId, paymentIntent: pi });
+            } catch (refundErr: any) {
+              logger.error('Failed to auto-refund full tournament payment', {
+                tournamentId, userId, paymentIntent: pi, error: refundErr.message,
+              });
+            }
+          }
           res.json({ received: true });
           return;
         }
@@ -153,7 +202,7 @@ webhookRouter.post('/', async (req: Request, res: Response, next: NextFunction) 
     if (event.type === 'customer.subscription.created' || event.type === 'customer.subscription.updated') {
       const sub = event.data.object as Stripe.Subscription;
       const userId = sub.metadata?.userId;
-      if (userId) {
+      if (userId && await prisma.user.findUnique({ where: { id: userId }, select: { id: true } })) {
         const status = sub.status === 'active' ? 'ACTIVE'
           : sub.status === 'past_due' ? 'PAST_DUE'
           : sub.status === 'canceled' ? 'CANCELLED'
@@ -188,7 +237,7 @@ webhookRouter.post('/', async (req: Request, res: Response, next: NextFunction) 
     if (event.type === 'customer.subscription.deleted') {
       const sub = event.data.object as Stripe.Subscription;
       const userId = sub.metadata?.userId;
-      if (userId) {
+      if (userId && await prisma.user.findUnique({ where: { id: userId }, select: { id: true } })) {
         await prisma.ballerSubscription.update({
           where: { userId },
           data: { status: 'EXPIRED' },

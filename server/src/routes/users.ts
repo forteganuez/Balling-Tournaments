@@ -28,7 +28,12 @@ usersRouter.get(
   authenticate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const q = (req.query.q as string) || '';
+      const raw = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+      if (raw.length < 1 || raw.length > 100) {
+        res.status(400).json({ error: 'Search query must be between 1 and 100 characters' });
+        return;
+      }
+      const q = raw;
 
       // Check blocked users to exclude them
       const blocks = await prisma.block.findMany({
@@ -80,16 +85,19 @@ usersRouter.get(
       const raw = typeof req.query.q === 'string' ? req.query.q.trim() : '';
       const q = raw.slice(0, 100);
 
+      if (!q) {
+        res.status(400).json({ error: 'Search query is required' });
+        return;
+      }
+
       const users = await prisma.user.findMany({
-        where: q
-          ? {
-              OR: [
-                { name: { contains: q, mode: 'insensitive' } },
-                { email: { contains: q, mode: 'insensitive' } },
-                { city: { contains: q, mode: 'insensitive' } },
-              ],
-            }
-          : undefined,
+        where: {
+          OR: [
+            { name: { contains: q, mode: 'insensitive' } },
+            { email: { contains: q, mode: 'insensitive' } },
+            { city: { contains: q, mode: 'insensitive' } },
+          ],
+        },
         select: {
           ...publicUserSearchSelect,
           role: true,
@@ -115,25 +123,27 @@ usersRouter.put(
     try {
       const data = updateUserRoleSchema.parse(req.body);
 
+      const targetUser = await prisma.user.findUnique({
+        where: { id: req.params.id },
+        select: { id: true, role: true },
+      });
+
+      if (!targetUser) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+
+      // Prevent admins from removing their own admin access
       if (req.params.id === req.user!.id && data.role !== 'ADMIN') {
         res.status(400).json({ error: 'Admins cannot remove their own admin access from the app.' });
         return;
       }
 
-      const existingUser = await prisma.user.findUnique({
-        where: { id: req.params.id },
-        select: { id: true },
-      });
-
-      if (!existingUser) {
-        res.status(404).json({ error: 'User not found' });
+      // Prevent admins from modifying another admin's role
+      if (targetUser.role === 'ADMIN' && req.params.id !== req.user!.id) {
+        res.status(403).json({ error: 'Cannot modify another admin\'s role' });
         return;
       }
-
-      const previousUser = await prisma.user.findUnique({
-        where: { id: req.params.id },
-        select: { role: true },
-      });
 
       const updatedUser = await prisma.user.update({
         where: { id: req.params.id },
@@ -150,7 +160,7 @@ usersRouter.put(
         action: 'ROLE_CHANGE',
         targetType: 'USER',
         targetId: req.params.id,
-        details: { previousRole: previousUser?.role, newRole: data.role },
+        details: { previousRole: targetUser.role, newRole: data.role },
       });
 
       res.json(updatedUser);
@@ -192,8 +202,6 @@ usersRouter.get(
         tournamentDate: reg.tournament.date,
         location: reg.tournament.location,
         paidAt: reg.paidAt,
-        stripeSessionId: reg.stripeSessionId,
-        stripePaymentId: reg.stripePaymentId,
         registeredAt: reg.createdAt,
       }));
 

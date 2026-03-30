@@ -109,8 +109,9 @@ openMatchesRouter.post(
     try {
       const data = createOpenMatchSchema.parse(req.body);
 
-      if (data.scheduledFor.getTime() <= Date.now()) {
-        res.status(400).json({ error: 'Scheduled time must be in the future.' });
+      const minimumTime = Date.now() + 15 * 60 * 1000; // 15 minutes from now
+      if (data.scheduledFor.getTime() < minimumTime) {
+        res.status(400).json({ error: 'Match must be scheduled at least 15 minutes in the future.' });
         return;
       }
 

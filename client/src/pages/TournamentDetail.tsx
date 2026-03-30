@@ -39,6 +39,83 @@ const statusLabels: Record<string, { label: string; color: string }> = {
   CANCELLED: { label: 'Cancelled', color: 'bg-red-100 text-red-800' },
 };
 
+function PaymentBanner({ status }: { status: string | null }) {
+  if (status === 'success') {
+    return (
+      <div className="mb-6 rounded-lg bg-green-50 px-4 py-3 text-sm font-medium text-green-800">
+        Payment successful! You are now registered for this tournament.
+      </div>
+    );
+  }
+  if (status === 'cancelled') {
+    return (
+      <div className="mb-6 rounded-lg bg-yellow-50 px-4 py-3 text-sm font-medium text-yellow-800">
+        Payment was cancelled. You can try joining again.
+      </div>
+    );
+  }
+  return null;
+}
+
+function JoinAction({
+  user,
+  isRegistered,
+  isFull,
+  joining,
+  entryFee,
+  onJoin,
+}: {
+  user: { id: string } | null;
+  isRegistered: boolean;
+  isFull: boolean;
+  joining: boolean;
+  entryFee: number;
+  onJoin: () => void;
+}) {
+  if (!user) {
+    return (
+      <Link
+        to="/login"
+        className="inline-block rounded-lg bg-primary-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-primary-600"
+      >
+        Log in to Join
+      </Link>
+    );
+  }
+  if (isRegistered) {
+    return (
+      <button
+        disabled
+        className="inline-flex items-center gap-2 rounded-lg bg-green-100 px-6 py-3 font-semibold text-green-800"
+      >
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+        </svg>
+        You&apos;re Registered
+      </button>
+    );
+  }
+  if (isFull) {
+    return (
+      <button
+        disabled
+        className="rounded-lg bg-gray-200 px-6 py-3 font-semibold text-gray-500"
+      >
+        Tournament Full
+      </button>
+    );
+  }
+  return (
+    <button
+      onClick={onJoin}
+      disabled={joining}
+      className="rounded-lg bg-primary-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-primary-600 disabled:opacity-60"
+    >
+      {joining ? 'Redirecting to payment...' : `Join Tournament \u2014 ${formatCentsToEuros(entryFee)}`}
+    </button>
+  );
+}
+
 export default function TournamentDetail() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
@@ -47,7 +124,10 @@ export default function TournamentDetail() {
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState('');
 
-  const paymentStatus = searchParams.get('payment');
+  const rawPaymentStatus = searchParams.get('payment');
+  const paymentStatus = rawPaymentStatus === 'success' || rawPaymentStatus === 'cancelled'
+    ? rawPaymentStatus
+    : null;
 
   // Build player name map from registrations
   const playerMap = useMemo(() => {
@@ -76,6 +156,15 @@ export default function TournamentDetail() {
     setJoinError('');
     try {
       const { url } = await joinTournament(tournament.id);
+
+      // Validate redirect URL to prevent open redirect attacks
+      const parsed = new URL(url, window.location.origin);
+      const isSameOrigin = parsed.origin === window.location.origin;
+      const isTrustedPaymentProvider = parsed.hostname.endsWith('.stripe.com');
+      if (!isSameOrigin && !isTrustedPaymentProvider) {
+        throw new Error('Unexpected payment redirect');
+      }
+
       window.location.href = url;
     } catch (err: unknown) {
       setJoinError(
@@ -114,16 +203,7 @@ export default function TournamentDetail() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
       {/* Payment banners */}
-      {paymentStatus === 'success' && (
-        <div className="mb-6 rounded-lg bg-green-50 px-4 py-3 text-sm font-medium text-green-800">
-          Payment successful! You are now registered for this tournament.
-        </div>
-      )}
-      {paymentStatus === 'cancelled' && (
-        <div className="mb-6 rounded-lg bg-yellow-50 px-4 py-3 text-sm font-medium text-yellow-800">
-          Payment was cancelled. You can try joining again.
-        </div>
-      )}
+      <PaymentBanner status={paymentStatus} />
 
       {/* Back link */}
       <Link
@@ -257,41 +337,14 @@ export default function TournamentDetail() {
           )}
 
           {tournament.status === 'REGISTRATION_OPEN' && (
-            <>
-              {!user ? (
-                <Link
-                  to="/login"
-                  className="inline-block rounded-lg bg-primary-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-primary-600"
-                >
-                  Log in to Join
-                </Link>
-              ) : isRegistered ? (
-                <button
-                  disabled
-                  className="inline-flex items-center gap-2 rounded-lg bg-green-100 px-6 py-3 font-semibold text-green-800"
-                >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                  You&apos;re Registered
-                </button>
-              ) : isFull ? (
-                <button
-                  disabled
-                  className="rounded-lg bg-gray-200 px-6 py-3 font-semibold text-gray-500"
-                >
-                  Tournament Full
-                </button>
-              ) : (
-                <button
-                  onClick={handleJoin}
-                  disabled={joining}
-                  className="rounded-lg bg-primary-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-primary-600 disabled:opacity-60"
-                >
-                  {joining ? 'Redirecting to payment...' : `Join Tournament \u2014 ${formatCentsToEuros(tournament.entryFee)}`}
-                </button>
-              )}
-            </>
+            <JoinAction
+              user={user}
+              isRegistered={isRegistered}
+              isFull={isFull}
+              joining={joining}
+              entryFee={tournament.entryFee}
+              onJoin={handleJoin}
+            />
           )}
 
           {tournament.status === 'CANCELLED' && (
