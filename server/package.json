@@ -10,8 +10,10 @@
     "test:watch": "NODE_ENV=test NODE_OPTIONS='--experimental-vm-modules' jest --watch"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "schema": "prisma/schema.prisma"
   },
+  
   "dependencies": {
     "@prisma/client": "^6.3.0",
     "@sentry/node": "^10.45.0",
