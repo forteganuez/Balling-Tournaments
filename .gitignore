@@ -4,3 +4,7 @@ dist
 .expo
 *.log
 .DS_Store
+.claude/settings.local.json
+.worktrees
+
+
