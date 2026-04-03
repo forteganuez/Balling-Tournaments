@@ -1,5 +1,9 @@
 {
   "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "./.tsbuild/node",
     "target": "ES2022",
     "lib": ["ES2023"],
     "module": "ESNext",
@@ -8,7 +12,6 @@
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",
-    "noEmit": true,
     "strict": true
   },
   "include": ["vite.config.ts", "tailwind.config.ts"]

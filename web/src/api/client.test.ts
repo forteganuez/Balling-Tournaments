@@ -31,8 +31,15 @@ describe('api client', () => {
     });
 
     const { api } = await import('./client');
+    const requestHandlers = api.interceptors.request.handlers ?? [];
+    const requestHandler = requestHandlers[0]?.fulfilled;
+    expect(requestHandler).toBeTypeOf('function');
+    if (!requestHandler) {
+      throw new Error('Request interceptor missing');
+    }
+
     // Intercept the outgoing request config
-    const config = await api.interceptors.request.handlers[0].fulfilled({
+    const config = await requestHandler({
       headers: new axios.AxiosHeaders(),
       url: '/test',
     } as never);
@@ -48,8 +55,15 @@ describe('api client', () => {
 
     const { api } = await import('./client');
     const error = { response: { status: 401 } };
+    const responseHandlers = api.interceptors.response.handlers ?? [];
+    const responseHandler = responseHandlers[0]?.rejected;
 
-    await api.interceptors.response.handlers[0].rejected(error as never).catch(() => {});
+    expect(responseHandler).toBeTypeOf('function');
+    if (!responseHandler) {
+      throw new Error('Response interceptor missing');
+    }
+
+    await responseHandler(error as never).catch(() => {});
 
     expect(supabase.auth.signOut).toHaveBeenCalled();
     expect(locationMock.href).toBe('/login');
