@@ -27,16 +27,16 @@ export default function TournamentsPage() {
   };
 
   const selectClass =
-    'rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-primary outline-none focus:border-accent';
+    'rounded-sm border border-[#d8ccb9] bg-[#f8f4ed] px-3 py-2.5 text-sm text-black outline-none focus:border-[#c4a47a]';
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="bg-[#f3eee5] text-[#191510] mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-3xl font-bold text-primary">Tournaments</h1>
+        <h1 className="text-3xl font-bold text-black">Tournaments</h1>
         {user?.role === 'ORGANIZER' && (
           <Link
             to="/tournaments/new"
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-green-600"
+            className="rounded-sm bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-black/90"
           >
             + Create Tournament
           </Link>
@@ -44,7 +44,7 @@ export default function TournamentsPage() {
       </div>
 
       {/* Filters */}
-      <div className="mb-8 flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 sm:flex-row">
+      <div className="mb-8 flex flex-col gap-3 rounded-sm border border-[#d8ccb9] bg-[#f8f4ed] p-4 sm:flex-row">
         <select value={sport} onChange={(e) => { setSport(e.target.value as Sport | ''); updateParams('sport', e.target.value); }} className={selectClass}>
           <option value="">All Sports</option>
           <option value="PADEL">Padel</option>
@@ -63,12 +63,12 @@ export default function TournamentsPage() {
           value={search}
           onChange={(e) => { setSearch(e.target.value); updateParams('search', e.target.value); }}
           placeholder="Search tournaments…"
-          className="flex-1 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm text-primary placeholder-muted outline-none focus:border-accent"
+          className="flex-1 rounded-sm border border-[#d8ccb9] bg-[#f8f4ed] px-4 py-2.5 text-sm text-black placeholder-[#6d6358] outline-none focus:border-[#c4a47a]"
         />
       </div>
 
       {error && (
-        <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <div className="mb-6 rounded-sm border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
@@ -76,13 +76,13 @@ export default function TournamentsPage() {
       {loading ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-52 animate-pulse rounded-xl bg-surface" />
+            <div key={i} className="h-52 animate-pulse rounded-sm bg-[#f8f4ed]" />
           ))}
         </div>
       ) : tournaments.length === 0 ? (
-        <div className="rounded-xl border border-border bg-surface py-16 text-center">
-          <p className="text-muted">No tournaments found.</p>
-          <p className="mt-1 text-sm text-muted">Try adjusting your filters.</p>
+        <div className="rounded-sm border border-[#d8ccb9] bg-[#f8f4ed] py-16 text-center">
+          <p className="text-[#6d6358]">No tournaments found.</p>
+          <p className="mt-1 text-sm text-[#6d6358]">Try adjusting your filters.</p>
         </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

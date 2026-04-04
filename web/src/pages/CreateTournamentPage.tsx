@@ -30,10 +30,10 @@ interface FormState {
 }
 
 const inputClass =
-  'w-full rounded-lg border border-border bg-base px-4 py-3 text-primary placeholder-muted outline-none focus:border-accent';
-const labelClass = 'mb-1.5 block text-sm font-medium text-muted';
+  'w-full rounded-sm border border-[#d8ccb9] bg-[#f8f4ed] px-4 py-3 text-black placeholder-[#6d6358] outline-none focus:border-[#c4a47a]';
+const labelClass = 'mb-1.5 block text-sm font-medium text-[#6d6358]';
 const selectClass =
-  'w-full rounded-lg border border-border bg-base px-4 py-3 text-primary outline-none focus:border-accent';
+  'w-full rounded-sm border border-[#d8ccb9] bg-[#f8f4ed] px-4 py-3 text-black outline-none focus:border-[#c4a47a]';
 
 export default function CreateTournamentPage() {
   const navigate = useNavigate();
@@ -78,14 +78,14 @@ export default function CreateTournamentPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
-      <Link to="/organizer" className="mb-6 inline-flex items-center gap-1 text-sm text-muted hover:text-primary">
+    <div className="bg-[#f3eee5] text-[#191510] mx-auto max-w-2xl px-4 py-10 sm:px-6">
+      <Link to="/organizer" className="mb-6 inline-flex items-center gap-1 text-sm text-[#6d6358] hover:text-black">
         ← Back to Organizer Dashboard
       </Link>
-      <h1 className="mb-8 text-2xl font-bold text-primary">Create Tournament</h1>
+      <h1 className="mb-8 text-2xl font-bold text-black">Create Tournament</h1>
 
       {error && (
-        <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <div className="mb-6 rounded-sm border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
@@ -156,7 +156,7 @@ export default function CreateTournamentPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-lg bg-accent py-3 font-semibold text-white hover:bg-green-600 disabled:opacity-60"
+          className="w-full rounded-sm bg-black py-3 font-semibold text-white hover:bg-black/90 disabled:opacity-60"
         >
           {submitting ? 'Creating…' : 'Create Tournament'}
         </button>

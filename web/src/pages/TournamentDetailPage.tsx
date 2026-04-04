@@ -16,10 +16,10 @@ const formatLabels: Record<string, string> = {
 };
 
 const statusLabels: Record<string, { label: string; color: string }> = {
-  REGISTRATION_OPEN: { label: 'Registration Open', color: 'text-accent' },
-  IN_PROGRESS: { label: 'In Progress', color: 'text-yellow-400' },
-  COMPLETED: { label: 'Completed', color: 'text-muted' },
-  CANCELLED: { label: 'Cancelled', color: 'text-red-400' },
+  REGISTRATION_OPEN: { label: 'Registration Open', color: 'text-[#8a6838]' },
+  IN_PROGRESS: { label: 'In Progress', color: 'text-yellow-600' },
+  COMPLETED: { label: 'Completed', color: 'text-[#6d6358]' },
+  CANCELLED: { label: 'Cancelled', color: 'text-red-600' },
 };
 
 function formatDate(dateStr: string): string {
@@ -80,17 +80,17 @@ export default function TournamentDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-accent border-t-transparent" />
+      <div className="bg-[#f3eee5] flex min-h-[60vh] items-center justify-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#c4a47a] border-t-transparent" />
       </div>
     );
   }
 
   if (error || !tournament) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-12 text-center">
-        <p className="text-red-400">{error ?? 'Tournament not found'}</p>
-        <Link to="/tournaments" className="mt-4 inline-block text-accent hover:underline">
+      <div className="bg-[#f3eee5] text-[#191510] mx-auto max-w-3xl px-4 py-12 text-center">
+        <p className="text-red-600">{error ?? 'Tournament not found'}</p>
+        <Link to="/tournaments" className="mt-4 inline-block text-black hover:underline">
           ← Back to Tournaments
         </Link>
       </div>
@@ -100,61 +100,61 @@ export default function TournamentDetailPage() {
   const statusInfo = statusLabels[tournament.status] ?? statusLabels.COMPLETED;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+    <div className="bg-[#f3eee5] text-[#191510] mx-auto max-w-4xl px-4 py-8 sm:px-6">
       {/* Payment banner */}
       {paymentStatus === 'success' && (
-        <div className="mb-6 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 text-sm font-medium text-accent">
+        <div className="mb-6 rounded-sm border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
           Payment successful! You are now registered.
         </div>
       )}
       {paymentStatus === 'cancelled' && (
-        <div className="mb-6 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm font-medium text-yellow-400">
+        <div className="mb-6 rounded-sm border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm font-medium text-yellow-700">
           Payment was cancelled. You can try joining again.
         </div>
       )}
 
-      <Link to="/tournaments" className="mb-6 inline-flex items-center gap-1 text-sm text-muted hover:text-primary">
+      <Link to="/tournaments" className="mb-6 inline-flex items-center gap-1 text-sm text-[#6d6358] hover:text-black">
         ← Back to Tournaments
       </Link>
 
       {/* Info card */}
-      <div className="rounded-xl border border-border bg-surface p-6 sm:p-8">
+      <div className="rounded-sm border border-[#d8ccb9] bg-[#f8f4ed] p-6 sm:p-8">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <SportIcon sport={tournament.sport} className="text-3xl" />
             <div>
-              <h1 className="text-2xl font-bold text-primary sm:text-3xl">{tournament.name}</h1>
+              <h1 className="text-2xl font-bold text-black sm:text-3xl">{tournament.name}</h1>
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <span className={`text-xs font-medium ${statusInfo.color}`}>{statusInfo.label}</span>
-                <span className="rounded border border-border px-2 py-0.5 text-xs text-muted">
+                <span className="rounded border border-[#d8ccb9] px-2 py-0.5 text-xs text-[#6d6358]">
                   {formatLabels[tournament.format] ?? tournament.format}
                 </span>
               </div>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-bold text-accent">
+            <p className="text-2xl font-bold text-[#8a6838]">
               {tournament.entryFee === 0 ? 'Free' : formatCentsToEuros(tournament.entryFee)}
             </p>
-            <p className="text-xs text-muted">entry fee</p>
+            <p className="text-xs text-[#6d6358]">entry fee</p>
           </div>
         </div>
 
-        <div className="mb-6 grid gap-4 border-t border-border pt-6 sm:grid-cols-2">
+        <div className="mb-6 grid gap-4 border-t border-[#d8ccb9] pt-6 sm:grid-cols-2">
           <div>
-            <p className="text-sm font-medium text-primary">{formatDate(tournament.date)}</p>
-            <p className="text-xs text-muted">Date &amp; Time</p>
+            <p className="text-sm font-medium text-black">{formatDate(tournament.date)}</p>
+            <p className="text-xs text-[#6d6358]">Date &amp; Time</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-primary">{tournament.location}</p>
-            {tournament.venue && <p className="text-xs text-muted">{tournament.venue}</p>}
+            <p className="text-sm font-medium text-black">{tournament.location}</p>
+            {tournament.venue && <p className="text-xs text-[#6d6358]">{tournament.venue}</p>}
           </div>
         </div>
 
         {tournament.description && (
           <div className="mb-6">
-            <h3 className="mb-1 text-sm font-semibold text-muted">About</h3>
-            <p className="text-sm leading-relaxed text-primary">{tournament.description}</p>
+            <h3 className="mb-1 text-sm font-semibold text-[#6d6358]">About</h3>
+            <p className="text-sm leading-relaxed text-black">{tournament.description}</p>
           </div>
         )}
 
@@ -165,12 +165,12 @@ export default function TournamentDetailPage() {
         {/* Spots progress */}
         <div className="mb-6">
           <div className="mb-1 flex justify-between text-sm">
-            <span className="font-medium text-primary">{spotsUsed} / {tournament.maxPlayers} spots filled</span>
-            <span className="text-muted">{tournament.maxPlayers - spotsUsed} remaining</span>
+            <span className="font-medium text-black">{spotsUsed} / {tournament.maxPlayers} spots filled</span>
+            <span className="text-[#6d6358]">{tournament.maxPlayers - spotsUsed} remaining</span>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-border">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-[#e2d7c7]">
             <div
-              className="h-full rounded-full bg-accent transition-all"
+              className="h-full rounded-full bg-[#8a6838] transition-all"
               style={{ width: `${Math.min((spotsUsed / tournament.maxPlayers) * 100, 100)}%` }}
             />
           </div>
@@ -179,15 +179,15 @@ export default function TournamentDetailPage() {
         {/* Players */}
         {tournament.registrations && tournament.registrations.length > 0 && (
           <div className="mb-6">
-            <h3 className="mb-2 text-sm font-semibold text-muted">Registered Players</h3>
+            <h3 className="mb-2 text-sm font-semibold text-[#6d6358]">Registered Players</h3>
             <div className="flex flex-wrap gap-2">
               {tournament.registrations.slice(0, 8).map((reg) => (
-                <span key={reg.id} className="rounded-full border border-border bg-base px-3 py-1 text-sm text-primary">
+                <span key={reg.id} className="rounded-full border border-[#d8ccb9] bg-[#f7f2ea] px-3 py-1 text-sm text-black">
                   {reg.user?.name ?? 'Player'}
                 </span>
               ))}
               {tournament.registrations.length > 8 && (
-                <span className="rounded-full border border-border bg-base px-3 py-1 text-sm text-muted">
+                <span className="rounded-full border border-[#d8ccb9] bg-[#f7f2ea] px-3 py-1 text-sm text-[#6d6358]">
                   +{tournament.registrations.length - 8} more
                 </span>
               )}
@@ -196,21 +196,21 @@ export default function TournamentDetailPage() {
         )}
 
         {/* Join action */}
-        <div className="border-t border-border pt-6">
+        <div className="border-t border-[#d8ccb9] pt-6">
           {joinError && (
-            <div className="mb-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-400">
+            <div className="mb-3 rounded-sm border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
               {joinError}
             </div>
           )}
           {tournament.status === 'REGISTRATION_OPEN' && (
             <>
               {!user && (
-                <Link to="/login" className="inline-block rounded-lg bg-accent px-6 py-3 font-semibold text-white hover:bg-green-600">
+                <Link to="/login" className="inline-block rounded-sm bg-black px-6 py-3 font-semibold text-white hover:bg-black/90">
                   Log in to Join
                 </Link>
               )}
               {user && isRegistered && (
-                <span className="inline-flex items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-6 py-3 font-semibold text-accent">
+                <span className="inline-flex items-center gap-2 rounded-sm border border-[#b99763] bg-[#efe4d2] px-6 py-3 font-semibold text-[#8a6838]">
                   ✓ You&apos;re Registered
                 </span>
               )}
@@ -218,20 +218,20 @@ export default function TournamentDetailPage() {
                 <button
                   onClick={() => void handleJoin()}
                   disabled={joining}
-                  className="rounded-lg bg-accent px-6 py-3 font-semibold text-white hover:bg-green-600 disabled:opacity-60"
+                  className="rounded-sm bg-black px-6 py-3 font-semibold text-white hover:bg-black/90 disabled:opacity-60"
                 >
                   {joining ? 'Redirecting to payment…' : `Join — ${tournament.entryFee === 0 ? 'Free' : formatCentsToEuros(tournament.entryFee)}`}
                 </button>
               )}
               {user && !isRegistered && isFull && (
-                <span className="rounded-lg border border-border px-6 py-3 font-semibold text-muted">
+                <span className="rounded-sm border border-[#d8ccb9] px-6 py-3 font-semibold text-[#6d6358]">
                   Tournament Full
                 </span>
               )}
             </>
           )}
           {tournament.status === 'CANCELLED' && (
-            <p className="text-sm font-medium text-red-400">This tournament has been cancelled.</p>
+            <p className="text-sm font-medium text-red-600">This tournament has been cancelled.</p>
           )}
         </div>
       </div>
@@ -239,8 +239,8 @@ export default function TournamentDetailPage() {
       {/* Bracket */}
       {(tournament.status === 'IN_PROGRESS' || tournament.status === 'COMPLETED') &&
         tournament.matches && tournament.matches.length > 0 && (
-          <div className="mt-8 rounded-xl border border-border bg-surface p-6 sm:p-8">
-            <h2 className="mb-6 text-xl font-bold text-primary">
+          <div className="mt-8 rounded-sm border border-[#d8ccb9] bg-[#f8f4ed] p-6 sm:p-8">
+            <h2 className="mb-6 text-xl font-bold text-black">
               {tournament.status === 'COMPLETED' ? 'Final Results' : 'Live Bracket'}
             </h2>
             {tournament.format === 'ROUND_ROBIN' ? (
@@ -252,8 +252,8 @@ export default function TournamentDetailPage() {
         )}
 
       {tournament.organizer && (
-        <div className="mt-6 text-center text-sm text-muted">
-          Organized by <span className="font-medium text-primary">{tournament.organizer.name}</span>
+        <div className="mt-6 text-center text-sm text-[#6d6358]">
+          Organized by <span className="font-medium text-black">{tournament.organizer.name}</span>
         </div>
       )}
     </div>
