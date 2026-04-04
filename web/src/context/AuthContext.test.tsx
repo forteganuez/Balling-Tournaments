@@ -73,7 +73,16 @@ describe('AuthContext', () => {
         },
       })
       .mockResolvedValueOnce({
-        data: { totalCredits: 10, subscription: null },
+        data: {
+          credits: {
+            total: 10,
+            packs: [],
+          },
+          subscription: null,
+          isBaller: false,
+          competitiveMatchesThisMonth: 0,
+          nudge: null,
+        },
       });
 
     const { useAuth, AuthProvider } = await import('./AuthContext');

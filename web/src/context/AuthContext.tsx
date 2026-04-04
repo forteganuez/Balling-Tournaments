@@ -13,7 +13,7 @@ import type { AppUser, BalanceResponse } from '../lib/types';
 interface AuthContextValue {
   user: AppUser | null;
   isLoading: boolean;
-  refetch: () => Promise<void>;
+  refetch: () => Promise<AppUser | null>;
   logout: () => Promise<void>;
 }
 
@@ -32,14 +32,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         api.get<BalanceResponse>('/api/monetization/balance'),
       ]);
 
-      setUser({
+      const nextUser = {
         ...meRes.data.user,
-        credits: balanceRes.data.totalCredits,
+        credits: balanceRes.data.credits.total,
         ballerExpiresAt:
           balanceRes.data.subscription?.currentPeriodEnd ?? null,
-      });
-    } catch {
+      };
+
+      setUser(nextUser);
+      return nextUser;
+    } catch (error) {
       setUser(null);
+      throw error;
     }
   }, []);
 
@@ -49,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data: { session },
       } = await supabase.auth.getSession();
       if (session) {
-        await fetchUser();
+        await fetchUser().catch(() => null);
       }
       setIsLoading(false);
     };
@@ -63,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session &&
         (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')
       ) {
-        await fetchUser();
+        await fetchUser().catch(() => null);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
       }

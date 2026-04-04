@@ -69,11 +69,24 @@ export interface Match {
 }
 
 export interface BalanceResponse {
-  totalCredits: number;
+  credits: {
+    total: number;
+    packs: Array<{
+      id: string;
+      packSize: number;
+      remaining: number;
+      purchasedAt: string;
+    }>;
+  };
   subscription: {
-    id: string;
     status: string;
     currentPeriodEnd: string;
     cancelAtPeriodEnd: boolean;
+  } | null;
+  isBaller: boolean;
+  competitiveMatchesThisMonth: number;
+  nudge: {
+    type: string;
+    message: string;
   } | null;
 }
