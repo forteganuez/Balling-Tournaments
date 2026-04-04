@@ -97,3 +97,7 @@ Whenever I encounter an error and fix it, I must immediately add the lesson to C
 - JWT is sent as a cookie AND Bearer header — middleware supports both.
 - OAuth callbacks are server-side redirects — not handled in the mobile app directly.
 - Rate limits: 100 req/min general · 10/15min auth · 30/min writes.
+- **Web Client**: All pages use light beige theme (#f3eee5 bg, #191510 text) — do NOT use dark theme tokens. Navbar is sticky light beige across all pages.
+- **Web Client**: BalanceResponse API has structure `{ credits: { total: number }, subscription: {...} }` — always access as `balanceRes.data.credits.total`, not `totalCredits`.
+- **Web Client**: Navbar should apply light beige styling to all pages, not a conditional "editorial shell" pattern. Keep navbar styles consistent across entire app.
+- **Web Client**: Color references in components must use beige theme hex colors (#c4a47a, #d8ccb9, #f8f4ed, etc.) — never use Tailwind dark tokens (base, surface, accent) in light-themed pages.
