@@ -172,33 +172,7 @@ describe('API Integration Tests', () => {
   });
 
   describe('Auth endpoints', () => {
-    it('POST /api/auth/register — rejects invalid data', async () => {
-      const res = await request(app)
-        .post('/api/auth/register')
-        .send({ name: 'J', email: 'bad', password: '12' });
-
-      expect(res.status).toBe(400);
-      expect(res.body.error).toBe('Validation error');
-    });
-
-    it('POST /api/auth/login — rejects invalid data', async () => {
-      const res = await request(app)
-        .post('/api/auth/login')
-        .send({ email: 'not-email', password: '12' });
-
-      expect(res.status).toBe(400);
-      expect(res.body.error).toBe('Validation error');
-    });
-
-    it('POST /api/auth/login — returns 401 for non-existent user', async () => {
-      prismaMock.user.findUnique.mockResolvedValueOnce(null);
-
-      const res = await request(app)
-        .post('/api/auth/login')
-        .send({ email: 'nobody@example.com', password: 'password123' });
-
-      expect(res.status).toBe(401);
-    });
+    // Auth is handled entirely by Supabase OAuth — no local /register or /login routes exist.
 
     it('GET /api/auth/me — returns 401 without token', async () => {
       const res = await request(app).get('/api/auth/me');
@@ -299,6 +273,7 @@ describe('API Integration Tests', () => {
         matchesPlayed: 0,
         level: null,
         preferredSport: null,
+        profileVisible: true,
         createdAt: new Date(),
       });
 

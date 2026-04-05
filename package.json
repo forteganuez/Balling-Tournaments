@@ -5,9 +5,10 @@
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "cd server && npm run dev",
     "dev:client": "cd client && npm run dev",
-    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install && cd ../.worktrees/web-client/web && npm install",
     "db:migrate": "cd server && npx prisma migrate dev",
-    "db:seed": "cd server && npx prisma db seed"
+    "db:seed": "cd server && npx prisma db seed",
+    "dev:web": "cd .worktrees/web-client/web && npm run dev"
   },
   "devDependencies": {
     "@types/react": "~19.2.10",

@@ -72,7 +72,9 @@ client/           Legacy web app (reference only — do not modify)
 
 ## Agents
 
-Six project-specific agents live in `.claude/skills/`. Invoke them at the trigger points below:
+Project-specific agents live in `.claude/skills/`. Invoke them at the trigger points below:
+
+### Quality & Review Agents (original)
 
 | Agent | Invoke when |
 |---|---|
@@ -84,6 +86,20 @@ Six project-specific agents live in `.claude/skills/`. Invoke them at the trigge
 | `api-consistency` | Any new or changed file in `server/src/routes/` |
 
 To invoke: `/typescript-strict`, `/code-reviewer`, `/security-guard`, `/db-health`, `/mobile-quality`, `/api-consistency`
+
+### Specialist Agents (from wshobson/agents)
+
+| Agent | Invoke when |
+|---|---|
+| `backend-architect` | Designing new API routes, services, or backend architecture |
+| `mobile-developer` | Building or optimizing React Native / Expo features |
+| `payment-integration` | Any Stripe checkout, webhook, or billing work |
+| `backend-security-coder` | Implementing auth, JWT, input validation, or security hardening |
+| `typescript-pro` | Advanced TypeScript types, generics, or strict config issues |
+| `tdd-orchestrator` | Writing tests or adopting TDD for a feature |
+| `database-architect` | Prisma schema design, migrations, or query optimization |
+
+To invoke: `/backend-architect`, `/mobile-developer`, `/payment-integration`, `/backend-security-coder`, `/typescript-pro`, `/tdd-orchestrator`, `/database-architect`
 
 ## Iterate Constantly
 
@@ -101,3 +117,8 @@ Whenever I encounter an error and fix it, I must immediately add the lesson to C
 - **Web Client**: BalanceResponse API has structure `{ credits: { total: number }, subscription: {...} }` — always access as `balanceRes.data.credits.total`, not `totalCredits`.
 - **Web Client**: Navbar should apply light beige styling to all pages, not a conditional "editorial shell" pattern. Keep navbar styles consistent across entire app.
 - **Web Client**: Color references in components must use beige theme hex colors (#c4a47a, #d8ccb9, #f8f4ed, etc.) — never use Tailwind dark tokens (base, surface, accent) in light-themed pages.
+- **Web Client**: Always validate `import.meta.env.VITE_API_URL` exists before creating the axios instance — missing env var causes all requests to fail silently with `baseURL: undefined`.
+- **Web Client**: Axios error messages are nested at `err.response.data.error` (our `{ error: string }` format) — when catching API errors, extract from that path before falling back to `err.message`.
+- **Web Client**: Tournament format labels, short labels, status colors/labels, and valid sport/status arrays live in `src/lib/constants.ts` — import from there, do not re-declare locally.
+- **Web Client**: URL search params must be validated against allowed values before casting to enum types — use the `SPORTS` and `TOURNAMENT_STATUSES` arrays from `src/lib/constants.ts`.
+- **Web Client**: Never use `window.confirm()` for destructive actions — use inline two-step confirmation (first click requests, second click executes via a confirm/cancel button pair).

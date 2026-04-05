@@ -53,7 +53,7 @@ export const updateTournamentSchema = createTournamentSchema.partial();
 
 export const matchResultSchema = z.object({
   score: z.string().min(1, 'Score is required').max(50, 'Score too long'),
-  winnerId: z.string().cuid('Invalid winner ID'),
+  winnerId: z.string().min(1, 'Winner ID is required'),
 });
 
 export const profileUpdateSchema = z.object({
@@ -104,7 +104,7 @@ export const announcementSchema = z.object({
 });
 
 export const playerSubmitResultSchema = z.object({
-  winnerId: z.string().cuid('Invalid winner ID'),
+  winnerId: z.string().min(1, 'Winner ID is required'),
   score: z.string().max(50).optional(),
 });
 
@@ -117,7 +117,7 @@ export const tournamentQuerySchema = z.object({
 });
 
 export const doublesRegistrationSchema = z.object({
-  partnerId: z.string().cuid('Invalid partner ID'),
+  partnerId: z.string().min(1, 'Partner ID is required'),
 });
 
 // Competitive match
