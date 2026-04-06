@@ -1,14 +1,11 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
-import { stripe } from '../services/stripe.js';
+import { getStripe, isStripeConfigured } from '../services/stripe.js';
 import { CREDIT_PACK_PRICES } from '../services/payments.js';
-import Stripe from 'stripe';
+import type Stripe from 'stripe';
 import { logger } from '../lib/logger.js';
 
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
-if (!STRIPE_WEBHOOK_SECRET) {
-  throw new Error('STRIPE_WEBHOOK_SECRET environment variable is required');
-}
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 
 export const webhookRouter = Router();
 
@@ -16,6 +13,12 @@ export const webhookRouter = Router();
 // Note: express.raw() is applied in index.ts for this route
 webhookRouter.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!isStripeConfigured() || !STRIPE_WEBHOOK_SECRET || /placeholder/i.test(STRIPE_WEBHOOK_SECRET)) {
+      res.status(503).json({ error: 'Stripe webhooks are not configured in this environment' });
+      return;
+    }
+
+    const stripe = await getStripe();
     const sig = req.headers['stripe-signature'] as string;
 
     if (!sig) {

@@ -11,6 +11,7 @@ export type RootStackParamList = {
 export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
+  AuthCallback: undefined;
 };
 
 export type RankingStackParamList = {

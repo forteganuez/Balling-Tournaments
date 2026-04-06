@@ -202,7 +202,7 @@ tournamentRouter.delete('/:id', authenticate, async (req: Request, res: Response
   try {
     const tournament = await prisma.tournament.findUnique({
       where: { id: req.params.id },
-      select: { id: true, organizerId: true },
+      select: { id: true, organizerId: true, status: true },
     });
 
     if (!tournament) {
@@ -212,6 +212,11 @@ tournamentRouter.delete('/:id', authenticate, async (req: Request, res: Response
 
     if (tournament.organizerId !== req.user!.id && req.user!.role !== 'ADMIN') {
       res.status(403).json({ error: 'Insufficient permissions' });
+      return;
+    }
+
+    if (tournament.status === 'IN_PROGRESS' || tournament.status === 'COMPLETED') {
+      res.status(400).json({ error: `Cannot delete a tournament that is ${tournament.status.toLowerCase().replace('_', ' ')}` });
       return;
     }
 
@@ -397,14 +402,25 @@ tournamentRouter.post('/:id/join', authenticate, async (req: Request, res: Respo
       return;
     }
 
-    // If entry fee is 0, register directly without Stripe
+    // If entry fee is 0, register directly without Stripe.
+    // Wrapping in a transaction ensures the capacity re-check and the
+    // registration insert are atomic, preventing over-registration under
+    // concurrent requests (the paid path relies on the webhook for this).
     if (tournament.entryFee === 0) {
-      await prisma.registration.create({
-        data: {
-          userId: req.user!.id,
-          tournamentId: req.params.id,
-          paidAt: new Date(),
-        },
+      await prisma.$transaction(async (tx) => {
+        const currentCount = await tx.registration.count({
+          where: { tournamentId: req.params.id },
+        });
+        if (currentCount >= tournament.maxPlayers) {
+          throw Object.assign(new Error('Tournament is full'), { statusCode: 400 });
+        }
+        await tx.registration.create({
+          data: {
+            userId: req.user!.id,
+            tournamentId: req.params.id,
+            paidAt: new Date(),
+          },
+        });
       });
 
       res.json({ url: `${process.env.CLIENT_URL || 'http://localhost:5173'}/tournaments/${req.params.id}?payment=success` });

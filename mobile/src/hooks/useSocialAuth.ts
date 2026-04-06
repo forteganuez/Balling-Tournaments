@@ -76,19 +76,10 @@ export function useSocialAuth() {
       if (result.type === 'cancel' || result.type === 'dismiss') return;
 
       if (result.type === 'success' && result.url) {
-        const url = new URL(result.url);
-        // Supabase returns tokens in the URL fragment
-        const fragment = url.hash.substring(1);
-        const params = new URLSearchParams(fragment);
-        const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token');
-
-        if (accessToken && refreshToken) {
-          await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
-          await refreshUser();
-        } else {
-          throw new Error('Google sign in did not return tokens.');
-        }
+        // exchangeCodeForSession handles both PKCE (?code=…) and implicit (#access_token=…) flows
+        const { error: sessionError } = await supabase.auth.exchangeCodeForSession(result.url);
+        if (sessionError) throw new Error(sessionError.message);
+        await refreshUser();
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Google sign in failed');

@@ -10,7 +10,6 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, phone?: string) => Promise<void>;
   logout: () => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
   updateProfile: (data: ProfileUpdate) => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -91,17 +90,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await fetchProfile();
   }, [fetchProfile]);
 
-  const signInWithGoogle = useCallback(async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: 'balling://auth/callback',
-        skipBrowserRedirect: true,
-      },
-    });
-    if (error) throw new Error(error.message);
-  }, []);
-
   const updateProfile = useCallback(async (data: ProfileUpdate) => {
     const { user: updated } = await api.updateProfile(data);
     setUser(updated);
@@ -114,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user, loading, login, register, logout: handleLogout,
-      signInWithGoogle, updateProfile, refreshUser,
+      updateProfile, refreshUser,
     }}>
       {children}
     </AuthContext.Provider>

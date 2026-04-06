@@ -121,12 +121,17 @@ jest.unstable_mockModule('@sentry/node', () => ({
 }));
 
 // Mock Stripe
+const mockStripeInstance = {
+  webhooks: { constructEvent: jest.fn<any>() },
+  checkout: { sessions: { create: jest.fn<any>() } },
+  subscriptions: { retrieve: jest.fn<any>(), update: jest.fn<any>() },
+  refunds: { create: jest.fn<any>() },
+  customers: { create: jest.fn<any>() },
+};
 jest.unstable_mockModule('../../src/services/stripe.js', () => ({
-  stripe: {
-    webhooks: { constructEvent: jest.fn() },
-    checkout: { sessions: { create: jest.fn() } },
-  },
-  createCheckoutSession: jest.fn(),
+  getStripe: jest.fn<any>().mockResolvedValue(mockStripeInstance),
+  createCheckoutSession: jest.fn<any>(),
+  isStripeConfigured: jest.fn<any>().mockReturnValue(false),
 }));
 
 // Mock Google Auth
@@ -238,6 +243,145 @@ describe('API Integration Tests', () => {
     });
   });
 
+  describe('Tournament join endpoint', () => {
+    const fullTournament = {
+      ...mockTournament,
+      entryFee: 0,
+      maxPlayers: 2,
+      _count: { registrations: 2 },
+    };
+
+    const openFreeTournament = {
+      ...mockTournament,
+      entryFee: 0,
+      maxPlayers: 16,
+      _count: { registrations: 0 },
+    };
+
+    it('POST /api/tournaments/:id/join — rejects unauthenticated', async () => {
+      const res = await request(app).post('/api/tournaments/tournament-1/join');
+      expect(res.status).toBe(401);
+    });
+
+    it('POST /api/tournaments/:id/join — returns 400 when tournament is full', async () => {
+      const token = makeToken({ id: 'user-2', email: 'user2@example.com', role: 'PLAYER' });
+      prismaMock.tournament.findUnique.mockResolvedValueOnce(fullTournament);
+
+      const res = await request(app)
+        .post('/api/tournaments/tournament-1/join')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/full/i);
+    });
+
+    it('POST /api/tournaments/:id/join — returns 409 when already registered', async () => {
+      const token = makeToken({ id: 'user-1', email: 'test@example.com', role: 'PLAYER' });
+      prismaMock.tournament.findUnique.mockResolvedValueOnce(openFreeTournament);
+      prismaMock.registration.findUnique.mockResolvedValueOnce({ id: 'reg-1', userId: 'user-1', tournamentId: 'tournament-1' });
+
+      const res = await request(app)
+        .post('/api/tournaments/tournament-1/join')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(409);
+    });
+
+    it('POST /api/tournaments/:id/join — free tournament registers directly inside a transaction', async () => {
+      const token = makeToken({ id: 'user-2', email: 'user2@example.com', role: 'PLAYER' });
+      prismaMock.tournament.findUnique.mockResolvedValueOnce(openFreeTournament);
+      prismaMock.registration.findUnique.mockResolvedValueOnce(null);
+      prismaMock.registration.create.mockResolvedValueOnce({ id: 'reg-new' });
+
+      const res = await request(app)
+        .post('/api/tournaments/tournament-1/join')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.url).toBeDefined();
+      // Registration must go through a transaction to prevent race conditions
+      expect(prismaMock.$transaction).toHaveBeenCalled();
+    });
+  });
+
+  describe('Tournament mutation authorization', () => {
+    it('DELETE /api/tournaments/:id — returns 400 when tournament is IN_PROGRESS', async () => {
+      const token = makeToken({ id: 'user-1', email: 'test@example.com', role: 'ORGANIZER' });
+      prismaMock.tournament.findUnique.mockResolvedValueOnce({
+        ...mockTournament,
+        status: 'IN_PROGRESS',
+        organizerId: 'user-1',
+      });
+
+      const res = await request(app)
+        .delete('/api/tournaments/tournament-1')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/in progress|cannot delete/i);
+    });
+
+    it('DELETE /api/tournaments/:id — returns 400 when tournament is COMPLETED', async () => {
+      const token = makeToken({ id: 'user-1', email: 'test@example.com', role: 'ORGANIZER' });
+      prismaMock.tournament.findUnique.mockResolvedValueOnce({
+        ...mockTournament,
+        status: 'COMPLETED',
+        organizerId: 'user-1',
+      });
+
+      const res = await request(app)
+        .delete('/api/tournaments/tournament-1')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/completed|cannot delete/i);
+    });
+
+    it('PUT /api/tournaments/:id — rejects PLAYER role even as non-owner', async () => {
+      const token = makeToken({ id: 'user-2', email: 'other@example.com', role: 'PLAYER' });
+      prismaMock.tournament.findUnique.mockResolvedValueOnce({
+        ...mockTournament,
+        organizerId: 'user-1',
+      });
+
+      const res = await request(app)
+        .put('/api/tournaments/tournament-1')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ name: 'Renamed' });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('POST /api/tournaments/:id/close-registration — rejects PLAYER role', async () => {
+      const token = makeToken({ id: 'user-2', email: 'other@example.com', role: 'PLAYER' });
+      prismaMock.tournament.findUnique.mockResolvedValueOnce({
+        ...mockTournament,
+        organizerId: 'user-1',
+        _count: { registrations: 4 },
+      });
+
+      const res = await request(app)
+        .post('/api/tournaments/tournament-1/close-registration')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('POST /api/tournaments/:id/cancel — rejects PLAYER role', async () => {
+      const token = makeToken({ id: 'user-2', email: 'other@example.com', role: 'PLAYER' });
+      prismaMock.tournament.findUnique.mockResolvedValueOnce({
+        ...mockTournament,
+        organizerId: 'user-1',
+      });
+
+      const res = await request(app)
+        .post('/api/tournaments/tournament-1/cancel')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(403);
+    });
+  });
+
   describe('Notification endpoints', () => {
     it('GET /api/notifications — returns 401 without auth', async () => {
       const res = await request(app).get('/api/notifications');
@@ -311,7 +455,7 @@ describe('API Integration Tests', () => {
         .post('/api/auth/login')
         .send({ email: 'test@example.com', password: 'password123' });
 
-      // Rate limit headers should be present
+      // Rate limit headers should be present (header names are lowercased by supertest)
       expect(res.headers['ratelimit-limit']).toBeDefined();
     });
   });

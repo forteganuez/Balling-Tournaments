@@ -58,6 +58,12 @@ export const linking: LinkingOptions<RootStackParamList> = {
         screens: {
           Login: 'login',
           Register: 'register',
+          // auth/callback is the OAuth redirect target (Google, Apple).
+          // WebBrowser.openAuthSessionAsync captures it before it deep-links
+          // into the app, but this entry ensures that on Android (where the
+          // external browser may not be intercepted) the redirect still lands
+          // correctly and triggers the onAuthStateChange SIGNED_IN event.
+          AuthCallback: 'auth/callback',
         },
       },
     },

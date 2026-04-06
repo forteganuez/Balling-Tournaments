@@ -9,6 +9,7 @@ import {
   verifyCompetitiveAccess,
   CREDIT_PACK_PRICES,
 } from '../services/payments.js';
+import { getStripe } from '../services/stripe.js';
 
 export const monetizationRouter = Router();
 
@@ -156,7 +157,7 @@ monetizationRouter.post(
       }
 
       // Cancel at period end in Stripe
-      const { stripe: stripeInstance } = await import('../services/stripe.js');
+      const stripeInstance = await getStripe();
       await stripeInstance.subscriptions.update(subscription.stripeSubscriptionId, {
         cancel_at_period_end: true,
       });

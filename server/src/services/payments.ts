@@ -1,5 +1,5 @@
 import prisma from '../lib/prisma.js';
-import { stripe } from './stripe.js';
+import { getStripe } from './stripe.js';
 import { logger } from '../lib/logger.js';
 import type { CompetitiveMatch } from '@prisma/client';
 import crypto from 'crypto';
@@ -29,6 +29,7 @@ export async function verifyCompetitiveAccess(userId: string): Promise<AccessRes
   if (subscription && subscription.status === 'ACTIVE') {
     // Verify against Stripe in real-time
     try {
+      const stripe = await getStripe();
       const stripeSub = await stripe.subscriptions.retrieve(subscription.stripeSubscriptionId);
       if (stripeSub.status === 'active') {
         return {
@@ -128,6 +129,7 @@ export async function createMatchPaymentSession(
 ) {
   const idempotencyKey = `match-payment-${matchId}-${userId}`;
   const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+  const stripe = await getStripe();
 
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
@@ -161,6 +163,7 @@ export async function createCreditPackCheckout(
 
   const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
   const idempotencyKey = `credit-pack-${userId}-${packSize}-${Date.now()}`;
+  const stripe = await getStripe();
 
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
@@ -186,6 +189,7 @@ export async function createCreditPackCheckout(
 
 export async function createBallerSubscriptionCheckout(userId: string, userEmail: string) {
   const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+  const stripe = await getStripe();
 
   // Create or get Stripe customer
   const existingSub = await prisma.ballerSubscription.findUnique({ where: { userId } });
@@ -299,6 +303,7 @@ export async function refundMatchPayments(match: CompetitiveMatch) {
   });
 
   // Stripe refunds outside the DB transaction — failures are logged, not fatal
+  const stripe = await getStripe();
   for (const paymentIntent of stripeRefundIntents) {
     try {
       await stripe.refunds.create({ payment_intent: paymentIntent });

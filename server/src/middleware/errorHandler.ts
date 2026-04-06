@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
-import * as Sentry from '@sentry/node';
 import { logger } from '../lib/logger.js';
+import { captureSentryException } from '../lib/sentry.js';
 
 export function errorHandler(
   err: Error,
@@ -11,6 +11,13 @@ export function errorHandler(
 ): void {
   if (process.env.NODE_ENV !== 'production') {
     logger.error(err.message || 'Unknown error');
+  }
+
+  // Application errors with an explicit HTTP status (e.g. thrown inside $transaction)
+  if ('statusCode' in err && typeof (err as { statusCode: unknown }).statusCode === 'number') {
+    const statusCode = (err as { statusCode: number }).statusCode;
+    res.status(statusCode).json({ error: err.message });
+    return;
   }
 
   if (err instanceof ZodError || err.name === 'ZodError') {
@@ -35,7 +42,7 @@ export function errorHandler(
 
   // Report unexpected errors to Sentry
   if (process.env.SENTRY_DSN) {
-    Sentry.captureException(err);
+    captureSentryException(err);
   }
 
   // Never leak internal error details in production

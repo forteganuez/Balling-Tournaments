@@ -1,5 +1,4 @@
 import 'dotenv/config';
-import * as Sentry from '@sentry/node';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -20,16 +19,13 @@ import { rankingRouter } from './routes/ranking.js';
 import { monetizationRouter } from './routes/monetization.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { logger } from './lib/logger.js';
+import { initSentry } from './lib/sentry.js';
 import { authenticate } from './middleware/auth.js';
 import { generalLimiter, authLimiter, writeLimiter } from './middleware/rateLimiter.js';
 
 // ── Sentry (only in production with a DSN) ──
 if (process.env.SENTRY_DSN) {
-  Sentry.init({
-    dsn: process.env.SENTRY_DSN,
-    environment: process.env.NODE_ENV || 'development',
-    tracesSampleRate: 0.2,
-  });
+  void initSentry();
 }
 
 const app = express();
