@@ -1,5 +1,29 @@
 import { z } from 'zod';
 
+export const paginationQuerySchema = z.object({
+  page: z
+    .string()
+    .optional()
+    .default('1')
+    .transform((val) => parseInt(val, 10))
+    .refine((val) => !isNaN(val) && val > 0, { message: 'page must be a positive integer' }),
+  limit: z
+    .string()
+    .optional()
+    .default('20')
+    .transform((val) => parseInt(val, 10))
+    .refine((val) => !isNaN(val) && val > 0 && val <= 100, { message: 'limit must be between 1 and 100' }),
+});
+
+export type PaginationQuery = z.infer<typeof paginationQuerySchema>;
+
+export function getPaginationParams(parsed: PaginationQuery) {
+  return {
+    skip: (parsed.page - 1) * parsed.limit,
+    take: parsed.limit,
+  };
+}
+
 const RESERVED_USERNAMES = [
   'admin', 'balling', 'ballingapp', 'support', 'help', 'null', 'undefined',
   'system', 'moderator', 'mod', 'root', 'api', 'www', 'mail', 'ftp',

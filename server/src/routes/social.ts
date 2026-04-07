@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
 import { authenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/roleCheck.js';
-import { createReportSchema, blockUserSchema } from '../lib/validation.js';
+import { createReportSchema, blockUserSchema, paginationQuerySchema, getPaginationParams } from '../lib/validation.js';
 import { createNotification } from '../lib/notifications.js';
 
 export const socialRouter = Router();
@@ -102,17 +102,25 @@ socialRouter.get(
   authenticate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const blocks = await prisma.block.findMany({
-        where: { blockerId: req.user!.id },
-        include: {
-          blocked: {
-            select: { id: true, username: true, name: true, avatarUrl: true },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-      });
+      const query = paginationQuerySchema.parse(req.query);
+      const { skip, take } = getPaginationParams(query);
+      const where = { blockerId: req.user!.id };
 
-      res.json(blocks.map(b => ({ ...b.blocked, blockedAt: b.createdAt })));
+      const [blocks, total] = await Promise.all([
+        prisma.block.findMany({
+          where,
+          select: { blocked: { select: { id: true, username: true, name: true, avatarUrl: true } }, createdAt: true },
+          skip,
+          take,
+          orderBy: { createdAt: 'desc' },
+        }),
+        prisma.block.count({ where }),
+      ]);
+
+      res.json({
+        data: blocks.map((b) => ({ ...b.blocked, blockedAt: b.createdAt })),
+        pagination: { page: query.page, limit: query.limit, total, pages: Math.ceil(total / query.limit) },
+      });
     } catch (err) {
       next(err);
     }

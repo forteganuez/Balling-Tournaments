@@ -4,6 +4,7 @@ import { createTournamentSchema, updateTournamentSchema, chatMessageSchema, anno
 import { authenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/roleCheck.js';
 import { requireTournamentOrganizerOrAdmin } from '../middleware/requireTournamentAuth.js';
+import { paginationQuerySchema, getPaginationParams } from '../lib/validation.js';
 import { generateBrackets } from '../services/bracket-generator.js';
 import { createCheckoutSession } from '../services/stripe.js';
 import { Prisma } from '@prisma/client';
@@ -458,16 +459,25 @@ tournamentRouter.get('/:id/announcements', async (req: Request, res: Response, n
       return;
     }
 
-    const announcements = await prisma.tournamentAnnouncement.findMany({
-      where: { tournamentId: req.params.id },
-      include: {
-        organizer: { select: { id: true, name: true, avatarUrl: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-    });
+    const query = paginationQuerySchema.parse(req.query);
+    const { skip, take } = getPaginationParams(query);
+    const announcementWhere = { tournamentId: req.params.id };
 
-    res.json(announcements);
+    const [announcements, total] = await Promise.all([
+      prisma.tournamentAnnouncement.findMany({
+        where: announcementWhere,
+        include: { organizer: { select: { id: true, name: true, avatarUrl: true } } },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+      prisma.tournamentAnnouncement.count({ where: announcementWhere }),
+    ]);
+
+    res.json({
+      data: announcements,
+      pagination: { page: query.page, limit: query.limit, total, pages: Math.ceil(total / query.limit) },
+    });
   } catch (err) {
     next(err);
   }

@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
 import { authenticate } from '../middleware/auth.js';
+import { paginationQuerySchema, getPaginationParams } from '../lib/validation.js';
 
 export const notificationsRouter = Router();
 
@@ -10,13 +11,24 @@ notificationsRouter.get(
   authenticate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const notifications = await prisma.notification.findMany({
-        where: { userId: req.user!.id },
-        orderBy: { createdAt: 'desc' },
-        take: 50,
-      });
+      const query = paginationQuerySchema.parse(req.query);
+      const { skip, take } = getPaginationParams(query);
+      const where = { userId: req.user!.id };
 
-      res.json(notifications);
+      const [notifications, total] = await Promise.all([
+        prisma.notification.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take,
+        }),
+        prisma.notification.count({ where }),
+      ]);
+
+      res.json({
+        data: notifications,
+        pagination: { page: query.page, limit: query.limit, total, pages: Math.ceil(total / query.limit) },
+      });
     } catch (err) {
       next(err);
     }

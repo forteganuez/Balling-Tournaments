@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
 import { authenticate } from '../middleware/auth.js';
 import { createNotification } from '../lib/notifications.js';
+import { paginationQuerySchema, getPaginationParams } from '../lib/validation.js';
 
 export const followsRouter = Router();
 
@@ -80,22 +81,27 @@ followsRouter.get(
   authenticate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const follows = await prisma.follow.findMany({
-        where: { followerId: req.user!.id },
-        include: {
-          following: {
-            select: {
-              id: true,
-              name: true,
-              avatarUrl: true,
-              city: true,
-              skillLevel: true,
-            },
-          },
-        },
-      });
+      const query = paginationQuerySchema.parse(req.query);
+      const { skip, take } = getPaginationParams(query);
+      const where = { followerId: req.user!.id };
 
-      res.json(follows);
+      const [follows, total] = await Promise.all([
+        prisma.follow.findMany({
+          where,
+          select: {
+            following: { select: { id: true, name: true, avatarUrl: true, city: true, skillLevel: true } },
+          },
+          skip,
+          take,
+          orderBy: { createdAt: 'desc' },
+        }),
+        prisma.follow.count({ where }),
+      ]);
+
+      res.json({
+        data: follows.map((f) => f.following),
+        pagination: { page: query.page, limit: query.limit, total, pages: Math.ceil(total / query.limit) },
+      });
     } catch (err) {
       next(err);
     }
@@ -108,22 +114,27 @@ followsRouter.get(
   authenticate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const followers = await prisma.follow.findMany({
-        where: { followingId: req.user!.id },
-        include: {
-          follower: {
-            select: {
-              id: true,
-              name: true,
-              avatarUrl: true,
-              city: true,
-              skillLevel: true,
-            },
-          },
-        },
-      });
+      const query = paginationQuerySchema.parse(req.query);
+      const { skip, take } = getPaginationParams(query);
+      const where = { followingId: req.user!.id };
 
-      res.json(followers);
+      const [followers, total] = await Promise.all([
+        prisma.follow.findMany({
+          where,
+          select: {
+            follower: { select: { id: true, name: true, avatarUrl: true, city: true, skillLevel: true } },
+          },
+          skip,
+          take,
+          orderBy: { createdAt: 'desc' },
+        }),
+        prisma.follow.count({ where }),
+      ]);
+
+      res.json({
+        data: followers.map((f) => f.follower),
+        pagination: { page: query.page, limit: query.limit, total, pages: Math.ceil(total / query.limit) },
+      });
     } catch (err) {
       next(err);
     }

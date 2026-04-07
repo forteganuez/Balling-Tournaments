@@ -3,6 +3,7 @@ import prisma from '../lib/prisma.js';
 import { authenticate } from '../middleware/auth.js';
 import { createNotification } from '../lib/notifications.js';
 import { SAFE_USER_SELECT } from '../lib/constants.js';
+import { paginationQuerySchema, getPaginationParams } from '../lib/validation.js';
 
 export const friendsRouter = Router();
 
@@ -214,32 +215,43 @@ friendsRouter.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const me = req.user!.id;
+      const query = paginationQuerySchema.parse(req.query);
+      const { skip, take } = getPaginationParams(query);
 
-      const friendships = await prisma.friendship.findMany({
-        where: {
-          OR: [
-            { requesterId: me },
-            { receiverId: me },
-          ],
-          status: 'ACCEPTED',
-        },
-        select: {
-          id: true,
-          requesterId: true,
-          receiverId: true,
-          status: true,
-          createdAt: true,
-          requester: { select: SAFE_USER_SELECT },
-          receiver: { select: SAFE_USER_SELECT },
-        },
-      });
+      const friendshipWhere = {
+        OR: [{ requesterId: me }, { receiverId: me }],
+        status: 'ACCEPTED' as const,
+      };
 
-      // Return the "other" user for each friendship
+      const [friendships, total] = await Promise.all([
+        prisma.friendship.findMany({
+          where: {
+            OR: [{ requesterId: me }, { receiverId: me }],
+            status: 'ACCEPTED',
+          },
+          select: {
+            id: true,
+            requesterId: true,
+            receiverId: true,
+            createdAt: true,
+            requester: { select: SAFE_USER_SELECT },
+            receiver: { select: SAFE_USER_SELECT },
+          },
+          skip,
+          take,
+          orderBy: { createdAt: 'desc' },
+        }),
+        prisma.friendship.count({ where: friendshipWhere }),
+      ]);
+
       const friends = friendships.map((f) =>
         f.requesterId === me ? f.receiver : f.requester
       );
 
-      res.json(friends);
+      res.json({
+        data: friends,
+        pagination: { page: query.page, limit: query.limit, total, pages: Math.ceil(total / query.limit) },
+      });
     } catch (err) {
       next(err);
     }
@@ -253,21 +265,31 @@ friendsRouter.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const me = req.user!.id;
+      const query = paginationQuerySchema.parse(req.query);
+      const { skip, take } = getPaginationParams(query);
 
-      const requests = await prisma.friendship.findMany({
-        where: {
-          receiverId: me,
-          status: 'PENDING',
-        },
-        select: {
-          id: true,
-          requesterId: true,
-          createdAt: true,
-          requester: { select: SAFE_USER_SELECT },
-        },
+      const where = { receiverId: me, status: 'PENDING' as const };
+
+      const [requests, total] = await Promise.all([
+        prisma.friendship.findMany({
+          where,
+          select: {
+            id: true,
+            requesterId: true,
+            createdAt: true,
+            requester: { select: SAFE_USER_SELECT },
+          },
+          skip,
+          take,
+          orderBy: { createdAt: 'desc' },
+        }),
+        prisma.friendship.count({ where }),
+      ]);
+
+      res.json({
+        data: requests,
+        pagination: { page: query.page, limit: query.limit, total, pages: Math.ceil(total / query.limit) },
       });
-
-      res.json(requests);
     } catch (err) {
       next(err);
     }
