@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
+import { z } from 'zod';
 import { authenticate } from '../middleware/auth.js';
 import { getSupabaseAdminClient } from '../lib/supabase.js';
 
@@ -12,7 +13,22 @@ const upload = multer({
   },
 });
 
-const ALLOWED_BUCKETS = new Set(['avatars', 'covers']);
+const uploadBodySchema = z.object({
+  bucket: z.enum(['avatars', 'covers']),
+});
+
+// Magic bytes for allowed image types
+const FILE_SIGNATURES: Record<string, Buffer[]> = {
+  'image/jpeg': [Buffer.from([0xff, 0xd8, 0xff])],
+  'image/png': [Buffer.from([0x89, 0x50, 0x4e, 0x47])],
+  'image/webp': [Buffer.from([0x52, 0x49, 0x46, 0x46])], // RIFF header
+};
+
+function hasValidMagicBytes(buffer: Buffer, mimeType: string): boolean {
+  const signatures = FILE_SIGNATURES[mimeType];
+  if (!signatures) return false;
+  return signatures.some(sig => buffer.subarray(0, sig.length).equals(sig));
+}
 
 function getFileExtension(mimeType: string): string {
   switch (mimeType) {
@@ -43,11 +59,12 @@ uploadsRouter.post(
   upload.single('file'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const bucket = typeof req.body.bucket === 'string' ? req.body.bucket : '';
-      if (!ALLOWED_BUCKETS.has(bucket)) {
+      const parsed = uploadBodySchema.safeParse(req.body);
+      if (!parsed.success) {
         res.status(400).json({ error: 'Invalid upload bucket.' });
         return;
       }
+      const { bucket } = parsed.data;
 
       if (!req.file) {
         res.status(400).json({ error: 'Image file is required.' });
@@ -56,6 +73,11 @@ uploadsRouter.post(
 
       if (!req.file.mimetype.startsWith('image/')) {
         res.status(400).json({ error: 'Only image uploads are supported.' });
+        return;
+      }
+
+      if (!hasValidMagicBytes(req.file.buffer, req.file.mimetype)) {
+        res.status(400).json({ error: 'File content does not match declared type.' });
         return;
       }
 

@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { webhookRouter } from './routes/webhooks.js';
 import { authRouter } from './routes/auth.js';
-import { tournamentRouter, myTournamentsHandler } from './routes/tournaments.js';
+import { tournamentRouter } from './routes/tournaments.js';
 import { matchRouter } from './routes/matches.js';
 import { openMatchesRouter } from './routes/openMatches.js';
 import { competitiveMatchRouter } from './routes/competitiveMatches.js';
@@ -88,8 +88,6 @@ app.use('/api/notifications', notificationsRouter);
 app.use('/api/social', socialRouter);
 app.use('/api/ranking', rankingRouter);
 app.use('/api/monetization', monetizationRouter);
-app.get('/api/my-tournaments', authenticate, myTournamentsHandler);
-
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'Not found' });
 });

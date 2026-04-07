@@ -53,28 +53,6 @@ tournamentRouter.get('/organized', authenticate, async (req: Request, res: Respo
   }
 });
 
-// Also export the handler for mounting at /api/my-tournaments in index.ts
-export async function myTournamentsHandler(req: Request, res: Response, next: NextFunction) {
-  try {
-    const registrations = await prisma.registration.findMany({
-      where: { userId: req.user!.id },
-      include: {
-        tournament: {
-          include: {
-            organizer: { select: { id: true, name: true } },
-            _count: { select: { registrations: true } },
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    res.json(registrations);
-  } catch (err) {
-    next(err);
-  }
-}
-
 // GET / — list tournaments
 tournamentRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
