@@ -5,6 +5,7 @@ import { createNotification } from '../lib/notifications.js';
 import { createCompetitiveMatchSchema, submitMatchResultSchema } from '../lib/validation.js';
 import { updateRatingsAfterMatch } from '../services/rating.js';
 import { verifyCompetitiveAccess, deductCredit, refundMatchPayments } from '../services/payments.js';
+import crypto from 'crypto';
 
 export const competitiveMatchRouter = Router();
 
@@ -179,30 +180,86 @@ competitiveMatchRouter.post(
           return;
         }
         paymentMethod = access.method;
-        if (access.method === 'CREDIT' && access.creditPackId) {
-          const result = await deductCredit(req.user!.id, access.creditPackId);
-          creditId = access.creditPackId;
-          transactionId = result.transactionId;
-        }
       }
 
       const deadline = new Date();
       deadline.setHours(deadline.getHours() + 24);
 
-      const updated = await prisma.competitiveMatch.update({
-        where: { id: match.id },
-        data: {
-          playerBId: req.user!.id,
-          playerBPaymentMethod: paymentMethod,
-          playerBCreditId: creditId,
-          playerBTransactionId: transactionId,
-          status: 'ACTIVE',
-          resultDeadline: deadline,
-        },
-        include: {
-          playerA: { select: playerSelect },
-          playerB: { select: playerSelect },
-        },
+      // Wrap accept + credit deduction in a single transaction to prevent TOCTOU:
+      // match status check + credit deduction are atomic — if either fails, both roll back.
+      const updated = await prisma.$transaction(async (tx) => {
+        // Step 1: Atomically check match is still available and assign playerB
+        const matchUpdate = await tx.competitiveMatch.updateMany({
+          where: {
+            id: match.id,
+            playerBId: null,
+            status: { in: ['AWAITING_OPPONENT', 'CREATED'] },
+          },
+          data: {
+            playerBId: req.user!.id,
+            playerBPaymentMethod: paymentMethod,
+            status: 'ACTIVE',
+            resultDeadline: deadline,
+          },
+        });
+
+        if (matchUpdate.count === 0) {
+          throw Object.assign(new Error('Match already accepted or no longer available'), { statusCode: 409 });
+        }
+
+        // Step 2: Deduct credit inside the same transaction (if applicable)
+        if (paymentMethod === 'CREDIT') {
+          const packUpdate = await tx.creditPack.updateMany({
+            where: {
+              userId: req.user!.id,
+              creditsRemaining: { gt: 0 },
+            },
+            data: { creditsRemaining: { decrement: 1 } },
+          });
+
+          if (packUpdate.count === 0) {
+            throw Object.assign(new Error('Insufficient credits'), { statusCode: 402 });
+          }
+
+          // Identify which pack was deducted for the transaction record
+          const deductedPack = await tx.creditPack.findFirst({
+            where: { userId: req.user!.id },
+            orderBy: { purchasedAt: 'asc' },
+            select: { id: true },
+          });
+
+          if (deductedPack) {
+            const txRecord = await tx.transaction.create({
+              data: {
+                userId: req.user!.id,
+                type: 'CREDIT_CONSUMPTION',
+                amount: 0,
+                description: 'Competitive match credit used',
+                creditPackId: deductedPack.id,
+                idempotencyKey: `credit-deduct-${crypto.randomUUID()}`,
+              },
+            });
+            creditId = deductedPack.id;
+            transactionId = txRecord.id;
+          }
+
+          // Update match with credit info
+          await tx.competitiveMatch.update({
+            where: { id: match.id },
+            data: {
+              playerBCreditId: creditId,
+              playerBTransactionId: transactionId,
+            },
+          });
+        }
+
+        return tx.competitiveMatch.findUniqueOrThrow({
+          where: { id: match.id },
+          include: {
+            playerA: { select: playerSelect },
+            playerB: { select: playerSelect },
+          },
+        });
       });
 
       // Notify player A
@@ -216,6 +273,11 @@ competitiveMatchRouter.post(
 
       res.json(updated);
     } catch (err) {
+      const statusCode = (err as { statusCode?: number }).statusCode;
+      if (statusCode === 409 || statusCode === 402) {
+        res.status(statusCode).json({ error: (err as Error).message });
+        return;
+      }
       next(err);
     }
   },
