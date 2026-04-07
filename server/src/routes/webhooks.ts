@@ -30,8 +30,10 @@ webhookRouter.post('/', async (req: Request, res: Response, next: NextFunction) 
 
     try {
       event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
-    } catch (err: any) {
-      logger.error('Webhook signature verification failed', { error: err.message });
+    } catch (err: unknown) {
+      logger.error('Webhook signature verification failed', {
+        error: err instanceof Error ? err.message : String(err),
+      });
       res.status(400).json({ error: 'Invalid webhook signature' });
       return;
     }
@@ -180,9 +182,10 @@ webhookRouter.post('/', async (req: Request, res: Response, next: NextFunction) 
             try {
               await stripe.refunds.create({ payment_intent: pi });
               logger.info('Auto-refund issued for full tournament', { tournamentId, userId, paymentIntent: pi });
-            } catch (refundErr: any) {
+            } catch (refundErr: unknown) {
               logger.error('Failed to auto-refund full tournament payment', {
-                tournamentId, userId, paymentIntent: pi, error: refundErr.message,
+                tournamentId, userId, paymentIntent: pi,
+                error: refundErr instanceof Error ? refundErr.message : String(refundErr),
               });
             }
           }

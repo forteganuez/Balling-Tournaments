@@ -48,9 +48,10 @@ export async function verifyCompetitiveAccess(userId: string): Promise<AccessRes
         where: { id: userId },
         data: { isBaller: false },
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.warn('Stripe subscription check failed, falling through to credits', {
-        userId, subscriptionId: subscription.stripeSubscriptionId, error: err.message,
+        userId, subscriptionId: subscription.stripeSubscriptionId,
+        error: err instanceof Error ? err.message : String(err),
       });
     }
   }
@@ -303,10 +304,11 @@ export async function refundMatchPayments(match: CompetitiveMatch) {
   for (const paymentIntent of stripeRefundIntents) {
     try {
       await stripe.refunds.create({ payment_intent: paymentIntent });
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Logged for manual reconciliation; DB refund record already exists
       logger.error('Stripe refund failed — manual reconciliation needed', {
-        paymentIntent, matchId: match.id, error: err.message,
+        paymentIntent, matchId: match.id,
+        error: err instanceof Error ? err.message : String(err),
       });
     }
   }

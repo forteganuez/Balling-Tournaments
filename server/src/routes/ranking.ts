@@ -4,6 +4,9 @@ import { authenticate, optionalAuth } from '../middleware/auth.js';
 import { z } from 'zod';
 import { paginationQuerySchema, getPaginationParams } from '../lib/validation.js';
 
+const SPORT_ENUM = z.enum(['TENNIS', 'PADEL', 'SQUASH']);
+type Sport = z.infer<typeof SPORT_ENUM>;
+
 const leaderboardQuerySchema = paginationQuerySchema.extend({
   filter: z.enum(['global', 'regional', 'friends']).default('global'),
   region: z.string().max(100).optional(),
@@ -26,11 +29,12 @@ rankingRouter.get(
   optionalAuth,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const sport = req.params.sport.toUpperCase();
-      if (!['TENNIS', 'PADEL', 'SQUASH'].includes(sport)) {
+      const sportResult = SPORT_ENUM.safeParse(req.params.sport.toUpperCase());
+      if (!sportResult.success) {
         res.status(400).json({ error: 'Invalid sport' });
         return;
       }
+      const sport: Sport = sportResult.data;
 
       const { filter, region, page, limit } = leaderboardQuerySchema.parse(req.query);
       const { skip, take } = getPaginationParams({ page, limit });
@@ -65,7 +69,7 @@ rankingRouter.get(
 
       // Only show users with 3+ matches (publicly visible rating)
       const where = {
-        sport: sport as 'TENNIS' | 'PADEL' | 'SQUASH',
+        sport,
         matchesPlayed: { gte: 3 },
         ...userFilter,
       };
@@ -112,7 +116,7 @@ rankingRouter.get(
       let myPosition = null;
       if (req.user) {
         const myRating = await prisma.userSportRating.findUnique({
-          where: { userId_sport: { userId: req.user.id, sport: sport as 'TENNIS' | 'PADEL' | 'SQUASH' } },
+          where: { userId_sport: { userId: req.user.id, sport } },
         });
         if (myRating && myRating.matchesPlayed >= 3) {
           const higherCount = await prisma.userSportRating.count({
@@ -197,18 +201,19 @@ rankingRouter.get(
   authenticate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const sport = req.params.sport.toUpperCase();
-      if (!['TENNIS', 'PADEL', 'SQUASH'].includes(sport)) {
+      const sportResult = SPORT_ENUM.safeParse(req.params.sport.toUpperCase());
+      if (!sportResult.success) {
         res.status(400).json({ error: 'Invalid sport' });
         return;
       }
+      const sport: Sport = sportResult.data;
 
       const { limit } = historyQuerySchema.parse(req.query);
 
       const history = await prisma.ratingHistory.findMany({
         where: {
           userId: req.user!.id,
-          sport: sport as 'TENNIS' | 'PADEL' | 'SQUASH',
+          sport,
         },
         orderBy: { createdAt: 'desc' },
         take: limit,
@@ -244,11 +249,12 @@ rankingRouter.get(
   '/user/:userId/:sport',
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const sport = req.params.sport.toUpperCase();
-      if (!['TENNIS', 'PADEL', 'SQUASH'].includes(sport)) {
+      const sportResult = SPORT_ENUM.safeParse(req.params.sport.toUpperCase());
+      if (!sportResult.success) {
         res.status(400).json({ error: 'Invalid sport' });
         return;
       }
+      const sport: Sport = sportResult.data;
 
       const user = await prisma.user.findUnique({
         where: { id: req.params.userId },
@@ -264,7 +270,7 @@ rankingRouter.get(
         where: {
           userId_sport: {
             userId: req.params.userId,
-            sport: sport as 'TENNIS' | 'PADEL' | 'SQUASH',
+            sport,
           },
         },
       });

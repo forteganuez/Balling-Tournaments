@@ -1,4 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma.js';
 import { authenticate } from '../middleware/auth.js';
 import { createNotification } from '../lib/notifications.js';
@@ -318,7 +319,7 @@ competitiveMatchRouter.post(
       }
 
       // Update the player's confirmation
-      const updateData: Record<string, unknown> = {};
+      const updateData: Prisma.CompetitiveMatchUpdateInput = {};
       if (isPlayerA) {
         if (match.playerAConfirmed) {
           res.status(400).json({ error: 'You already submitted a result' });
@@ -489,14 +490,14 @@ competitiveMatchRouter.get(
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
 
-      const where: Record<string, unknown> = {
+      const where: Prisma.CompetitiveMatchWhereInput = {
         OR: [
           { playerAId: req.user!.id },
           { playerBId: req.user!.id },
         ],
       };
       if (status) {
-        where.status = status;
+        where.status = status as Prisma.EnumCompetitiveMatchStatusFilter;
       }
 
       const [matches, total] = await Promise.all([

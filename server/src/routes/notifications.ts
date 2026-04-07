@@ -18,7 +18,7 @@ notificationsRouter.get(
       const [notifications, total] = await Promise.all([
         prisma.notification.findMany({
           where,
-          orderBy: { createdAt: 'desc' },
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
           skip,
           take,
         }),

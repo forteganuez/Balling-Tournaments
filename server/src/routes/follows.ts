@@ -41,9 +41,9 @@ followsRouter.post(
       );
 
       res.status(201).json(follow);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Handle unique constraint violation (already following)
-      if (err?.code === 'P2002') {
+      if ((err as { code?: string })?.code === 'P2002') {
         res.status(409).json({ error: 'Already following this user' });
         return;
       }
