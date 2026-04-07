@@ -48,6 +48,12 @@ cd mobile && npm run android      # Android emulator
 - Never use `console.log` in server code — use the project logger (`src/lib/logger`).
 - Stripe amounts are always in cents — never in dollars.
 - Role checks: `PLAYER`, `ORGANIZER`, `ADMIN` — always enforce the correct role per route.
+- Never use `include: true` in Prisma for user relations — always use `select` with `SAFE_USER_SELECT` from `src/lib/constants.ts` to avoid leaking email, passwordHash, providerId, expoPushToken.
+- Never use mutable values (e.g. `creditsRemaining`) in idempotency keys — always use `crypto.randomUUID()`.
+- Never do check-then-update in two separate DB calls — use `updateMany` with conditions in `WHERE` for atomic check-and-set.
+- Never process Stripe webhook side effects before checking idempotency — check `WebhookEvent` first, then execute, then record.
+- Never repeat authorization checks inline across multiple routes — extract to middleware (e.g. `requireTournamentOrganizerOrAdmin`).
+- Never verify access and deduct credits in separate DB operations — wrap both in `$transaction` to prevent TOCTOU.
 
 ## Verification (run after every change)
 
@@ -104,6 +110,25 @@ To invoke: `/backend-architect`, `/mobile-developer`, `/payment-integration`, `/
 ## Iterate Constantly
 
 Whenever I encounter an error and fix it, I must immediately add the lesson to CLAUDE.md — in the relevant section (Guardrails, Gotchas, or Rules) — so the same mistake is never repeated.
+
+## API Patterns
+
+- **Paginated list responses**: Always return `{ data: [...], pagination: { page, limit, total, pages } }`. Use `paginationQuerySchema` + `getPaginationParams` from `src/lib/validation.ts`. Default limit=20, max=100.
+- **Query validation**: Never use raw `parseInt` on query params — use Zod schemas. `mode: 'insensitive'` in Prisma `where` variables must be typed as `Prisma.QueryMode.insensitive` (not a raw string) to satisfy TypeScript.
+- **Privacy checks**: `GET /:id/stats` and `GET /:id/tournaments` require `optionalAuth` + `profileVisible`/`showMatchHistory` checks. Return 404 (not 403) for private profiles to avoid user enumeration.
+- **Shared `where` variable with Prisma**: Passing the same `where` variable to both `findMany` and `count` in `Promise.all` can confuse TypeScript's generic inference. Inline the `where` in `findMany` if relation fields (`requester`, `receiver`) are missing from the inferred type.
+- **Test assertions after pagination**: Tests that check `Array.isArray(res.body)` must be updated to `Array.isArray(res.body.data)` after wrapping responses in `{ data, pagination }`.
+
+## Security & Payment Patterns
+
+- **Safe user select**: Always import `SAFE_USER_SELECT` from `src/lib/constants.ts` when returning user data in relations. Never expose raw user objects.
+- **Atomic joins**: Use `updateMany` with `WHERE opponentId = null` (or equivalent) instead of `findUnique + update`. If `count === 0`, the slot was taken — return 409.
+- **Credit deduction**: Always deduct credits inside the same `$transaction` that updates the match status. A failed credit check must roll back the match update.
+- **Webhook guard**: `WebhookEvent` table prevents duplicate processing. Check before side effects, record after. `stripeTransactionId` on `CreditPack` is `@unique` as a second layer.
+- **Tournament auth**: Use `requireTournamentOrganizerOrAdmin` middleware on PUT, DELETE, close-registration, cancel, announce. It attaches `req.tournament` (id, organizerId, name, status) — no second `findUnique` needed in handler.
+- **Prisma mocks consume once**: When a test uses `mockResolvedValueOnce`, each `findUnique` call consumes one mock. If middleware + handler both call `findUnique`, provide two mocks or move data to `req` (e.g. `req.tournament`) to avoid the second call.
+- **`prisma db push`**: Use for local dev when `prisma migrate dev` fails in non-interactive environment. Requires `--accept-data-loss` if adding `@unique` to existing column.
+- **User schema**: No `rating` field on `User` — ratings are per-sport in `UserSportRating`. Avatar field is `avatarUrl`, not `profilePictureUrl`.
 
 ## Common Gotchas
 
