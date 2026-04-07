@@ -101,11 +101,7 @@ export async function deductCredit(userId: string, creditPackId: string) {
       throw new Error('Insufficient credits');
     }
 
-    const pack = await tx.creditPack.findUniqueOrThrow({
-      where: { id: creditPackId },
-    });
-
-    const idempotencyKey = `credit-deduct-${creditPackId}-${pack.creditsRemaining}`;
+    const idempotencyKey = `credit-deduct-${crypto.randomUUID()}`;
 
     const transaction = await tx.transaction.create({
       data: {
@@ -118,7 +114,7 @@ export async function deductCredit(userId: string, creditPackId: string) {
       },
     });
 
-    return { pack, transactionId: transaction.id };
+    return { transactionId: transaction.id };
   });
 }
 
