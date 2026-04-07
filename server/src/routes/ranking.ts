@@ -1,6 +1,22 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
 import { authenticate, optionalAuth } from '../middleware/auth.js';
+import { z } from 'zod';
+import { paginationQuerySchema, getPaginationParams } from '../lib/validation.js';
+
+const leaderboardQuerySchema = paginationQuerySchema.extend({
+  filter: z.enum(['global', 'regional', 'friends']).default('global'),
+  region: z.string().max(100).optional(),
+});
+
+const historyQuerySchema = z.object({
+  limit: z
+    .string()
+    .optional()
+    .default('30')
+    .transform((val) => parseInt(val, 10))
+    .refine((val) => !isNaN(val) && val >= 1 && val <= 100, { message: 'limit must be between 1 and 100' }),
+});
 
 export const rankingRouter = Router();
 
@@ -16,10 +32,8 @@ rankingRouter.get(
         return;
       }
 
-      const filter = req.query.filter as string || 'global'; // global, regional, friends
-      const region = req.query.region as string || '';
-      const page = Math.max(1, parseInt(req.query.page as string) || 1);
-      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+      const { filter, region, page, limit } = leaderboardQuerySchema.parse(req.query);
+      const { skip, take } = getPaginationParams({ page, limit });
 
       let userFilter: Record<string, unknown> = {};
 
@@ -69,8 +83,8 @@ rankingRouter.get(
             },
           },
           orderBy: { rating: 'desc' },
-          take: limit,
-          skip: (page - 1) * limit,
+          take,
+          skip,
         }),
         prisma.userSportRating.count({ where }),
       ]);
@@ -189,7 +203,7 @@ rankingRouter.get(
         return;
       }
 
-      const limit = Math.min(30, Math.max(1, parseInt(req.query.limit as string) || 30));
+      const { limit } = historyQuerySchema.parse(req.query);
 
       const history = await prisma.ratingHistory.findMany({
         where: {

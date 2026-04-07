@@ -1,8 +1,9 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
-import { authenticate } from '../middleware/auth.js';
+import { Prisma } from '@prisma/client';
+import { authenticate, optionalAuth } from '../middleware/auth.js';
 import { requireRole } from '../middleware/roleCheck.js';
-import { updateUserRoleSchema } from '../lib/validation.js';
+import { updateUserRoleSchema, paginationQuerySchema, getPaginationParams } from '../lib/validation.js';
 import { logAudit } from '../lib/audit.js';
 
 export const usersRouter = Router();
@@ -49,26 +50,30 @@ usersRouter.get(
         blocks.map(b => b.blockerId === req.user!.id ? b.blockedId : b.blockerId)
       );
 
-      const users = await prisma.user.findMany({
-        where: {
-          AND: [
-            { profileVisible: true },
-            { bannedAt: null },
-            {
-              OR: [
-                { username: { contains: q.toLowerCase(), mode: 'insensitive' } },
-                { name: { contains: q, mode: 'insensitive' } },
-                { displayName: { contains: q, mode: 'insensitive' } },
-              ],
-            },
-            ...(blockedIds.size > 0 ? [{ id: { notIn: Array.from(blockedIds) } }] : []),
-          ],
-        },
-        select: publicUserSearchSelect,
-        take: 20,
-      });
+      const query = paginationQuerySchema.parse(req.query);
+      const { skip, take } = getPaginationParams(query);
 
-      res.json(users);
+      const searchWhere: Prisma.UserWhereInput = {
+        AND: [
+          { profileVisible: true },
+          { bannedAt: null },
+          {
+            OR: [
+              { username: { contains: q.toLowerCase(), mode: Prisma.QueryMode.insensitive } },
+              { name: { contains: q, mode: Prisma.QueryMode.insensitive } },
+              { displayName: { contains: q, mode: Prisma.QueryMode.insensitive } },
+            ],
+          },
+          ...(blockedIds.size > 0 ? [{ id: { notIn: Array.from(blockedIds) } }] : []),
+        ],
+      };
+
+      const [users, total] = await Promise.all([
+        prisma.user.findMany({ where: searchWhere, select: publicUserSearchSelect, skip, take }),
+        prisma.user.count({ where: searchWhere }),
+      ]);
+
+      res.json({ data: users, pagination: { page: query.page, limit: query.limit, total, pages: Math.ceil(total / query.limit) } });
     } catch (err) {
       next(err);
     }
@@ -298,11 +303,15 @@ usersRouter.get(
 // GET /:id/stats — get user stats
 usersRouter.get(
   '/:id/stats',
+  optionalAuth,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = await prisma.user.findUnique({
         where: { id: req.params.id },
         select: {
+          id: true,
+          profileVisible: true,
+          showMatchHistory: true,
           wins: true,
           losses: true,
           matchesPlayed: true,
@@ -311,6 +320,19 @@ usersRouter.get(
 
       if (!user) {
         res.status(404).json({ error: 'User not found' });
+        return;
+      }
+
+      const isOwnProfile = req.user?.id === user.id;
+      const isAdmin = req.user?.role === 'ADMIN';
+
+      if (!user.profileVisible && !isOwnProfile && !isAdmin) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+
+      if (!user.showMatchHistory && !isOwnProfile && !isAdmin) {
+        res.status(403).json({ error: 'User has hidden their match history' });
         return;
       }
 
@@ -333,20 +355,43 @@ usersRouter.get(
 // GET /:id/tournaments — get user tournament registrations
 usersRouter.get(
   '/:id/tournaments',
+  optionalAuth,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const page = Math.max(1, parseInt(req.query.page as string) || 1);
-      const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 25));
-
-      const registrations = await prisma.registration.findMany({
-        where: { userId: req.params.id },
-        include: { tournament: true },
-        orderBy: { tournament: { date: 'desc' } },
-        take: limit,
-        skip: (page - 1) * limit,
+      const profile = await prisma.user.findUnique({
+        where: { id: req.params.id },
+        select: { id: true, profileVisible: true },
       });
 
-      res.json(registrations);
+      if (!profile) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+
+      const isOwnProfile = req.user?.id === profile.id;
+      const isAdmin = req.user?.role === 'ADMIN';
+
+      if (!profile.profileVisible && !isOwnProfile && !isAdmin) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+
+      const query = paginationQuerySchema.parse(req.query);
+      const { skip, take } = getPaginationParams(query);
+      const regWhere = { userId: req.params.id };
+
+      const [registrations, total] = await Promise.all([
+        prisma.registration.findMany({
+          where: regWhere,
+          include: { tournament: true },
+          orderBy: { tournament: { date: 'desc' } },
+          take,
+          skip,
+        }),
+        prisma.registration.count({ where: regWhere }),
+      ]);
+
+      res.json({ data: registrations, pagination: { page: query.page, limit: query.limit, total, pages: Math.ceil(total / query.limit) } });
     } catch (err) {
       next(err);
     }
