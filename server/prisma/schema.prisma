@@ -492,7 +492,7 @@ model CreditPack {
   packSize         Int      // 10, 25, or 50
   creditsRemaining Int
   pricePaid        Int      // in cents
-  stripeTransactionId String
+  stripeTransactionId String   @unique
   purchasedAt      DateTime @default(now())
   user             User     @relation(fields: [userId], references: [id])
 
@@ -529,4 +529,14 @@ model Transaction {
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([matchId])
+}
+
+// ── Webhook idempotency ──
+model WebhookEvent {
+  id            String   @id @default(cuid())
+  stripeEventId String   @unique
+  type          String
+  processedAt   DateTime @default(now())
+
+  @@index([stripeEventId])
 }

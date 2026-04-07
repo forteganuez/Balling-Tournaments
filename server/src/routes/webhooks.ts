@@ -36,6 +36,16 @@ webhookRouter.post('/', async (req: Request, res: Response, next: NextFunction) 
       return;
     }
 
+    // Idempotency: check if this event was already processed before any side effects
+    const alreadyProcessed = await prisma.webhookEvent.findUnique({
+      where: { stripeEventId: event.id },
+    });
+    if (alreadyProcessed) {
+      logger.info('Webhook event already processed — skipping', { eventId: event.id, type: event.type });
+      res.json({ received: true });
+      return;
+    }
+
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
       const userId = session.metadata?.userId;
@@ -251,6 +261,11 @@ webhookRouter.post('/', async (req: Request, res: Response, next: NextFunction) 
         });
       }
     }
+
+    // Record event as processed (idempotency guard)
+    await prisma.webhookEvent.create({
+      data: { stripeEventId: event.id, type: event.type },
+    });
 
     res.json({ received: true });
   } catch (err) {
