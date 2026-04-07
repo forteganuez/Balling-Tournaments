@@ -67,10 +67,10 @@ export const createTournamentSchema = z.object({
   entryFee: z.number().int().min(0, 'Entry fee cannot be negative'),
   coverImageUrl: z.string().url().nullable().optional(),
   rules: z.string().nullable().optional(),
-  allowDoubles: z.boolean().optional(),
+  allowDoubles: z.boolean().default(true),
   skillMin: z.number().int().min(1).max(10).nullable().optional(),
   skillMax: z.number().int().min(1).max(10).nullable().optional(),
-  chatEnabled: z.boolean().optional(),
+  chatEnabled: z.boolean().default(true),
 });
 
 export const updateTournamentSchema = createTournamentSchema.partial();
