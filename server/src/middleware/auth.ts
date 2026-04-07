@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import prisma from '../lib/prisma.js';
+import { logger } from '../lib/logger.js';
 
 declare global {
   namespace Express {
@@ -92,7 +93,10 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
 
     req.user = user;
     next();
-  } catch {
+  } catch (err: unknown) {
+    logger.warn('Unexpected auth failure in authenticate', {
+      error: err instanceof Error ? err.message : String(err),
+    });
     res.status(401).json({ error: 'Invalid or expired token' });
   }
 }
@@ -110,7 +114,10 @@ export async function optionalAuth(req: Request, _res: Response, next: NextFunct
     if (user) {
       req.user = user;
     }
-  } catch {
+  } catch (err: unknown) {
+    logger.warn('Unexpected auth failure in optionalAuth', {
+      error: err instanceof Error ? err.message : String(err),
+    });
     // Token invalid — proceed without user
   }
 
