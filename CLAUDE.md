@@ -130,6 +130,16 @@ Whenever I encounter an error and fix it, I must immediately add the lesson to C
 - **`prisma db push`**: Use for local dev when `prisma migrate dev` fails in non-interactive environment. Requires `--accept-data-loss` if adding `@unique` to existing column.
 - **User schema**: No `rating` field on `User` — ratings are per-sport in `UserSportRating`. Avatar field is `avatarUrl`, not `profilePictureUrl`.
 
+## P2 Lessons Learned
+
+- **Upload validation**: Always validate `bucket` with `z.enum(['avatars','covers'])` and verify file content with magic bytes (JPEG: `[0xff,0xd8,0xff]`, PNG: `[0x89,0x50,0x4e,0x47]`, WebP: `[0x52,0x49,0x46,0x46]`) — MIME header alone is spoofable.
+- **Route params with enum values**: Use `z.enum` + `.safeParse` on `:sport` params instead of `.includes()` checks — gives consistent error format and TypeScript type narrowing with no cast needed.
+- **Stable pagination sort**: Any `orderBy: { createdAt: 'desc' }` must have a secondary `{ id: 'desc' }` to avoid page skips when two records share a timestamp.
+- **Duplicate route handlers**: Never export a handler from a router file just to re-mount it elsewhere — keep one canonical route (`/api/tournaments/my`) and delete the legacy alias.
+- **`catch (err: any)`**: Always use `err: unknown` in catch blocks. Extract message with `err instanceof Error ? err.message : String(err)` — never cast to `any`.
+- **Prisma types over `Record<string, unknown>`**: Use `Prisma.ModelUpdateInput` for dynamic update objects and `Prisma.ModelWhereInput` for dynamic where clauses — provides compile-time safety and eliminates runtime surprises.
+- **`EnumFieldFilter` in dynamic where**: Setting `where.status = status` when `where` is typed as `Prisma.CompetitiveMatchWhereInput` requires casting to `Prisma.EnumCompetitiveMatchStatusFilter` or using a narrowed string union.
+
 ## Common Gotchas
 
 - `entryFee = 0` means free tournament — skip Stripe, register directly.
