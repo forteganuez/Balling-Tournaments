@@ -3,6 +3,7 @@ import prisma from '../lib/prisma.js';
 import { createTournamentSchema, updateTournamentSchema, chatMessageSchema, announcementSchema, tournamentQuerySchema, doublesRegistrationSchema } from '../lib/validation.js';
 import { authenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/roleCheck.js';
+import { requireTournamentOrganizerOrAdmin } from '../middleware/requireTournamentAuth.js';
 import { generateBrackets } from '../services/bracket-generator.js';
 import { createCheckoutSession } from '../services/stripe.js';
 import { Prisma } from '@prisma/client';
@@ -170,24 +171,12 @@ tournamentRouter.post(
 );
 
 // PUT /:id — update tournament
-tournamentRouter.put('/:id', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+tournamentRouter.put('/:id', authenticate, requireTournamentOrganizerOrAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const tournament = await prisma.tournament.findUnique({ where: { id: req.params.id } });
-
-    if (!tournament) {
-      res.status(404).json({ error: 'Tournament not found' });
-      return;
-    }
-
-    if (tournament.organizerId !== req.user!.id && req.user!.role !== 'ADMIN') {
-      res.status(403).json({ error: 'Insufficient permissions' });
-      return;
-    }
-
     const data = updateTournamentSchema.parse(req.body);
 
     const updated = await prisma.tournament.update({
-      where: { id: req.params.id },
+      where: { id: req.tournament!.id },
       data,
     });
 
@@ -198,25 +187,12 @@ tournamentRouter.put('/:id', authenticate, async (req: Request, res: Response, n
 });
 
 // DELETE /:id — delete tournament and related records
-tournamentRouter.delete('/:id', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+tournamentRouter.delete('/:id', authenticate, requireTournamentOrganizerOrAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const tournament = await prisma.tournament.findUnique({
-      where: { id: req.params.id },
-      select: { id: true, organizerId: true, status: true },
-    });
+    const { status } = req.tournament!;
 
-    if (!tournament) {
-      res.status(404).json({ error: 'Tournament not found' });
-      return;
-    }
-
-    if (tournament.organizerId !== req.user!.id && req.user!.role !== 'ADMIN') {
-      res.status(403).json({ error: 'Insufficient permissions' });
-      return;
-    }
-
-    if (tournament.status === 'IN_PROGRESS' || tournament.status === 'COMPLETED') {
-      res.status(400).json({ error: `Cannot delete a tournament that is ${tournament.status.toLowerCase().replace('_', ' ')}` });
+    if (status === 'IN_PROGRESS' || status === 'COMPLETED') {
+      res.status(400).json({ error: `Cannot delete a tournament that is ${status.toLowerCase().replace('_', ' ')}` });
       return;
     }
 
@@ -258,7 +234,7 @@ tournamentRouter.delete('/:id', authenticate, async (req: Request, res: Response
       action: 'TOURNAMENT_DELETE',
       targetType: 'TOURNAMENT',
       targetId: req.params.id,
-      details: { organizerId: tournament.organizerId },
+      details: { organizerId: req.tournament!.organizerId },
     });
 
     res.json({ message: 'Tournament deleted successfully' });
@@ -271,20 +247,16 @@ tournamentRouter.delete('/:id', authenticate, async (req: Request, res: Response
 tournamentRouter.post(
   '/:id/close-registration',
   authenticate,
+  requireTournamentOrganizerOrAdmin,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const tournament = await prisma.tournament.findUnique({
-        where: { id: req.params.id },
+        where: { id: req.tournament!.id },
         include: { _count: { select: { registrations: true } } },
       });
 
       if (!tournament) {
         res.status(404).json({ error: 'Tournament not found' });
-        return;
-      }
-
-      if (tournament.organizerId !== req.user!.id && req.user!.role !== 'ADMIN') {
-        res.status(403).json({ error: 'Insufficient permissions' });
         return;
       }
 
@@ -332,22 +304,15 @@ tournamentRouter.post(
 );
 
 // POST /:id/cancel — cancel tournament
-tournamentRouter.post('/:id/cancel', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+tournamentRouter.post('/:id/cancel', authenticate, requireTournamentOrganizerOrAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const tournament = await prisma.tournament.findUnique({ where: { id: req.params.id } });
-
-    if (!tournament) {
-      res.status(404).json({ error: 'Tournament not found' });
-      return;
-    }
-
-    if (tournament.organizerId !== req.user!.id && req.user!.role !== 'ADMIN') {
-      res.status(403).json({ error: 'Insufficient permissions' });
-      return;
-    }
+    const current = await prisma.tournament.findUnique({
+      where: { id: req.tournament!.id },
+      select: { status: true },
+    });
 
     const updated = await prisma.tournament.update({
-      where: { id: req.params.id },
+      where: { id: req.tournament!.id },
       data: { status: 'CANCELLED' },
     });
 
@@ -356,7 +321,7 @@ tournamentRouter.post('/:id/cancel', authenticate, async (req: Request, res: Res
       action: 'TOURNAMENT_CANCEL',
       targetType: 'TOURNAMENT',
       targetId: req.params.id,
-      details: { previousStatus: tournament.status },
+      details: { previousStatus: current?.status },
     });
 
     res.json(updated);
@@ -442,20 +407,15 @@ tournamentRouter.post('/:id/join', authenticate, async (req: Request, res: Respo
 });
 
 // POST /:id/announce — organizer sends announcement
-tournamentRouter.post('/:id/announce', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+tournamentRouter.post('/:id/announce', authenticate, requireTournamentOrganizerOrAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const tournament = await prisma.tournament.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.tournament!.id },
       include: { registrations: true },
     });
 
     if (!tournament) {
       res.status(404).json({ error: 'Tournament not found' });
-      return;
-    }
-
-    if (tournament.organizerId !== req.user!.id) {
-      res.status(403).json({ error: 'Only the tournament organizer can post announcements' });
       return;
     }
 
