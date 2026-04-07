@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma.js';
 import { authenticate } from '../middleware/auth.js';
 import { createNotification } from '../lib/notifications.js';
+import { SAFE_USER_SELECT } from '../lib/constants.js';
 
 export const friendsRouter = Router();
 
@@ -222,9 +223,14 @@ friendsRouter.get(
           ],
           status: 'ACCEPTED',
         },
-        include: {
-          requester: true,
-          receiver: true,
+        select: {
+          id: true,
+          requesterId: true,
+          receiverId: true,
+          status: true,
+          createdAt: true,
+          requester: { select: SAFE_USER_SELECT },
+          receiver: { select: SAFE_USER_SELECT },
         },
       });
 
@@ -253,8 +259,11 @@ friendsRouter.get(
           receiverId: me,
           status: 'PENDING',
         },
-        include: {
-          requester: true,
+        select: {
+          id: true,
+          requesterId: true,
+          createdAt: true,
+          requester: { select: SAFE_USER_SELECT },
         },
       });
 
