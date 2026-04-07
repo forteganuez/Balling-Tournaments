@@ -173,11 +173,6 @@ openMatchesRouter.post(
         return;
       }
 
-      if (match.status !== 'OPEN' || match.opponentId) {
-        res.status(400).json({ error: 'This match is no longer available.' });
-        return;
-      }
-
       if (match.scheduledFor.getTime() <= Date.now()) {
         res.status(400).json({ error: 'This match time has already passed.' });
         return;
@@ -188,12 +183,26 @@ openMatchesRouter.post(
         select: { name: true },
       });
 
-      const updated = await prisma.openMatch.update({
-        where: { id: match.id },
+      // Atomic check-and-update: prevents two users from joining simultaneously
+      const result = await prisma.openMatch.updateMany({
+        where: {
+          id: match.id,
+          status: 'OPEN',
+          opponentId: null,
+        },
         data: {
           opponentId: req.user!.id,
           status: 'BOOKED',
         },
+      });
+
+      if (result.count === 0) {
+        res.status(409).json({ error: 'This match is no longer available.' });
+        return;
+      }
+
+      const updated = await prisma.openMatch.findUnique({
+        where: { id: match.id },
         include: {
           creator: { select: publicUserSelect },
           opponent: { select: publicUserSelect },
