@@ -52,9 +52,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // Detect pending OAuth exchange (PKCE code or implicit hash tokens)
+    const hasPendingOAuth =
+      window.location.search.includes('code=') ||
+      window.location.hash.includes('access_token=') ||
+      window.location.search.includes('error=');
+
+    let loadingResolved = false;
+    const resolveLoading = () => {
+      if (!loadingResolved) {
+        loadingResolved = true;
+        setIsLoading(false);
+      }
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (
         session &&
         (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')
@@ -64,12 +76,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
       }
 
-      if (event === 'INITIAL_SESSION') {
-        setIsLoading(false);
+      // If OAuth pending: wait for SIGNED_IN/SIGNED_OUT before resolving
+      // Otherwise: resolve on INITIAL_SESSION
+      if (hasPendingOAuth) {
+        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+          resolveLoading();
+        }
+      } else {
+        if (event === 'INITIAL_SESSION') {
+          resolveLoading();
+        }
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Safety timeout in case SIGNED_IN never fires (e.g. OAuth error)
+    const timeout = setTimeout(resolveLoading, 5000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, [fetchUser]);
 
   const logout = useCallback(async () => {
