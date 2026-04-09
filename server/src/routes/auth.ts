@@ -71,7 +71,7 @@ authRouter.put('/profile', authenticate, async (req: Request, res: Response, nex
         select: { username: true, usernameChangedAt: true },
       });
 
-      if (currentUser?.usernameChangedAt) {
+      if (currentUser?.usernameChangedAt && currentUser?.username) {
         const daysSinceChange = (Date.now() - currentUser.usernameChangedAt.getTime()) / (1000 * 60 * 60 * 24);
         if (daysSinceChange < 90) {
           const daysRemaining = Math.ceil(90 - daysSinceChange);

@@ -152,6 +152,8 @@ cp .env.example .env
 
 # Start Expo
 npm start
+# If Expo Go hangs on "Downloading update" on a real device:
+npm run start:tunnel
 ```
 
 Scan the QR code with Expo Go, or press `i` for iOS simulator / `a` for Android emulator.

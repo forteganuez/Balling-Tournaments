@@ -4,6 +4,7 @@ import type { SubmitResultParams } from '../screens/SubmitResultScreen';
 
 export type RootStackParamList = {
   Auth: undefined;
+  ChooseUsername: undefined;
   Onboarding: NavigatorScreenParams<OnboardingStackParamList>;
   App: NavigatorScreenParams<AppTabParamList>;
 };

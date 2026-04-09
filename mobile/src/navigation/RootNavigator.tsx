@@ -5,8 +5,10 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../context/ThemeContext';
 import { AppNavigator } from './AppNavigator';
+import { OnboardingNavigator } from './OnboardingNavigator';
 import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
+import { ChooseUsernameScreen } from '../screens/ChooseUsernameScreen';
 import type { RootStackParamList, AuthStackParamList } from './types';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -89,10 +91,14 @@ export function RootNavigator() {
         contentStyle: { backgroundColor: theme.background },
       }}
     >
-      {user ? (
-        <RootStack.Screen name="App" component={AppNavigator} />
-      ) : (
+      {!user ? (
         <RootStack.Screen name="Auth" component={AuthNavigator} />
+      ) : !user.username ? (
+        <RootStack.Screen name="ChooseUsername" component={ChooseUsernameScreen} />
+      ) : !user.onboardingDone ? (
+        <RootStack.Screen name="Onboarding" component={OnboardingNavigator} />
+      ) : (
+        <RootStack.Screen name="App" component={AppNavigator} />
       )}
     </RootStack.Navigator>
   );

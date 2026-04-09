@@ -4,6 +4,10 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
+    "start:clear": "expo start -c",
+    "start:tunnel": "expo start -c --tunnel",
+    "start:lan": "expo start -c --lan",
+    "start:localhost": "expo start -c --localhost",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web"
