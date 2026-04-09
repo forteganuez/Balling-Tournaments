@@ -25,48 +25,18 @@ export default function PricingPage() {
   const [loadingKey, setLoadingKey] = useState<string | null>(null);
   const [error, setError] = useState('');
 
-  const handleCreditPurchase = async (packSize: 10 | 25 | 50) => {
+  const handleCheckout = async (endpoint: string, key: string, body?: Record<string, unknown>) => {
     if (!user) {
       navigate('/login');
       return;
     }
-
-    setLoadingKey(`credits_${packSize}`);
+    setLoadingKey(key);
     setError('');
-
     try {
-      const response = await api.post<CheckoutResponse>('/api/monetization/buy-credits', {
-        packSize,
-      });
+      const response = await api.post<CheckoutResponse>(endpoint, body);
       window.location.href = response.data.checkoutUrl;
-    } catch (purchaseError) {
-      setError(
-        purchaseError instanceof Error
-          ? purchaseError.message
-          : 'Payment failed. Please try again.'
-      );
-      setLoadingKey(null);
-    }
-  };
-
-  const handleBallerSubscribe = async () => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-
-    setLoadingKey('baller');
-    setError('');
-
-    try {
-      const response = await api.post<CheckoutResponse>('/api/monetization/subscribe');
-      window.location.href = response.data.checkoutUrl;
-    } catch (subscribeError) {
-      setError(
-        subscribeError instanceof Error
-          ? subscribeError.message
-          : 'Payment failed. Please try again.'
-      );
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Payment failed. Please try again.');
       setLoadingKey(null);
     }
   };
@@ -146,7 +116,7 @@ export default function PricingPage() {
                   </p>
 
                   <button
-                    onClick={() => void handleCreditPurchase(pack.packSize)}
+                    onClick={() => void handleCheckout('/api/monetization/buy-credits', `credits_${pack.packSize}`, { packSize: pack.packSize })}
                     disabled={isLoading}
                     className={`mt-8 w-full rounded-sm py-3 text-sm font-medium transition disabled:opacity-60 ${
                       pack.popular
@@ -226,7 +196,7 @@ export default function PricingPage() {
                   </ul>
 
                   <button
-                    onClick={() => void handleBallerSubscribe()}
+                    onClick={() => void handleCheckout('/api/monetization/subscribe', 'baller')}
                     disabled={loadingKey === 'baller'}
                     className="mt-8 w-full rounded-sm bg-black py-3 text-sm font-medium text-white transition hover:bg-black/90 disabled:opacity-60"
                   >

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act } from 'react-test-renderer';
 
 const { apiGetMock } = vi.hoisted(() => ({
   apiGetMock: vi.fn(),
@@ -14,6 +14,7 @@ vi.mock('../api/client', () => ({
 
 import { useTournaments, useTournament, useMyTournaments } from './useTournaments';
 import type { Tournament } from '../lib/types';
+import { renderHook, waitFor } from '../test-utils';
 
 const mockTournament: Tournament = {
   id: 'tour-1',
@@ -38,7 +39,7 @@ describe('useTournaments', () => {
   it('fetches tournaments and sets loading state', async () => {
     apiGetMock.mockResolvedValueOnce({ data: [mockTournament] });
 
-    const { result } = renderHook(() => useTournaments());
+    const { result, unmount } = renderHook(() => useTournaments());
 
     expect(result.current.loading).toBe(true);
 
@@ -46,12 +47,13 @@ describe('useTournaments', () => {
 
     expect(result.current.tournaments).toEqual([mockTournament]);
     expect(result.current.error).toBe('');
+    unmount();
   });
 
   it('builds query params from filters', async () => {
     apiGetMock.mockResolvedValueOnce({ data: [] });
 
-    renderHook(() =>
+    const { unmount } = renderHook(() =>
       useTournaments({ sport: 'TENNIS', status: 'IN_PROGRESS', search: 'open', page: 2, limit: 10 })
     );
 
@@ -66,12 +68,13 @@ describe('useTournaments', () => {
     expect(callArg).toContain('search=open');
     expect(callArg).toContain('page=2');
     expect(callArg).toContain('limit=10');
+    unmount();
   });
 
   it('defaults page=1 and limit=20 when not provided', async () => {
     apiGetMock.mockResolvedValueOnce({ data: [] });
 
-    renderHook(() => useTournaments());
+    const { unmount } = renderHook(() => useTournaments());
 
     await waitFor(() => {
       expect(apiGetMock).toHaveBeenCalledWith(
@@ -81,27 +84,30 @@ describe('useTournaments', () => {
 
     const callArg = apiGetMock.mock.calls[0][0] as string;
     expect(callArg).toContain('limit=20');
+    unmount();
   });
 
   it('sets error message on fetch failure', async () => {
     apiGetMock.mockRejectedValueOnce(new Error('Network error'));
 
-    const { result } = renderHook(() => useTournaments());
+    const { result, unmount } = renderHook(() => useTournaments());
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.error).toBe('Network error');
     expect(result.current.tournaments).toEqual([]);
+    unmount();
   });
 
   it('sets generic error message for non-Error rejections', async () => {
     apiGetMock.mockRejectedValueOnce('unexpected');
 
-    const { result } = renderHook(() => useTournaments());
+    const { result, unmount } = renderHook(() => useTournaments());
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.error).toBe('Failed to load tournaments');
+    unmount();
   });
 });
 
@@ -113,7 +119,7 @@ describe('useTournament', () => {
   it('fetches a single tournament by id', async () => {
     apiGetMock.mockResolvedValueOnce({ data: mockTournament });
 
-    const { result } = renderHook(() => useTournament('tour-1'));
+    const { result, unmount } = renderHook(() => useTournament('tour-1'));
 
     expect(result.current.loading).toBe(true);
 
@@ -122,17 +128,19 @@ describe('useTournament', () => {
     expect(result.current.tournament).toEqual(mockTournament);
     expect(result.current.error).toBe('');
     expect(apiGetMock).toHaveBeenCalledWith('/api/tournaments/tour-1');
+    unmount();
   });
 
   it('sets error on fetch failure', async () => {
     apiGetMock.mockRejectedValueOnce(new Error('Not found'));
 
-    const { result } = renderHook(() => useTournament('bad-id'));
+    const { result, unmount } = renderHook(() => useTournament('bad-id'));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.error).toBe('Not found');
     expect(result.current.tournament).toBeNull();
+    unmount();
   });
 
   it('exposes a refetch function that re-fetches tournament', async () => {
@@ -140,7 +148,7 @@ describe('useTournament', () => {
       .mockResolvedValueOnce({ data: mockTournament })
       .mockResolvedValueOnce({ data: { ...mockTournament, name: 'Updated' } });
 
-    const { result } = renderHook(() => useTournament('tour-1'));
+    const { result, unmount } = renderHook(() => useTournament('tour-1'));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.tournament?.name).toBe('Padel Open');
@@ -151,16 +159,18 @@ describe('useTournament', () => {
 
     await waitFor(() => expect(result.current.tournament?.name).toBe('Updated'));
     expect(apiGetMock).toHaveBeenCalledTimes(2);
+    unmount();
   });
 
   it('sets generic error for non-Error rejections', async () => {
     apiGetMock.mockRejectedValueOnce(42);
 
-    const { result } = renderHook(() => useTournament('tour-1'));
+    const { result, unmount } = renderHook(() => useTournament('tour-1'));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.error).toBe('Failed to load tournament');
+    unmount();
   });
 
   it('clears a previous error after a successful refetch', async () => {
@@ -168,7 +178,7 @@ describe('useTournament', () => {
       .mockRejectedValueOnce(new Error('Temporary failure'))
       .mockResolvedValueOnce({ data: mockTournament });
 
-    const { result } = renderHook(() => useTournament('tour-1'));
+    const { result, unmount } = renderHook(() => useTournament('tour-1'));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.error).toBe('Temporary failure');
@@ -181,6 +191,7 @@ describe('useTournament', () => {
 
     expect(result.current.error).toBe('');
     expect(result.current.tournament).toEqual(mockTournament);
+    unmount();
   });
 });
 
@@ -192,7 +203,7 @@ describe('useMyTournaments', () => {
   it('fetches the current user organised tournaments', async () => {
     apiGetMock.mockResolvedValueOnce({ data: [mockTournament] });
 
-    const { result } = renderHook(() => useMyTournaments());
+    const { result, unmount } = renderHook(() => useMyTournaments());
 
     expect(result.current.loading).toBe(true);
 
@@ -200,27 +211,30 @@ describe('useMyTournaments', () => {
 
     expect(result.current.tournaments).toEqual([mockTournament]);
     expect(result.current.error).toBe('');
-    expect(apiGetMock).toHaveBeenCalledWith('/api/tournaments/my');
+    expect(apiGetMock).toHaveBeenCalledWith('/api/tournaments/organized');
+    unmount();
   });
 
   it('sets error on fetch failure', async () => {
     apiGetMock.mockRejectedValueOnce(new Error('Unauthorized'));
 
-    const { result } = renderHook(() => useMyTournaments());
+    const { result, unmount } = renderHook(() => useMyTournaments());
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.error).toBe('Unauthorized');
     expect(result.current.tournaments).toEqual([]);
+    unmount();
   });
 
   it('sets generic error for non-Error rejections', async () => {
     apiGetMock.mockRejectedValueOnce(null);
 
-    const { result } = renderHook(() => useMyTournaments());
+    const { result, unmount } = renderHook(() => useMyTournaments());
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.error).toBe('Failed to load tournaments');
+    unmount();
   });
 });

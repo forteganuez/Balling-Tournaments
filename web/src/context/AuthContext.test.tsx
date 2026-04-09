@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, waitFor } from '../test-utils';
 
 vi.mock('../lib/supabase', () => ({
   supabase: {
@@ -32,21 +32,30 @@ describe('AuthContext', () => {
     });
 
     const { useAuth, AuthProvider } = await import('./AuthContext');
+    let snapshot: { isLoading: boolean; user: { name: string } | null } | null = null;
+    const getSnapshot = () => {
+      if (!snapshot) {
+        throw new Error('Auth snapshot not ready');
+      }
+
+      return snapshot;
+    };
 
     function TestChild() {
-      const { user, isLoading } = useAuth();
-      if (isLoading) return <div>loading</div>;
-      return <div>{user ? user.name : 'no-user'}</div>;
+      snapshot = useAuth();
+      return null;
     }
 
-    render(
+    const view = render(
       <AuthProvider>
         <TestChild />
       </AuthProvider>
     );
 
-    expect(screen.getByText('loading')).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByText('no-user')).toBeInTheDocument());
+    expect(getSnapshot().isLoading).toBe(true);
+    await waitFor(() => expect(getSnapshot().isLoading).toBe(false));
+    expect(getSnapshot().user).toBeNull();
+    view.unmount();
   });
 
   it('populates user when session and API calls succeed', async () => {
@@ -86,19 +95,27 @@ describe('AuthContext', () => {
       });
 
     const { useAuth, AuthProvider } = await import('./AuthContext');
+    let snapshot: { isLoading: boolean; user: { name: string } | null } | null = null;
+    const getSnapshot = () => {
+      if (!snapshot) {
+        throw new Error('Auth snapshot not ready');
+      }
+
+      return snapshot;
+    };
 
     function TestChild() {
-      const { user, isLoading } = useAuth();
-      if (isLoading) return <div>loading</div>;
-      return <div>{user?.name ?? 'no-user'}</div>;
+      snapshot = useAuth();
+      return null;
     }
 
-    render(
+    const view = render(
       <AuthProvider>
         <TestChild />
       </AuthProvider>
     );
 
-    await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument());
+    await waitFor(() => expect(getSnapshot().user?.name).toBe('Alice'));
+    view.unmount();
   });
 });

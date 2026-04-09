@@ -13,7 +13,7 @@ import type { AppUser, BalanceResponse } from '../lib/types';
 interface AuthContextValue {
   user: AppUser | null;
   isLoading: boolean;
-  refetch: () => Promise<AppUser | null>;
+  refetch: (accessToken?: string) => Promise<AppUser | null>;
   logout: () => Promise<void>;
 }
 
@@ -23,13 +23,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchUser = useCallback(async () => {
+  const fetchUser = useCallback(async (accessToken?: string) => {
     try {
+      const headers = accessToken
+        ? { Authorization: `Bearer ${accessToken}` }
+        : undefined;
       const [meRes, balanceRes] = await Promise.all([
         api.get<{ user: Omit<AppUser, 'credits' | 'ballerExpiresAt'> }>(
-          '/api/auth/me'
+          '/api/auth/me',
+          { headers }
         ),
-        api.get<BalanceResponse>('/api/monetization/balance'),
+        api.get<BalanceResponse>('/api/monetization/balance', { headers }),
       ]);
 
       const nextUser = {
@@ -53,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data: { session },
       } = await supabase.auth.getSession();
       if (session) {
-        await fetchUser().catch(() => null);
+        await fetchUser(session.access_token).catch(() => null);
       }
       setIsLoading(false);
     };
@@ -67,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session &&
         (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')
       ) {
-        await fetchUser().catch(() => null);
+        await fetchUser(session.access_token).catch(() => null);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
       }

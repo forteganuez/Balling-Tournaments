@@ -4,13 +4,22 @@ import TournamentCard from '../components/TournamentCard';
 import { useTournaments } from '../hooks/useTournaments';
 import { useAuth } from '../context/AuthContext';
 import type { Sport, TournamentStatus } from '../lib/types';
+import { SPORTS, TOURNAMENT_STATUSES } from '../lib/constants';
+
+function toSport(val: string | null): Sport | '' {
+  return SPORTS.includes(val as Sport) ? (val as Sport) : '';
+}
+
+function toStatus(val: string | null): TournamentStatus | '' {
+  return TOURNAMENT_STATUSES.includes(val as TournamentStatus) ? (val as TournamentStatus) : '';
+}
 
 export default function TournamentsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
 
-  const [sport, setSport] = useState<Sport | ''>((searchParams.get('sport') as Sport) ?? '');
-  const [status, setStatus] = useState<TournamentStatus | ''>((searchParams.get('status') as TournamentStatus) ?? '');
+  const [sport, setSport] = useState<Sport | ''>(() => toSport(searchParams.get('sport')));
+  const [status, setStatus] = useState<TournamentStatus | ''>(() => toStatus(searchParams.get('status')));
   const [search, setSearch] = useState(searchParams.get('search') ?? '');
 
   const filters = useMemo(
@@ -32,8 +41,11 @@ export default function TournamentsPage() {
   return (
     <div className="bg-[#f3eee5] text-[#191510] mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-3xl font-bold text-black">Tournaments</h1>
-        {user?.role === 'ORGANIZER' && (
+        <div>
+          <p className="text-sm uppercase tracking-[0.3em] text-[#c4a47a]">Tournaments</p>
+          <h1 className="mt-3 font-serif text-5xl leading-[0.98] text-black">Find your next bracket.</h1>
+        </div>
+        {(user?.role === 'ORGANIZER' || user?.role === 'ADMIN') && (
           <Link
             to="/tournaments/new"
             className="rounded-sm bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-black/90"

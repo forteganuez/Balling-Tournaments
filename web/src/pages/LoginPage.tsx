@@ -51,7 +51,7 @@ export default function LoginPage() {
         throw new Error('Login succeeded, but no active session was returned.');
       }
 
-      await refetch();
+      await refetch(data.session.access_token);
       navigate('/dashboard');
     } catch (submitError) {
       setError(

@@ -74,7 +74,7 @@ export default function RegisterPage() {
         );
       }
 
-      await refetch();
+      await refetch(data.session.access_token);
       navigate('/dashboard');
     } catch (submitError) {
       setError(

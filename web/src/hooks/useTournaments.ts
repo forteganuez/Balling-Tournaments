@@ -88,7 +88,7 @@ export function useMyTournaments() {
     setLoading(true);
 
     api
-      .get<Tournament[]>('/api/tournaments/my')
+      .get<Tournament[]>('/api/tournaments/organized')
       .then((res) => {
         if (!cancelled) {
           setTournaments(res.data);

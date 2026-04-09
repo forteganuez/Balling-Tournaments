@@ -8,19 +8,7 @@ import Countdown from '../components/Countdown';
 import BracketView from '../components/BracketView';
 import RoundRobinView from '../components/RoundRobinView';
 import { formatCentsToEuros } from '../components/TournamentCard';
-
-const formatLabels: Record<string, string> = {
-  SINGLE_ELIMINATION: 'Single Elimination',
-  DOUBLE_ELIMINATION: 'Double Elimination',
-  ROUND_ROBIN: 'Round Robin',
-};
-
-const statusLabels: Record<string, { label: string; color: string }> = {
-  REGISTRATION_OPEN: { label: 'Registration Open', color: 'text-[#8a6838]' },
-  IN_PROGRESS: { label: 'In Progress', color: 'text-yellow-600' },
-  COMPLETED: { label: 'Completed', color: 'text-[#6d6358]' },
-  CANCELLED: { label: 'Cancelled', color: 'text-red-600' },
-};
+import { TOURNAMENT_FORMAT_LABELS, TOURNAMENT_STATUS_MAP } from '../lib/constants';
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -73,7 +61,20 @@ export default function TournamentDetailPage() {
       if (!isSameOrigin && !isTrustedPayment) throw new Error('Unexpected redirect URL');
       window.location.href = res.data.url;
     } catch (err: unknown) {
-      setJoinError(err instanceof Error ? err.message : 'Failed to join');
+      const axiosMsg =
+        err &&
+        typeof err === 'object' &&
+        'response' in err &&
+        err.response &&
+        typeof err.response === 'object' &&
+        'data' in err.response &&
+        err.response.data &&
+        typeof err.response.data === 'object' &&
+        'error' in err.response.data &&
+        typeof (err.response.data as { error: unknown }).error === 'string'
+          ? (err.response.data as { error: string }).error
+          : null;
+      setJoinError(axiosMsg ?? (err instanceof Error ? err.message : 'Failed to join'));
       setJoining(false);
     }
   };
@@ -97,7 +98,8 @@ export default function TournamentDetailPage() {
     );
   }
 
-  const statusInfo = statusLabels[tournament.status] ?? statusLabels.COMPLETED;
+  const statusEntry = TOURNAMENT_STATUS_MAP[tournament.status] ?? TOURNAMENT_STATUS_MAP.COMPLETED;
+  const statusInfo = { label: statusEntry.label, color: statusEntry.color };
 
   return (
     <div className="bg-[#f3eee5] text-[#191510] mx-auto max-w-4xl px-4 py-8 sm:px-6">
@@ -127,7 +129,7 @@ export default function TournamentDetailPage() {
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <span className={`text-xs font-medium ${statusInfo.color}`}>{statusInfo.label}</span>
                 <span className="rounded border border-[#d8ccb9] px-2 py-0.5 text-xs text-[#6d6358]">
-                  {formatLabels[tournament.format] ?? tournament.format}
+                  {TOURNAMENT_FORMAT_LABELS[tournament.format] ?? tournament.format}
                 </span>
               </div>
             </div>

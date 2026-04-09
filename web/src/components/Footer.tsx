@@ -7,7 +7,10 @@ export default function Footer() {
     location.pathname === '/login' ||
     location.pathname === '/register' ||
     location.pathname === '/dashboard' ||
-    location.pathname === '/pricing';
+    location.pathname === '/pricing' ||
+    location.pathname === '/tournaments' ||
+    location.pathname.startsWith('/tournaments/') ||
+    location.pathname === '/organizer';
 
   if (isEditorialShell) {
     return (

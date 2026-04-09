@@ -126,6 +126,33 @@ export default function DashboardPage() {
           </div>
         </section>
 
+        {(user.role === 'ORGANIZER' || user.role === 'ADMIN') && (
+          <section className="mb-10">
+            <div className="mb-6">
+              <p className="text-sm uppercase tracking-[0.3em] text-[#c4a47a]">Organizer</p>
+              <h2 className="mt-3 font-serif text-4xl text-black">Manage Tournaments</h2>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Link
+                to="/tournaments/new"
+                className="rounded-sm border border-[#d8ccb9] bg-[#f8f4ed] p-6 transition hover:border-[#c4a47a]"
+              >
+                <div className="text-xs uppercase tracking-[0.22em] text-[#c4a47a]">Create</div>
+                <div className="mt-4 font-serif text-3xl leading-tight text-black">+ New Tournament</div>
+                <div className="mt-3 text-sm leading-7 text-[#5a5148]">Set up brackets, entry fee, and registration.</div>
+              </Link>
+              <Link
+                to="/organizer"
+                className="rounded-sm border border-[#d8ccb9] bg-[#f8f4ed] p-6 transition hover:border-[#c4a47a]"
+              >
+                <div className="text-xs uppercase tracking-[0.22em] text-[#c4a47a]">Manage</div>
+                <div className="mt-4 font-serif text-3xl leading-tight text-black">Organizer Dashboard</div>
+                <div className="mt-3 text-sm leading-7 text-[#5a5148]">View and manage all your tournaments.</div>
+              </Link>
+            </div>
+          </section>
+        )}
+
         <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="rounded-sm border border-[#d8ccb9] bg-[#f8f4ed] px-6 py-12 lg:px-8">
             <p className="text-sm uppercase tracking-[0.3em] text-[#c4a47a]">Activity</p>

@@ -44,16 +44,16 @@ export default function RoundRobinView({ matches, players }: Props) {
   }, [matches, playerIds, players]);
 
   if (!matches.length) {
-    return <p className="py-8 text-center text-muted">No round robin data yet.</p>;
+    return <p className="py-8 text-center text-[#6d6358]">No round robin data yet.</p>;
   }
 
-  const thClass = 'border border-border bg-surface px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted';
-  const tdClass = 'border border-border px-3 py-2 text-sm text-primary';
+  const thClass = 'border border-[#d8ccb9] bg-[#f8f4ed] px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-[#6d6358]';
+  const tdClass = 'border border-[#d8ccb9] px-3 py-2 text-sm text-[#191510]';
 
   return (
     <div className="space-y-8">
       <div>
-        <h4 className="mb-3 text-sm font-semibold text-muted">Results Matrix</h4>
+        <h4 className="mb-3 text-sm font-semibold text-[#6d6358]">Results Matrix</h4>
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse">
             <thead>
@@ -71,11 +71,11 @@ export default function RoundRobinView({ matches, players }: Props) {
                 <tr key={rowId}>
                   <td className={`${tdClass} font-medium`}>{players[rowId]}</td>
                   {playerIds.map((colId) => {
-                    if (rowId === colId) return <td key={colId} className={`${tdClass} text-center text-muted`}>—</td>;
+                    if (rowId === colId) return <td key={colId} className={`${tdClass} text-center text-[#6d6358]`}>—</td>;
                     const result = resultMap[rowId]?.[colId];
-                    if (!result) return <td key={colId} className={`${tdClass} text-center text-muted`}>—</td>;
+                    if (!result) return <td key={colId} className={`${tdClass} text-center text-[#6d6358]`}>—</td>;
                     return (
-                      <td key={colId} className={`${tdClass} text-center font-medium ${result.won ? 'text-accent' : 'text-red-400'}`}>
+                      <td key={colId} className={`${tdClass} text-center font-medium ${result.won ? 'text-[#8a6838]' : 'text-red-500'}`}>
                         {result.won ? 'W' : 'L'}
                       </td>
                     );
@@ -88,7 +88,7 @@ export default function RoundRobinView({ matches, players }: Props) {
       </div>
 
       <div>
-        <h4 className="mb-3 text-sm font-semibold text-muted">Standings</h4>
+        <h4 className="mb-3 text-sm font-semibold text-[#6d6358]">Standings</h4>
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse">
             <thead>
@@ -100,11 +100,11 @@ export default function RoundRobinView({ matches, players }: Props) {
             </thead>
             <tbody>
               {standings.map((s, idx) => (
-                <tr key={s.playerId} className={idx === 0 ? 'bg-accent/5' : ''}>
+                <tr key={s.playerId} className={idx === 0 ? 'bg-[#8a6838]/5' : ''}>
                   <td className={tdClass}>{idx + 1}</td>
                   <td className={`${tdClass} font-medium`}>{s.name}</td>
-                  <td className={`${tdClass} text-center text-accent`}>{s.wins}</td>
-                  <td className={`${tdClass} text-center text-red-400`}>{s.losses}</td>
+                  <td className={`${tdClass} text-center text-[#8a6838]`}>{s.wins}</td>
+                  <td className={`${tdClass} text-center text-red-500`}>{s.losses}</td>
                   <td className={`${tdClass} text-center font-semibold`}>{s.points}</td>
                 </tr>
               ))}

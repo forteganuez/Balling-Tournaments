@@ -3,13 +3,7 @@ import { useMyTournaments } from '../hooks/useTournaments';
 import { useAuth } from '../context/AuthContext';
 import SportIcon from '../components/SportIcon';
 import { formatCentsToEuros } from '../components/TournamentCard';
-
-const statusColors: Record<string, string> = {
-  REGISTRATION_OPEN: 'text-[#8a6838]',
-  IN_PROGRESS: 'text-yellow-600',
-  COMPLETED: 'text-[#6d6358]',
-  CANCELLED: 'text-red-600',
-};
+import { TOURNAMENT_STATUS_MAP } from '../lib/constants';
 
 export default function OrganizerDashboardPage() {
   const { user } = useAuth();
@@ -81,7 +75,7 @@ export default function OrganizerDashboardPage() {
                 <SportIcon sport={t.sport} className="text-xl" />
                 <div>
                   <p className="font-semibold text-black">{t.name}</p>
-                  <p className={`text-xs ${statusColors[t.status] ?? 'text-[#6d6358]'}`}>
+                  <p className={`text-xs ${TOURNAMENT_STATUS_MAP[t.status]?.color ?? 'text-[#6d6358]'}`}>
                     {t.status.replace('_', ' ')} · {t._count?.registrations ?? 0}/{t.maxPlayers} players
                   </p>
                 </div>

@@ -56,7 +56,7 @@ export default function Navbar() {
               Dashboard
             </NavLink>
           )}
-          {user?.role === 'ORGANIZER' && (
+          {(user?.role === 'ORGANIZER' || user?.role === 'ADMIN') && (
             <NavLink to="/organizer" className={navLinkClass}>
               Organizer
             </NavLink>

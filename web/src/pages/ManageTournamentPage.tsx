@@ -16,6 +16,7 @@ export default function ManageTournamentPage() {
   });
   const [actionLoading, setActionLoading] = useState('');
   const [actionError, setActionError] = useState('');
+  const [confirmKey, setConfirmKey] = useState<string | null>(null);
 
   const playerMap: Record<string, string> = {};
   if (tournament?.registrations) {
@@ -24,8 +25,12 @@ export default function ManageTournamentPage() {
     }
   }
 
-  const doAction = async (path: string, key: string, confirm?: string) => {
-    if (confirm && !window.confirm(confirm)) return;
+  const requestAction = (key: string) => {
+    setConfirmKey(key);
+  };
+
+  const doAction = async (path: string, key: string) => {
+    setConfirmKey(null);
     setActionLoading(key);
     setActionError('');
     try {
@@ -92,22 +97,60 @@ export default function ManageTournamentPage() {
             View Public Page
           </Link>
           {tournament.status === 'REGISTRATION_OPEN' && (
-            <button
-              onClick={() => void doAction('close-registration', 'close', 'Close registration and generate bracket?')}
-              disabled={actionLoading === 'close'}
-              className="rounded-sm bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-black/90 disabled:opacity-60"
-            >
-              {actionLoading === 'close' ? 'Closing…' : 'Close Registration'}
-            </button>
+            confirmKey === 'close' ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-[#6d6358]">Close registration and generate bracket?</span>
+                <button
+                  onClick={() => void doAction('close-registration', 'close')}
+                  disabled={actionLoading === 'close'}
+                  className="rounded-sm bg-black px-3 py-2 text-sm font-semibold text-white hover:bg-black/90 disabled:opacity-60"
+                >
+                  Confirm
+                </button>
+                <button
+                  onClick={() => setConfirmKey(null)}
+                  className="rounded-sm border border-[#d8ccb9] px-3 py-2 text-sm text-[#6d6358] hover:border-[#c4a47a]"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => requestAction('close')}
+                disabled={actionLoading === 'close'}
+                className="rounded-sm bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-black/90 disabled:opacity-60"
+              >
+                {actionLoading === 'close' ? 'Closing…' : 'Close Registration'}
+              </button>
+            )
           )}
           {(tournament.status === 'REGISTRATION_OPEN' || tournament.status === 'IN_PROGRESS') && (
-            <button
-              onClick={() => void doAction('cancel', 'cancel', 'Cancel this tournament? This cannot be undone.')}
-              disabled={actionLoading === 'cancel'}
-              className="rounded-sm border border-red-300 px-4 py-2 text-sm text-red-600 hover:border-red-400 disabled:opacity-60"
-            >
-              {actionLoading === 'cancel' ? 'Cancelling…' : 'Cancel Tournament'}
-            </button>
+            confirmKey === 'cancel' ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-red-600">This cannot be undone.</span>
+                <button
+                  onClick={() => void doAction('cancel', 'cancel')}
+                  disabled={actionLoading === 'cancel'}
+                  className="rounded-sm border border-red-400 bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-100 disabled:opacity-60"
+                >
+                  Confirm Cancel
+                </button>
+                <button
+                  onClick={() => setConfirmKey(null)}
+                  className="rounded-sm border border-[#d8ccb9] px-3 py-2 text-sm text-[#6d6358] hover:border-[#c4a47a]"
+                >
+                  Keep
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => requestAction('cancel')}
+                disabled={actionLoading === 'cancel'}
+                className="rounded-sm border border-red-300 px-4 py-2 text-sm text-red-600 hover:border-red-400 disabled:opacity-60"
+              >
+                {actionLoading === 'cancel' ? 'Cancelling…' : 'Cancel Tournament'}
+              </button>
+            )
           )}
         </div>
       </div>
