@@ -52,28 +52,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const init = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session) {
-        await fetchUser(session.access_token).catch(() => null);
-      }
-      setIsLoading(false);
-    };
-
-    void init();
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (
         session &&
-        (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')
+        (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')
       ) {
         await fetchUser(session.access_token).catch(() => null);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
+      }
+
+      if (event === 'INITIAL_SESSION') {
+        setIsLoading(false);
       }
     });
 
