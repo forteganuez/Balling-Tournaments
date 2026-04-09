@@ -1,4 +1,4 @@
-# Balling
+/usage# Balling
 
 Tournament platform for padel, tennis, and squash. Players find local tournaments, register and pay online, and follow their matches and brackets in real time.
 
