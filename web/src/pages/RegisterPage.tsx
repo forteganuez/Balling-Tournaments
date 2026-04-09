@@ -193,7 +193,7 @@ export default function RegisterPage() {
               </div>
               <button
                 type="button"
-                onClick={() => void supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/dashboard` } })}
+                onClick={() => void supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/login` } })}
                 className="mt-4 flex w-full items-center justify-center gap-3 rounded-sm border border-[#d5c7b2] bg-white py-3 text-sm font-medium text-[#191510] transition hover:bg-[#f8f4ed]"
               >
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">

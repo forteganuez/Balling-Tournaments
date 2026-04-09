@@ -61,7 +61,6 @@ app.use(
 
 // ── Rate limiting ──
 app.use('/api/', generalLimiter);
-app.use('/api/auth', authLimiter);
 
 // Write limiter on mutation-heavy routes
 app.use('/api/friends', writeLimiter);
