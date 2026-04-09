@@ -54,21 +54,7 @@ api.interceptors.request.use(async (config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  async (error: unknown) => {
-    const status =
-      error &&
-      typeof error === 'object' &&
-      'response' in error &&
-      error.response &&
-      typeof error.response === 'object' &&
-      'status' in error.response
-        ? (error.response as { status: number }).status
-        : null;
-
-    if (status === 401) {
-      await supabase.auth.signOut();
-      _nav.to('/login');
-    }
+  (error: unknown) => {
     return Promise.reject(error);
   }
 );

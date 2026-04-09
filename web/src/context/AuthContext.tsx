@@ -71,7 +71,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session &&
         (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')
       ) {
-        await fetchUser(session.access_token).catch(() => null);
+        await fetchUser(session.access_token).catch((err) => {
+          console.error('[Auth] fetchUser failed:', err);
+          return null;
+        });
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
       }
